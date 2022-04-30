@@ -434,7 +434,7 @@ namespace SohImGui {
         }
     }
 
-    char ipAddress[32];
+    char ipAddress[32] = "127.0.0.1";
     int port = 25565;
     bool done;
 
@@ -525,28 +525,20 @@ namespace SohImGui {
     {
         while (1) {
             printf("message: ");
-            char message[1024];
-            fgets(message, 1024, stdin);
-            int len = strlen(message);
+
+            int len = strlen("hello world!");
 
             /* strip the newline */
-            message[len - 1] = '\0';
+            int result;
 
-            if (len) {
-                int result;
+            /* print out the message */
+            printf("Sending: %.*s\n", len, "hello world!");
 
-                /* print out the message */
-                printf("Sending: %.*s\n", len, message);
+            result =
+                SDLNet_TCP_Send(tcpsock, "hello world!", len); /* add 1 for the NULL */
 
-                result =
-                    SDLNet_TCP_Send(tcpsock, message, len); /* add 1 for the NULL */
-                if (result < len)
-                    printf("SDLNet_TCP_Send: %s\n", SDLNet_GetError());
-            }
-
-            if (len == 2 && tolower(message[0]) == 'q') {
-                break;
-            }
+            if (result < len)
+                printf("SDLNet_TCP_Send: %s\n", SDLNet_GetError());
         }
     }
 
@@ -558,7 +550,6 @@ namespace SohImGui {
 
         printf("Starting client...\n");
         IPaddress ip;
-        TCPsocket tcpsock;
 
         if (SDLNet_ResolveHost(&ip, "127.0.0.1", 25565) == -1) {
             printf("SDLNet_ResolveHost: %s\n", SDLNet_GetError());
