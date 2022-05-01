@@ -781,6 +781,7 @@
     <ClCompile Include="src\overlays\actors\ovl_Item_Inbox\z_item_inbox.c" />
     <ClCompile Include="src\overlays\actors\ovl_Item_Ocarina\z_item_ocarina.c" />
     <ClCompile Include="src\overlays\actors\ovl_Item_Shield\z_item_shield.c" />
+    <ClCompile Include="src\overlays\actors\ovl_Link_Puppet\z_link_puppet.c" />
     <ClCompile Include="src\overlays\actors\ovl_Magic_Dark\z_magic_dark.c" />
     <ClCompile Include="src\overlays\actors\ovl_Magic_Fire\z_magic_fire.c" />
     <ClCompile Include="src\overlays\actors\ovl_Magic_Wind\z_magic_wind.c" />
@@ -1316,6 +1317,7 @@
     <ClInclude Include="src\overlays\actors\ovl_Item_Ocarina\z_item_ocarina.h" />
     <ClInclude Include="src\overlays\actors\ovl_Item_Shield\z_item_shield.h" />
     <ClInclude Include="src\overlays\actors\ovl_kaleido_scope\z_kaleido_scope.h" />
+    <ClInclude Include="src\overlays\actors\ovl_Link_Puppet\z_link_puppet.h" />
     <ClInclude Include="src\overlays\actors\ovl_Magic_Dark\z_magic_dark.h" />
     <ClInclude Include="src\overlays\actors\ovl_Magic_Fire\z_magic_fire.h" />
     <ClInclude Include="src\overlays\actors\ovl_Magic_Wind\z_magic_wind.h" />

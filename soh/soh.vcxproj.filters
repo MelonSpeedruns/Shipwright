@@ -2184,6 +2184,9 @@
     <ClCompile Include="soh\util.cpp">
       <Filter>Source Files\soh</Filter>
     </ClCompile>
+    <ClCompile Include="src\overlays\actors\ovl_Link_Puppet\z_link_puppet.c">
+      <Filter>Source Files\src\overlays\actors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\overlays\actors\ovl_kaleido_scope\z_kaleido_scope.h">
@@ -3733,6 +3736,9 @@
     </ClInclude>
     <ClInclude Include="soh\util.h">
       <Filter>Header Files\soh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\overlays\actors\ovl_Link_Puppet\z_link_puppet.h">
+      <Filter>Source Files\src\overlays\actors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

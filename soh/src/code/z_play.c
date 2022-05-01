@@ -195,7 +195,7 @@ void Gameplay_Init(GameState* thisx) {
     GlobalContext* globalCtx = (GlobalContext*)thisx;
     GraphicsContext* gfxCtx = globalCtx->state.gfxCtx;
     gGlobalCtx = globalCtx;
-    //globalCtx->state.gfxCtx = NULL;
+    // globalCtx->state.gfxCtx = NULL;
     u32 zAlloc;
     u32 zAllocAligned;
     size_t zAllocSize;
@@ -403,13 +403,16 @@ void Gameplay_Init(GameState* thisx) {
     func_8002DF18(globalCtx, GET_PLAYER(globalCtx));
     AnimationContext_Update(globalCtx, &globalCtx->animationCtx);
     gSaveContext.respawnFlag = 0;
-    #if 0
+#if 0
     if (dREG(95) != 0) {
         D_8012D1F0 = D_801614D0;
         osSyncPrintf("\nkawauso_data=[%x]", D_8012D1F0);
         DmaMgr_DmaRomToRam(0x03FEB000, D_8012D1F0, sizeof(D_801614D0));
     }
-    #endif
+#endif
+
+    Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_LINK_PUPPET, player->actor.world.pos.x,
+                player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, 0);
 }
 
 void Gameplay_Update(GlobalContext* globalCtx) {
