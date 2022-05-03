@@ -67,9 +67,6 @@ namespace SohImGui {
     void EnhancementSliderFloat(std::string text, std::string id, std::string cvarName, float min, float max, std::string format, float defaultValue);
     void DrawMainMenuAndCalculateGameSize(void);
 
-    void CreateServer();
-    void ConnectToPlayer();
-
     void DrawFramebufferAndGameInput(void);
     void Render(void);
     void CancelFrame(void);

@@ -94,6 +94,9 @@
     <Filter Include="Resource Files\Globals">
       <UniqueIdentifier>{c0f07350-c627-444e-9f66-23e19407ad9a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Online">
+      <UniqueIdentifier>{b0089502-a2e3-40e7-9c71-77f22eed342c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\MaterialFactory.cpp">
@@ -344,6 +347,9 @@
     </ClCompile>
     <ClCompile Include="GameSettings.cpp">
       <Filter>Source Files\CustomImpl</Filter>
+    </ClCompile>
+    <ClCompile Include="Online.cpp">
+      <Filter>Source Files\Online</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -904,6 +910,9 @@
     </ClInclude>
     <ClInclude Include="Lib\SDL\SDL2\SDL_atomic.h">
       <Filter>Source Files\Lib\SDL</Filter>
+    </ClInclude>
+    <ClInclude Include="Online.h">
+      <Filter>Source Files\Online</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

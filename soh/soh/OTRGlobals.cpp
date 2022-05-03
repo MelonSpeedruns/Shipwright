@@ -54,6 +54,10 @@ extern "C" void AudioPlayer_Play(const uint8_t* buf, uint32_t len);
 extern "C" int AudioPlayer_Buffered(void);
 extern "C" int AudioPlayer_GetDesiredBuffered(void);
 
+extern "C" void Shutdown(void) {
+    delete OTRGlobals::Instance;
+}
+
 // C->C++ Bridge
 extern "C" void InitOTR() {
     OTRGlobals::Instance = new OTRGlobals();
@@ -70,6 +74,8 @@ extern "C" void InitOTR() {
     OTRMessage_Init();
     DebugConsole_Init();
     Debug_Init();
+
+    atexit(Shutdown);
 }
 
 extern "C" uint64_t GetFrequency() {

@@ -35,6 +35,7 @@ namespace Ship {
 
     GlobalCtx2::~GlobalCtx2() {
         SPDLOG_INFO("destruct GlobalCtx2");
+        Logger->flush();
         INSTANCE->Exit();
     }
 

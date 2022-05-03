@@ -23,6 +23,7 @@
 #include "SohHooks.h"
 #include "SohConsole.h"
 #include <iostream>
+#include "Online.h"
 
 extern "C" {
     struct OSMesgQueue;
@@ -250,6 +251,8 @@ namespace Ship {
         bIsFullscreen = false;
         dwWidth = 320;
         dwHeight = 240;
+        server = std::make_shared<Online::Server>();
+        client = std::make_shared<Online::Client>();
     }
 
     Window::~Window() {

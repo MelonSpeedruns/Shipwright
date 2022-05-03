@@ -11,9 +11,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "Online.h"
+
 #include "ws2tcpip.h";
 #include <winsock2.h>
-#include "SDL_net.h"
 #include "Archive.h"
 #include "Environment.h"
 #include "GameSettings.h"
@@ -46,6 +47,7 @@
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif
+
 
 using namespace Ship;
 bool oldCursorState = true;
@@ -434,137 +436,6 @@ namespace SohImGui {
         }
     }
 
-    char ipAddress[32] = "127.0.0.1";
-    int port = 25565;
-    bool done;
-
-    UDPsocket udpsock;
-    UDPpacket* recv_packet;
-    SDLNet_SocketSet socketset = NULL;
-    int numused;
-    static const int MAX_PACKET_SIZE = 512;
-
-    std::thread onlineThread;
-
-    TCPsocket server;
-    TCPsocket client;
-    TCPsocket tcpsock;
-
-    void RunServer() {
-        while (!done) {
-            /* try to accept a connection */
-            client = SDLNet_TCP_Accept(server);
-            if (!client) { /* no connection accepted */
-              /*printf("SDLNet_TCP_Accept: %s\n",SDLNet_GetError()); */
-                SDL_Delay(100); /*sleep 1/10th of a second */
-                continue;
-            }
-
-            /* get the clients IP and port number */
-            IPaddress* remoteip;
-            remoteip = SDLNet_TCP_GetPeerAddress(client);
-            if (!remoteip) {
-                printf("SDLNet_TCP_GetPeerAddress: %s\n", SDLNet_GetError());
-                continue;
-            }
-
-            /* print out the clients IP and port number */
-            Uint32 ipaddr;
-            ipaddr = SDL_SwapBE32(remoteip->host);
-            printf("Accepted a connection from %d.%d.%d.%d port %hu\n", ipaddr >> 24,
-                (ipaddr >> 16) & 0xff, (ipaddr >> 8) & 0xff, ipaddr & 0xff,
-                remoteip->port);
-        }
-
-        while (1) {
-            /* read the buffer from client */
-            char message[1024];
-            int len = SDLNet_TCP_Recv(client, message, 1024);
-            if (!len) {
-                printf("SDLNet_TCP_Recv: %s\n", SDLNet_GetError());
-                break;
-            }
-            /* print out the message */
-            printf("Received: %.*s\n", len, message);
-            if (message[0] == 'q') {
-                printf("Disconecting on a q\n");
-                break;
-            }
-            if (message[0] == 'Q') {
-                printf("Closing server on a Q.\n");
-                done = true;
-                break;
-            }
-        }
-    }
-
-    void CreateServer() {
-        if (SDLNet_Init() == -1) {
-            printf("SDLNet_Init: %s\n", SDLNet_GetError());
-            exit(2);
-        }
-
-        printf("Starting server...\n");
-        IPaddress ip;
-        if (SDLNet_ResolveHost(&ip, NULL, 25565) == -1) {
-            printf("SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-            exit(1);
-        }
-
-        server = SDLNet_TCP_Open(&ip);
-
-        if (!server) {
-            printf("SDLNet_TCP_Open: %s\n", SDLNet_GetError());
-            exit(2);
-        }
-
-        onlineThread = std::thread(&RunServer);
-    }
-
-    void RunClient()
-    {
-        while (1) {
-            printf("message: ");
-
-            int len = strlen("hello world!");
-
-            /* strip the newline */
-            int result;
-
-            /* print out the message */
-            printf("Sending: %.*s\n", len, "hello world!");
-
-            result =
-                SDLNet_TCP_Send(tcpsock, "hello world!", len); /* add 1 for the NULL */
-
-            if (result < len)
-                printf("SDLNet_TCP_Send: %s\n", SDLNet_GetError());
-        }
-    }
-
-    void ConnectToPlayer() {
-        if (SDLNet_Init() == -1) {
-            printf("SDLNet_Init: %s\n", SDLNet_GetError());
-            exit(2);
-        }
-
-        printf("Starting client...\n");
-        IPaddress ip;
-
-        if (SDLNet_ResolveHost(&ip, "127.0.0.1", 25565) == -1) {
-            printf("SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-            exit(1);
-        }
-
-        tcpsock = SDLNet_TCP_Open(&ip);
-        if (!tcpsock) {
-            printf("SDLNet_TCP_Open: %s\n", SDLNet_GetError());
-            exit(2);
-        }
-
-        onlineThread = std::thread(&RunClient);
-    }
-
     void DrawMainMenuAndCalculateGameSize() {
         console->Update();
         ImGuiBackendNewFrame();
@@ -631,17 +502,27 @@ namespace SohImGui {
             }
 
             if (ImGui::BeginMenu("Online")) {
-                ImGui::InputText("IP Address", ipAddress, 32);
-                ImGui::InputInt("Port", &port);
+                if (ImGui::BeginMenu("Server")) {
+                    ImGui::InputInt("Port", &GlobalCtx2::GetInstance()->GetWindow()->GetServer()->port);
 
-                if (ImGui::Button("Host Game"))
-                {
-                    CreateServer();
+                    if (ImGui::Button("Host Game"))
+                    {
+                        GlobalCtx2::GetInstance()->GetWindow()->GetServer()->CreateServer();
+                    }
+
+                    ImGui::EndMenu();
                 }
 
-                if (ImGui::Button("Connect to Game"))
-                {
-                    ConnectToPlayer();
+                if (ImGui::BeginMenu("Client")) {
+                    ImGui::InputText("IP Address", GlobalCtx2::GetInstance()->GetWindow()->GetClient()->ipAddress.data(), 32);
+                    ImGui::InputInt("Port", &GlobalCtx2::GetInstance()->GetWindow()->GetClient()->port);
+
+                    if (ImGui::Button("Connect to Game"))
+                    {
+                        GlobalCtx2::GetInstance()->GetWindow()->GetClient()->ConnectToServer();
+                    }
+
+                    ImGui::EndMenu();
                 }
 
                 ImGui::EndMenu();

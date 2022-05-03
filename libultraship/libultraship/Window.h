@@ -9,6 +9,8 @@
 namespace Ship {
 	class AudioPlayer;
 
+	namespace Online { class Server; class Client; };
+
 	class Window {
 		public:
 			static std::map<size_t, std::vector<std::shared_ptr<Controller>>> Controllers;
@@ -34,6 +36,9 @@ namespace Ship {
 			std::shared_ptr<GlobalCtx2> GetContext() { return Context.lock(); }
 			std::shared_ptr<AudioPlayer> GetAudioPlayer() { return APlayer; }
 
+			std::shared_ptr<Online::Server> GetServer() { return server; }
+			std::shared_ptr<Online::Client> GetClient() { return client; }
+
 		protected:
 		private:
 			static bool KeyDown(int32_t dwScancode);
@@ -41,6 +46,9 @@ namespace Ship {
 			static void AllKeysUp(void);
 			static void OnFullscreenChanged(bool bIsNowFullscreen);
 			void SetAudioPlayer();
+
+			std::shared_ptr<Online::Server> server;
+			std::shared_ptr<Online::Client> client;
 
 			std::weak_ptr<GlobalCtx2> Context;
 			std::shared_ptr<AudioPlayer> APlayer;
