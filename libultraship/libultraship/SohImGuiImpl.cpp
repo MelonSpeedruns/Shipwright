@@ -48,7 +48,6 @@ IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPAR
 
 #endif
 
-
 using namespace Ship;
 bool oldCursorState = true;
 

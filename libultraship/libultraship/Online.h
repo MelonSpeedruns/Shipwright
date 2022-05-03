@@ -19,19 +19,17 @@ namespace Ship {
 
 			std::thread onlineThread;
 
+			const char* text = "HELLO CLIENT!\n";
+
+			IPaddress ip;
+
 			TCPsocket server;
 			TCPsocket client;
-			TCPsocket tcpsock;
-
-			std::mutex OnlineMutex;
 
 		public:
 			int port;
 
 			Server();
-			~Server();
-
-			void Stop();
 
 			void CreateServer();
 			void RunServer();
@@ -50,19 +48,15 @@ namespace Ship {
 
 			std::thread onlineThread;
 
+			TCPsocket server;
 			TCPsocket client;
-			TCPsocket tcpsock;
-
-			std::mutex OnlineMutex;
 
 		public:
+			IPaddress ip;
 			std::string ipAddress;
 			int port;
 
 			Client();
-			~Client();
-
-			void Stop();
 
 			void ConnectToServer();
 			void RunClient();
