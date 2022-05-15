@@ -15,8 +15,12 @@ namespace Ship {
 			uint8_t client_id;
 			uint16_t packet_id;
 			time_t timestamp;
+			virtual void OnExecute() = 0;
+		};
+
+		struct OnlinePacket_Rupees: public OnlinePacket {
 			uint16_t rupeeAmountChanged;
-			void OnExecute();
+			void OnExecute() override;
 		};
 
 		class Server {

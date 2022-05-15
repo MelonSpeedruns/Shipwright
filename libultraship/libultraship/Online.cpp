@@ -34,8 +34,9 @@ namespace Ship {
 
         void Server::ReceivePacketMessage()
         {
-            OnlinePacket* packet;
-            int len = SDLNet_TCP_Recv(client, &packet, sizeof(OnlinePacket));
+            char message[128];
+
+            int len = SDLNet_TCP_Recv(client, message, sizeof(message));
 
             if (len) {
                 Rupees_ChangeBy(1);
@@ -83,7 +84,7 @@ namespace Ship {
             port = 25565;
         }
 
-        void OnlinePacket::OnExecute()
+        void OnlinePacket_Rupees::OnExecute()
         {
             Rupees_ChangeBy(rupeeAmountChanged);
         }

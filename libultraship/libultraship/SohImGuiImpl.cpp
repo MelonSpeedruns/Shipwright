@@ -583,10 +583,6 @@ namespace SohImGui {
             }
 
             if (ImGui::BeginMenu("Online")) {
-                if (ImGui::Button("free money")) {
-                    OTRSendPacketRupees(1);
-                }
-
                 if (ImGui::BeginMenu("Server")) {
                     ImGui::InputInt("Port", &GlobalCtx2::GetInstance()->GetWindow()->GetServer()->port);
 

@@ -2265,6 +2265,7 @@ void Health_GiveHearts(s16 hearts) {
 
 void Rupees_ChangeBy(s16 rupeeChange) {
     gSaveContext.rupeeAccumulator += rupeeChange;
+    OTRSendPacketRupees(rupeeChange);
 }
 
 void Inventory_ChangeAmmo(s16 item, s16 ammoChange) {
