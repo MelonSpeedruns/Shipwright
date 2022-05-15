@@ -1,7 +1,8 @@
 #include "Online.h"
 #include <spdlog/spdlog.h>
+#include <PR/ultra64/gbi.h>
 
-extern "C" void Rupees_ChangeBy(uint16_t rupees);
+extern "C" void Rupees_ChangeBy(s16 rupeeChange);
 
 namespace Ship {
     namespace Online {
@@ -34,10 +35,10 @@ namespace Ship {
         void Server::ReceivePacketMessage()
         {
             OnlinePacket* packet;
-            SDLNet_TCP_Recv(client, &packet, 1000);
+            int len = SDLNet_TCP_Recv(client, &packet, sizeof(OnlinePacket));
 
-            if (packet != nullptr) {
-                packet->OnExecute();
+            if (len) {
+                Rupees_ChangeBy(1);
             }
         }
 
@@ -66,7 +67,7 @@ namespace Ship {
 
         void Client::SendPacketMessage(OnlinePacket* packet)
         {
-            SDLNet_TCP_Send(client, packet, 1000);
+            SDLNet_TCP_Send(client, packet, sizeof(OnlinePacket));
         }
 
         void Client::ConnectToServer() {
@@ -82,7 +83,7 @@ namespace Ship {
             port = 25565;
         }
 
-        void OnlinePacket_Rupees::OnExecute()
+        void OnlinePacket::OnExecute()
         {
             Rupees_ChangeBy(rupeeAmountChanged);
         }
