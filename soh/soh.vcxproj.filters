@@ -2193,6 +2193,9 @@
     <ClCompile Include="soh\Enhancements\savestates.cpp">
       <Filter>Source Files\soh\Enhancements</Filter>
     </ClCompile>
+    <ClCompile Include="src\overlays\actors\ovl_Link_Puppet\z_link_puppet.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\overlays\actors\ovl_kaleido_scope\z_kaleido_scope.h">
@@ -3754,6 +3757,9 @@
     </ClInclude>
     <ClInclude Include="soh\OTRAudio.h">
       <Filter>Source Files\soh</Filter>
+    </ClInclude>
+    <ClInclude Include="src\overlays\actors\ovl_Link_Puppet\z_link_puppet.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
