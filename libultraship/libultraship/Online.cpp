@@ -1,6 +1,8 @@
 #include "Online.h"
 #include <spdlog/spdlog.h>
 
+extern "C" void Rupees_ChangeBy(uint16_t rupees);
+
 namespace Ship {
     namespace Online {
         Server::Server() {
@@ -21,17 +23,22 @@ namespace Ship {
 
             while (client && server)
             {
-                SDLNet_TCP_Send(client, message, strlen(message) + 1);
-
-                char text[1000];
-
-                SDLNet_TCP_Recv(client, text, 1000);
-                SPDLOG_INFO(text);
+                ReceivePacketMessage();
             }
 
             SDLNet_TCP_Close(server);
             SDLNet_TCP_Close(client);
             SDLNet_Quit();
+        }
+
+        void Server::ReceivePacketMessage()
+        {
+            OnlinePacket* packet;
+            SDLNet_TCP_Recv(client, &packet, sizeof(packet));
+
+            if (packet != nullptr) {
+                packet->OnExecute();
+            }
         }
 
         void Server::CreateServer() {
@@ -50,16 +57,16 @@ namespace Ship {
             client = SDLNet_TCP_Open(&ip);
 
             while (client) {
-                SDLNet_TCP_Send(client, message, strlen(message) + 1);
 
-                char text[1000];
-
-                SDLNet_TCP_Recv(client, text, 1000);
-                SPDLOG_INFO(text);
             }
 
             SDLNet_TCP_Close(client);
             SDLNet_Quit();
+        }
+
+        void Client::SendPacketMessage(OnlinePacket* packet)
+        {
+            SDLNet_TCP_Send(client, packet, sizeof(packet));
         }
 
         void Client::ConnectToServer() {
@@ -73,6 +80,11 @@ namespace Ship {
         Client::Client() {
             ipAddress = "127.0.0.1";
             port = 25565;
+        }
+
+        void OnlinePacket_Rupees::OnExecute()
+        {
+            Rupees_ChangeBy(rupeeAmountChanged);
         }
     }
 }

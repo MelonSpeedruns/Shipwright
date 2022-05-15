@@ -35,6 +35,7 @@
 #include <Utils/StringHelper.h>
 
 #include <SDL2/SDL_scancode.h>
+#include <Online.h>
 
 OTRGlobals* OTRGlobals::Instance;
 
@@ -111,6 +112,17 @@ extern "C" uint64_t GetPerfCounter() {
     return monotime.tv_sec * 1000 + remainingMs;
 }
 #endif
+
+extern "C" void OTRSendPacketRupees(u16 rupeeChange) {
+    Ship::Online::OnlinePacket_Rupees* packet = new Ship::Online::OnlinePacket_Rupees();
+    packet->rupeeAmountChanged = rupeeChange;
+
+    OTRGlobals::Instance->context->GetWindow()->GetClient()->SendPacketMessage(packet);
+}
+
+extern "C" void OTRSendPacket(Ship::Online::OnlinePacket* packet) {
+    OTRGlobals::Instance->context->GetWindow()->GetClient()->SendPacketMessage(packet);
+}
 
 // C->C++ Bridge
 extern "C" void Graph_ProcessFrame(void (*run_one_game_iter)(void)) {

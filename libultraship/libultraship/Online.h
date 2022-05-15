@@ -6,6 +6,23 @@
 
 namespace Ship {
 	namespace Online {
+		enum PACKET_ID {
+			CHANGE_RUPEES = 0,
+			LINK_UPDATE = 1,
+		};
+
+		struct OnlinePacket {
+			uint8_t client_id;
+			uint16_t packet_id;
+			time_t timestamp;
+			virtual void OnExecute() = 0;
+		};
+
+		struct OnlinePacket_Rupees:OnlinePacket {
+			uint16_t rupeeAmountChanged;
+			void OnExecute() override;
+		};
+
 		class Server {
 		private:
 			bool done;
@@ -31,6 +48,7 @@ namespace Ship {
 
 			Server();
 
+			void ReceivePacketMessage();
 			void CreateServer();
 			void RunServer();
 		};
@@ -58,6 +76,7 @@ namespace Ship {
 
 			Client();
 
+			void SendPacketMessage(OnlinePacket* packet);
 			void ConnectToServer();
 			void RunClient();
 		};

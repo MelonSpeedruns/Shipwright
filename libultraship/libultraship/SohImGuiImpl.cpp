@@ -48,6 +48,7 @@
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif
+#include "../../soh/soh/OTRGlobals.h"
 
 using namespace Ship;
 bool oldCursorState = true;
@@ -327,6 +328,8 @@ namespace SohImGui {
         DefaultAssets[name] = asset;
     }
 
+    extern "C" void OTRSendPacketRupees(u16 rupeeChange);
+
     void Init(WindowImpl window_impl) {
         Game::LoadSettings();
         impl = window_impl;
@@ -580,6 +583,10 @@ namespace SohImGui {
             }
 
             if (ImGui::BeginMenu("Online")) {
+                if (ImGui::Button("free money")) {
+                    OTRSendPacketRupees(1);
+                }
+
                 if (ImGui::BeginMenu("Server")) {
                     ImGui::InputInt("Port", &GlobalCtx2::GetInstance()->GetWindow()->GetServer()->port);
 
