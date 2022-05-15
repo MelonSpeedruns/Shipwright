@@ -107,10 +107,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libultraship.lib;ZAPDUtils.lib;opengl32.lib;glu32.lib;SDL2.lib;SDL2main.lib;glfw3dll.lib;glew32s.lib;winmm.lib;imm32.lib;version.lib;setupapi.lib;SDL2_net.lib;ws2_32.lib;iphlpapi.lib;MSVCRT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libultraship.lib;ZAPDUtils.lib;opengl32.lib;glu32.lib;SDL2.lib;SDL2main.lib;glfw3dll.lib;glew32s.lib;winmm.lib;imm32.lib;version.lib;setupapi.lib;SDL2_net.lib;WSock32.Lib;IPHLPAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>8777216</StackReserveSize>
       <GenerateMapFile>true</GenerateMapFile>
       <MapExports>true</MapExports>
+      <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

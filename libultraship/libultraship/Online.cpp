@@ -34,7 +34,7 @@ namespace Ship {
         void Server::ReceivePacketMessage()
         {
             OnlinePacket* packet;
-            SDLNet_TCP_Recv(client, &packet, sizeof(packet));
+            SDLNet_TCP_Recv(client, &packet, 1000);
 
             if (packet != nullptr) {
                 packet->OnExecute();
@@ -66,7 +66,7 @@ namespace Ship {
 
         void Client::SendPacketMessage(OnlinePacket* packet)
         {
-            SDLNet_TCP_Send(client, packet, sizeof(packet));
+            SDLNet_TCP_Send(client, packet, 1000);
         }
 
         void Client::ConnectToServer() {

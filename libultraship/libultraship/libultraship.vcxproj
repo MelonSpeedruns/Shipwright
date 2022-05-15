@@ -148,7 +148,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level2</WarningLevel>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>SPDLOG_ACTIVE_LEVEL=0;WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;ENABLE_DX11;%(PreprocessorDefinitions)GLEW_STATIC </PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
