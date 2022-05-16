@@ -5,6 +5,8 @@
 
 #include "soh/Enhancements/gameconsole.h"
 
+#include "soh/frame_interpolation.h"
+
 void* D_8012D1F0 = NULL;
 //UNK_TYPE D_8012D1F4 = 0; // unused
 Input* D_8012D1F8 = NULL;
@@ -425,7 +427,7 @@ void Gameplay_Update(GlobalContext* globalCtx) {
 
     input = globalCtx->state.input;
 
-    if ((SREG(1) < 0) || (DREG(0) != 0)) {
+        if ((SREG(1) < 0) || (DREG(0) != 0)) {
         SREG(1) = 0;
         ZeldaArena_Display();
     }
@@ -1215,6 +1217,7 @@ void Gameplay_Draw(GlobalContext* globalCtx) {
 
             gfxP = Graph_GfxPlusOne(sp1CC);
             gSPDisplayList(OVERLAY_DISP++, gfxP);
+            gsSPGrayscale(gfxP++, false);
 
             if ((globalCtx->transitionMode == 3) || (globalCtx->transitionMode == 11) ||
                 (globalCtx->transitionCtx.transitionType >= 56)) {
@@ -1232,8 +1235,8 @@ void Gameplay_Draw(GlobalContext* globalCtx) {
             TransitionFade_Draw(&globalCtx->transitionFade, &gfxP);
 
             if (D_801614B0.a > 0) {
-                D_80161498.primColor.rgba = D_801614B0.rgba;
-                VisMono_Draw(&D_80161498, &gfxP);
+                gsDPSetGrayscaleColor(gfxP++, D_801614B0.r, D_801614B0.g, D_801614B0.b, D_801614B0.a);
+                gsSPGrayscale(gfxP++, true);
             }
 
             gSPEndDisplayList(gfxP++);
@@ -1267,7 +1270,7 @@ void Gameplay_Draw(GlobalContext* globalCtx) {
 
                 //goto Gameplay_Draw_DrawOverlayElements;
             }
-            //else 
+            //else
             {
                 s32 sp80;
 
@@ -1474,7 +1477,9 @@ void Gameplay_Main(GameState* thisx) {
         LOG_NUM("1", 1, "../z_play.c", 4583);
     }
 
+    FrameInterpolation_StartRecord();
     Gameplay_Draw(globalCtx);
+    FrameInterpolation_StopRecord();
 
     if (CVar_GetS32("gBlind_ObjectCue", 0)) {
         Gameplay_Draw_SceneInfo(globalCtx);
@@ -1572,7 +1577,7 @@ void Gameplay_InitEnvironment(GlobalContext* globalCtx, s16 skyboxId) {
     Environment_Init(globalCtx, &globalCtx->envCtx, 0);
 }
 
-void Gameplay_InitScene(GlobalContext* globalCtx, s32 spawn) 
+void Gameplay_InitScene(GlobalContext* globalCtx, s32 spawn)
 {
     globalCtx->curSpawn = spawn;
     globalCtx->linkActorEntry = NULL;
