@@ -3987,12 +3987,12 @@ void Interface_TTS_Update(GlobalContext* globalCtx) {
             u8 arg[8]; // at least big enough where no s8 string will overflow
             if (minutes > 0) {
                 sprintf(arg, "%d", minutes);
-                announceBuf += sprintf(announceBuf, "%s ", OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng",
+                announceBuf += sprintf(announceBuf, "%s ", OTRGetAccessibilityText(
                     0x800 + ((minutes > 1) ? 4 : 3), arg));
             }
             if (seconds > 0) {
                 sprintf(arg, "%d", seconds);
-                announceBuf += sprintf(announceBuf, "%s", OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng",
+                announceBuf += sprintf(announceBuf, "%s", OTRGetAccessibilityText(
                     0x800 + ((seconds > 1) ? 6 : 5), arg));
             }
             ASSERT(announceBuf < sTtsAnnounceBuf + sizeof(sTtsAnnounceBuf), "Text buffer exceeded", __FILE__, __LINE__);

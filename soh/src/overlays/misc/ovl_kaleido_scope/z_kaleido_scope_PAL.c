@@ -3031,7 +3031,33 @@ void KaleidoScope_TTS_Update(GlobalContext* globalCtx) {
     static u16 prevCursorSpecialPos = 0;
     static u16 prevCursorPoint[5] = { 0 };
 
+    static u16 prevPauseState = 0;
+    static s16 prevPromptChoice = 0;
+
     PauseContext* pauseCtx = &globalCtx->pauseCtx;
+
+    if (pauseCtx->state != prevPauseState) {
+        if (pauseCtx->state == 12) {
+            OTRTextToSpeechCallback(
+                OTRGetAccessibilityText(0x0800 + 7, NULL));
+        }
+        if (pauseCtx->state == 7 || pauseCtx->state == 14) {
+            OTRTextToSpeechCallback(
+                OTRGetAccessibilityText(0x0800 + 8, NULL));
+        } else if (pauseCtx->state == 16) {
+                OTRTextToSpeechCallback(
+                    OTRGetAccessibilityText(0x0800 + 9, NULL));
+        }
+        prevPromptChoice = 0;
+    }
+
+    if (pauseCtx->promptChoice != prevPromptChoice && (pauseCtx->state == 7 || pauseCtx->state == 14 || pauseCtx->state == 16)) {
+        OTRTextToSpeechCallback(
+            OTRGetAccessibilityText(0x0800 + 10 + ((pauseCtx->promptChoice == 0) ? 0 : 1), NULL));
+        prevPromptChoice = pauseCtx->promptChoice;
+    }
+
+    prevPauseState = pauseCtx->state;
 
     if (pauseCtx->state != 6) {
         //reset cursor index to so it is announced when pause is reopened
@@ -3043,13 +3069,13 @@ void KaleidoScope_TTS_Update(GlobalContext* globalCtx) {
         u8 arg[8];
         if (CHECK_BTN_ALL(globalCtx->state.input[0].press.button, BTN_DUP)) {
             sprintf(arg, "%d", gSaveContext.health / 16);
-            OTRTextToSpeechCallback(OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng", 0x0800 + 0, arg));
+            OTRTextToSpeechCallback(OTRGetAccessibilityText(0x0800 + 0, arg));
         } else if (CHECK_BTN_ALL(globalCtx->state.input[0].press.button, BTN_DLEFT)) {
             sprintf(arg, "%d", gSaveContext.magic);
-            OTRTextToSpeechCallback(OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng", 0x0800 + 1, arg));
+            OTRTextToSpeechCallback(OTRGetAccessibilityText(0x0800 + 1, arg));
         } else if (CHECK_BTN_ALL(globalCtx->state.input[0].press.button, BTN_DDOWN)) {
             sprintf(arg, "%d", gSaveContext.rupees);
-            OTRTextToSpeechCallback(OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng", 0x0800 + 2, arg));
+            OTRTextToSpeechCallback(OTRGetAccessibilityText(0x0800 + 2, arg));
         } else if (CHECK_BTN_ALL(globalCtx->state.input[0].press.button, BTN_DRIGHT)) {
             //TODO: announce timer?
         }
@@ -3087,20 +3113,18 @@ void KaleidoScope_TTS_Update(GlobalContext* globalCtx) {
                 default:
                     arg[0] = '\0';
             }
-            OTRTextToSpeechCallback(OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng",
+            OTRTextToSpeechCallback(OTRGetAccessibilityText(
                 pauseCtx->cursorItem[PAUSE_ITEM]), arg);
             break;
         }
         case PAUSE_MAP:
             if (sInDungeonScene) {
                 if (pauseCtx->cursorItem[PAUSE_MAP] != PAUSE_ITEM_NONE) {
-                    OTRTextToSpeechCallback(OTRMessage_GetAccessibilityText(
-                        "text/accessibility_text/accessibility_text_eng", pauseCtx->cursorItem[PAUSE_MAP], NULL));
+                    OTRTextToSpeechCallback(OTRGetAccessibilityText(pauseCtx->cursorItem[PAUSE_MAP], NULL));
                 }
             } else {
                 if (CVar_GetS32("gBlind_MessageTTS", 0)) {
-                    OTRTextToSpeechCallback(OTRMessage_GetAccessibilityText(
-                        "text/accessibility_text/accessibility_text_eng", 0x0100 + pauseCtx->cursorPoint[PAUSE_WORLD_MAP], NULL));
+                    OTRTextToSpeechCallback(OTRGetAccessibilityText(0x0100 + pauseCtx->cursorPoint[PAUSE_WORLD_MAP], NULL));
                 }
             }
             break;
@@ -3118,11 +3142,11 @@ void KaleidoScope_TTS_Update(GlobalContext* globalCtx) {
                     arg[0] = '\0';
             }
             OTRTextToSpeechCallback(
-                OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng", pauseCtx->cursorItem[PAUSE_QUEST], arg));
+                OTRGetAccessibilityText(pauseCtx->cursorItem[PAUSE_QUEST], arg));
             break;
         }
         case PAUSE_EQUIP:
-            OTRTextToSpeechCallback(OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng",
+            OTRTextToSpeechCallback(OTRGetAccessibilityText(
                 pauseCtx->cursorItem[PAUSE_EQUIP], NULL));
             break;
         default:

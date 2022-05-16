@@ -5,6 +5,8 @@
 #include "objects/object_triforce_spot/object_triforce_spot.h"
 #include "overlays/actors/ovl_Demo_Effect/z_demo_effect.h"
 
+#include "overlays/actors/ovl_Obj_Syokudai/z_obj_syokudai.h"
+
 typedef struct {
     /* 0x00 */ u8 flag;
     /* 0x02 */ u16 textId;
@@ -1277,124 +1279,565 @@ Vec3f D_801261E0[] = {
     { 200.0f, 200.0f, 0.0f },
 };
 
-static Vec3f sLedgePosition;
-static f32 sLedgeCuePitch;
-static f32 sLedgeCueVolume;
-static bool sLedgeCueIsActive;
-static bool sLedgeCueIsPlaying;
-static s32 sLedgeAlarmFrameOffset;
+typedef struct SoundCue {
+    bool active;
+    Vec3f position;
+    f32 pitch;
+    f32 volume;
+    s32 sfxId;
+    u32 repeatCount;
+    u32 repeatIntervalFrames;
+    f32 volumeModulateAmp;
+    u32 volumeModulateFreq;
 
-void Player_UpdateLedgeCue(Player* this, GlobalContext* globalCtx) {
+    bool isPlaying;
+    u32 startFrame;
+    u32 timesPlayed;
+} SoundCue;
+
+void SoundCue_Update(SoundCue* this, GlobalContext* globalCtx) {
+    if (this->active) {
+        if ((!this->isPlaying || (globalCtx->gameplayFrames - this->startFrame) % this->repeatIntervalFrames == 0) &&
+            (this->repeatCount == 0 || this->repeatCount < this->timesPlayed)) {
+            Audio_PlaySoundGeneral(this->sfxId, &this->position, 4, &this->pitch, &this->volume, &D_801333E8);
+            if (!this->isPlaying) {
+                this->isPlaying = true;
+                this->startFrame = globalCtx->gameplayFrames;
+            }
+            this->timesPlayed++;
+        }
+
+        this->volume =
+            MAX(0.0f, this->volume + this->volumeModulateAmp *
+                                         Math_SinF((float)(globalCtx->gameplayFrames % this->volumeModulateFreq) /
+                                                   this->volumeModulateFreq * 2.0f * M_PI));
+    } else if (this->isPlaying) {
+        Audio_StopSfxByPos(&this->position);
+        this->isPlaying = false;
+        this->timesPlayed = 0;
+    }
+}
+
+static SoundCue sFallCue = 
+{
+    false,
+    { 0.0f, 0.0f, 0.0f },
+    2.2f,
+    1.0f,
+    NA_SE_SY_MESSAGE_WOMAN,
+    0,
+    1,
+    0.0f,
+    20,
+    false,
+    0,
+    0
+};
+
+static SoundCue sFallWarningCue = 
+{
+    false,
+    { 0.0f, 0.0f, 0.0f },
+    0.7f,
+    1.0f,
+    NA_SE_PL_HOBBERBOOTS_LV,
+    0,
+    20,
+    0.0f,
+    20,
+    false,
+    0,
+    0
+};
+
+static struct FallCueInfo {
+    bool willFall;
+    bool willLandSafely;
+    bool willLandInWater;
+    Vec3f fallPosition;
+};
+
+void Player_UpdateFallCueClimbing(Player* this, GlobalContext* globalCtx, struct FallCueInfo* fallInfo) {
+    Vec3f vecInput;
+    f32 stickRadius = this->unk_A7C;
+    s16 stickAngle = this->unk_A80;
+
+    if (this->actor.wallPoly == NULL) {
+        return;
+    }
+
+    Vec3f wallNormal;
+    wallNormal.x = COLPOLY_GET_NORMAL(this->actor.wallPoly->normal.x);
+    wallNormal.y = COLPOLY_GET_NORMAL(this->actor.wallPoly->normal.y);
+    wallNormal.z = COLPOLY_GET_NORMAL(this->actor.wallPoly->normal.z);
+
     Vec3f vecA;
     Vec3f vecB;
-    Vec3f vecResult;
-    CollisionPoly* outPoly;
-    f32 dist = FLT_MAX;
+    CollisionPoly* wallPoly = this->actor.wallPoly;
+    s32 bgId = this->actor.wallBgId;
 
+    MtxF rotationMtx;
+
+    Vec3f vecUp;
+    vecUp.x = 0.0f;
+    vecUp.y = 16.0f;
+    vecUp.z = 0.0f;
+
+    s16 currentYaw = this->actor.shape.rot.y;
+    Vec3f vecCurrent = this->actor.world.pos;
+    Vec3f vecPrev;
+    Vec3f vecStep;
+
+    bool isPlayerClimbingLadder = !!(func_80041DB8(&globalCtx->colCtx, this->actor.wallPoly, this->actor.wallBgId) & 2);
+    if (isPlayerClimbingLadder) {
+        //round to nearest 2-way direction
+        stickRadius = stickRadius * ABS(Math_CosS(stickAngle));
+        stickAngle = (((u32)stickAngle + (0x4000)) / 0x8000) * 0x8000;
+    } else {
+        //round to nearest 4-way direction
+        stickAngle = (((u32)stickAngle + (0x2000)) / 0x4000) * 0x4000;
+    }
+
+    const int numSamples = ceilf(stickRadius / 60.0f * 3.0f);
+    for (int i = 0; i < numSamples; i++) {
+        vecPrev = vecCurrent;
+
+        SkinMatrix_SetRotateAxis(&rotationMtx, stickAngle, wallNormal.x,
+                                 wallNormal.y, wallNormal.z);
+        SkinMatrix_Vec3fMtxFMultXYZ(&rotationMtx, &vecUp, &vecStep);
+        Math_Vec3f_Sum(&vecCurrent, &vecStep, &vecCurrent);
+
+        f32 yawCos = Math_CosS(currentYaw);
+        f32 yawSin = Math_SinS(currentYaw);
+
+        CollisionPoly* polyResult;
+        Vec3f vecResult;
+        s32 bgIdResult;
+
+        const f32 wallCheckRadius = this->ageProperties->unk_38;
+        const f32 wallCheckHeight = 26.0f;
+        const f32 ceilingCheckHeight = this->ageProperties->unk_00;
+        f32 heightDiff = vecCurrent.y - vecPrev.y;
+        if (BgCheck_EntitySphVsWall3(&globalCtx->colCtx, &vecResult, &vecCurrent, &vecPrev, wallCheckRadius,
+                                      &polyResult, &bgIdResult, &this->actor, wallCheckHeight)) {
+            vecCurrent = vecResult;
+        }
+        f32 outY;
+        if (BgCheck_EntityCheckCeiling(&globalCtx->colCtx, &outY, &vecCurrent, (ceilingCheckHeight + heightDiff) - 10.0f,
+                                       &polyResult, &bgIdResult, &this->actor)) {
+            vecCurrent.y = (outY + heightDiff) - 10.0f;
+        }
+
+        //arbitrary constants from z_player.c:11623
+        vecA.x = vecCurrent.x + (-20.0f * yawSin);
+        vecA.z = vecCurrent.z + (-20.0f * yawCos);
+        vecB.x = vecCurrent.x + (50.0f * yawSin);
+        vecB.z = vecCurrent.z + (50.0f * yawCos);
+        vecA.y = vecB.y = vecCurrent.y + wallCheckHeight;
+
+        if (BgCheck_EntityLineTest1(&globalCtx->colCtx, &vecA, &vecB, &vecResult, &polyResult, true, false, false, true,
+                                    &bgIdResult) &&
+            (func_80041DB8(&globalCtx->colCtx, polyResult, bgIdResult) & (8 | 2))) {
+
+            wallPoly = polyResult;
+            bgId = bgIdResult;
+
+            wallNormal.x = COLPOLY_GET_NORMAL(wallPoly->normal.x);
+            wallNormal.y = COLPOLY_GET_NORMAL(wallPoly->normal.y);
+            wallNormal.z = COLPOLY_GET_NORMAL(wallPoly->normal.z);
+            currentYaw = Math_Atan2S(-wallNormal.z, -wallNormal.x);
+
+            vecCurrent.x = vecResult.x - (Math_SinS(currentYaw) * this->ageProperties->unk_3C);
+            vecCurrent.z = vecResult.z - (Math_CosS(currentYaw) * this->ageProperties->unk_3C);
+
+        } else {
+            fallInfo->willFall = true;
+            fallInfo->fallPosition = vecCurrent;
+
+            if (stickAngle == 0x0000) {
+                f32 wallDistance = Math3D_UDistPlaneToPos(wallNormal.x, wallNormal.y, wallNormal.z,
+                                                          wallPoly->dist,
+                                                          &vecPrev);
+                f32 testDistance = wallDistance + 10.0f;
+                Vec3f vecTestPoint;
+                vecTestPoint.x = vecCurrent.x - (testDistance * wallNormal.x);
+                vecTestPoint.z = vecCurrent.z - (testDistance * wallNormal.z);
+                vecTestPoint.y = vecCurrent.y + 50.0f;
+
+                CollisionPoly* floorPoly;
+                f32 floorHeight =
+                    BgCheck_EntityRaycastFloor1(&globalCtx->colCtx, &floorPoly, &vecTestPoint);
+                if (floorHeight > BGCHECK_Y_MIN && floorHeight > vecPrev.y) {
+                    fallInfo->willLandSafely = true;
+                }
+            } else {
+                const f32 safeDropDistance = this->ageProperties->unk_0C;
+                const f32 raycastPosYMargin = 50.0f;
+                vecA = vecCurrent;
+                vecA.y += raycastPosYMargin;
+                CollisionPoly* floorPoly;
+                f32 floorHeight = BgCheck_EntityRaycastFloor5(globalCtx, &globalCtx->colCtx, &floorPoly, &bgId, &this->actor, &vecA);
+                if (floorHeight > BGCHECK_Y_MIN && vecCurrent.y - floorHeight <= safeDropDistance) {
+                    fallInfo->willLandSafely = true;
+                }
+            }
+
+            break;
+        }
+    }
+
+    if (CVar_GetS32("gDebugEnabled", 0)) {
+        DebugDisplay_AddObject(vecCurrent.x, vecCurrent.y + 26.0f, vecCurrent.z, 0, currentYaw,
+                               0, 1.0f,
+                               1.0f, 1.0f,
+                               (fallInfo->willFall && !fallInfo->willLandSafely) ? 255 : 0,
+                               (!fallInfo->willFall) ? 255 : 0,
+                               (fallInfo->willLandSafely) ? 255 : 0, 255, 4,
+                               globalCtx->state.gfxCtx);
+    }
+}
+
+Actor playerProxy;
+
+static void func_808395DC(Actor* this, Vec3f* arg1, Vec3f* arg2, Vec3f* arg3) {
+    f32 cos = Math_CosS(this->shape.rot.y);
+    f32 sin = Math_SinS(this->shape.rot.y);
+
+    arg3->x = arg1->x + ((arg2->x * cos) + (arg2->z * sin));
+    arg3->y = arg1->y + arg2->y;
+    arg3->z = arg1->z + ((arg2->z * cos) - (arg2->x * sin));
+}
+
+static s32 func_80839768(GlobalContext* globalCtx, Actor* this, Vec3f* arg2, CollisionPoly** arg3, s32* arg4, Vec3f* arg5) {
+    Vec3f sp44;
+    Vec3f sp38;
+
+    sp44.x = this->world.pos.x;
+    sp44.y = this->world.pos.y + arg2->y;
+    sp44.z = this->world.pos.z;
+
+    func_808395DC(this, &this->world.pos, arg2, &sp38);
+
+    return BgCheck_EntityLineTest1(&globalCtx->colCtx, &sp44, &sp38, arg5, arg3, true, false, false, true, arg4);
+}
+
+void Player_UpdateFallCueNormal(Player* this, GlobalContext* globalCtx, struct FallCueInfo* fallInfo) {
+    const int maxSamples = 100;
+    const int numWarnAheadFrames = 20;
+    const f32 jumpHeightThreshold = 20.0f;
+    const f32 jumpLinearVelocityThreshold = 3.0f;
+    const f32 safeJumpHeightDiffThreshold = this->ageProperties->unk_14;
+    const f32 maxJumpLinearVelocity = this->unk_880; // R_RUN_SPEED_LIMIT / 100.0f;
+    const f32 defaultYVelocity = -4.0f;              // z_actor.c:1535
+
+    bool isPlayerWearingHoverBoots = (this->currentBoots == PLAYER_BOOTS_HOVER);
+    s32 hoverBootsTimer = (isPlayerWearingHoverBoots) ? this->hoverBootsTimer : 0;
+
+    fallInfo->willFall = !(this->actor.bgCheckFlags & 1); //player is already falling
+    bool willGrabLedge = false; //mainly for debug
+
+    f32 fallStartHeight = (fallInfo->willFall) ? this->fallStartHeight : BGCHECK_Y_MIN;
+
+    // z_player.c:4589
+    f32 jumpYVelocity;
+    if (this->linearVelocity > (IREG(66) / 100.0f)) {
+        jumpYVelocity = IREG(67) / 100.0f;
+    } else {
+        jumpYVelocity = (IREG(68) / 100.0f) + ((IREG(69) * this->linearVelocity) / 1000.0f);
+    }
+
+    Vec3f vecStep;
+    f32 linearVelocity;
+    playerProxy.velocity.y = defaultYVelocity;
+
+    if (this->linearVelocity > 0.0f || fallInfo->willFall) {
+        linearVelocity = MIN(this->linearVelocity, maxJumpLinearVelocity);
+    } else {
+        linearVelocity = jumpLinearVelocityThreshold;
+    }
+
+    playerProxy = this->actor;
+    playerProxy.speedXZ = linearVelocity;
+
+    for (int i = 0; i < maxSamples; i++) {
+        if (CVar_GetS32("gDebugEnabled", 0) && i % 4 == 0) {
+            DebugDisplay_AddObject(playerProxy.world.pos.x, playerProxy.world.pos.y + 26.0f, playerProxy.world.pos.z,
+                               0x4000, 0, 0, 1.0f, 1.0f, 1.0f, (fallInfo->willFall && !fallInfo->willLandSafely) ? 255 : 0,
+                               (!fallInfo->willFall || willGrabLedge) ? 255 : 0, (fallInfo->willLandSafely) ? 255 : 0, 255,
+                               4,
+                               globalCtx->state.gfxCtx);
+        }
+        
+
+        playerProxy.prevPos = playerProxy.world.pos;
+
+        func_8002D868(&playerProxy); // update velocity
+
+        if ((this->windSpeed != 0.0f) && !Player_InCsMode(globalCtx) &&
+            !(this->stateFlags1 & (PLAYER_STATE1_13 | PLAYER_STATE1_14 | PLAYER_STATE1_21))) { // &&
+            //(func_80845668 != this->func_674) && (func_808507F4 != this->func_674)) {
+            playerProxy.velocity.x += this->windSpeed * Math_SinS(this->windDirection);
+            playerProxy.velocity.z += this->windSpeed * Math_CosS(this->windDirection);
+        }
+
+        func_8002D7EC(&playerProxy); // update position
+
+        const f32 wallCheckRadius = this->ageProperties->unk_38;
+        const f32 wallCheckHeight = 26.0f;
+        const f32 ceilingCheckHeight = this->ageProperties->unk_00;
+        Actor_UpdateBgCheckInfo(globalCtx, &playerProxy, wallCheckHeight, wallCheckRadius, ceilingCheckHeight, 0x7F);
+
+        bool isProxyOnFloor = playerProxy.bgCheckFlags & 1;
+        bool isProxySwimming = playerProxy.yDistToWater > this->ageProperties->unk_2C;
+
+        if (!isProxyOnFloor || isProxySwimming) {
+            if (fallInfo->willFall == false) {
+                fallInfo->fallPosition = playerProxy.world.pos;
+                fallInfo->willFall = true;
+
+                fallStartHeight = playerProxy.world.pos.y;
+
+                bool willJump = !isPlayerWearingHoverBoots && (playerProxy.speedXZ > jumpLinearVelocityThreshold) &&
+                                (playerProxy.world.pos.y - playerProxy.floorHeight >= jumpHeightThreshold);
+                if (willJump) {
+                    playerProxy.velocity.y = jumpYVelocity;
+                }
+
+                if (isPlayerWearingHoverBoots && playerProxy.yDistToWater >= 0.0f) { //z_player.c:9758
+                    hoverBootsTimer = 20; //19 (+1 for the decrement below)
+                    playerProxy.world.pos.y = playerProxy.prevPos.y;
+                }
+            }
+
+            if (isPlayerWearingHoverBoots && hoverBootsTimer != 0) {
+                --hoverBootsTimer;
+                playerProxy.velocity.y = 1.0f;
+            } else if (isProxySwimming) {
+                fallInfo->willLandInWater = true;
+                break;
+            }
+
+            // WIP: ledge grab detection mostly just copied from z_player.c:9894
+            if (playerProxy.bgCheckFlags & 8) {
+                CollisionPoly* spA0;
+                s32 sp9C;
+                s16 sp9A;
+                s32 pad;
+                s32 spC7;
+                f32 spB0;
+                f32 spAC;
+
+                Vec3f D_80854798;
+                s32 D_808535F0;
+                s32 D_80853608;
+                s32 D_8085360C;
+                Vec3f D_80858AA8;
+
+                D_80854798.y = 0.0f;
+                D_80854798.y = 18.0f;
+                D_80854798.z = this->ageProperties->unk_38 + 10.0f;
+
+                sp9A = playerProxy.shape.rot.y - (s16)(playerProxy.wallYaw + 0x8000);
+
+                D_808535F0 = func_80041DB8(&globalCtx->colCtx, playerProxy.wallPoly, playerProxy.wallBgId);
+
+                D_80853608 = ABS(sp9A);
+
+                sp9A = /* this->currentYaw */ playerProxy.shape.rot.y - (s16)(playerProxy.wallYaw + 0x8000);
+
+                D_8085360C = ABS(sp9A);
+
+                spB0 = D_8085360C * 0.00008f;
+                if (!(playerProxy.bgCheckFlags & 1) || spB0 >= 1.0f) {
+                    // this->unk_880 = R_RUN_SPEED_LIMIT / 100.0f;
+                } else {
+                    spAC = (R_RUN_SPEED_LIMIT / 100.0f * spB0);
+                    // this->unk_880 = spAC;
+                    if (spAC < 0.1f) {
+                        // this->unk_880 = 0.1f;
+                    }
+                }
+
+                if (/* (this->actor.bgCheckFlags & 0x200) && */ (D_80853608 < 0x3000) && hoverBootsTimer == 0) {
+                    CollisionPoly* wallPoly = playerProxy.wallPoly;
+
+                    if ((ABS(wallPoly->normal.y) < 600) || (CVar_GetS32("gClimbEverything", 0) != 0)) {
+                        f32 sp8C = COLPOLY_GET_NORMAL(wallPoly->normal.x);
+                        f32 sp88 = COLPOLY_GET_NORMAL(wallPoly->normal.y);
+                        f32 sp84 = COLPOLY_GET_NORMAL(wallPoly->normal.z);
+                        f32 wallHeight;
+                        f32 wallDistance;
+                        CollisionPoly* sp7C;
+                        CollisionPoly* sp78;
+                        s32 sp74;
+                        Vec3f sp68;
+                        f32 sp64;
+                        f32 sp60;
+                        s32 temp3;
+
+                        wallDistance = Math3D_UDistPlaneToPos(sp8C, sp88, sp84, wallPoly->dist, &playerProxy.world.pos);
+
+                        spB0 = wallDistance + 10.0f;
+                        sp68.x = playerProxy.world.pos.x - (spB0 * sp8C);
+                        sp68.z = playerProxy.world.pos.z - (spB0 * sp84);
+                        sp68.y = playerProxy.world.pos.y + this->ageProperties->unk_0C;
+
+                        sp64 = BgCheck_EntityRaycastFloor1(&globalCtx->colCtx, &sp7C, &sp68);
+                        wallHeight = sp64 - playerProxy.world.pos.y;
+                        wallHeight = wallHeight;
+
+                        if ((wallHeight < 18.0f) ||
+                            BgCheck_EntityCheckCeiling(&globalCtx->colCtx, &sp60, &playerProxy.world.pos,
+                                                       (sp64 - playerProxy.world.pos.y) + 20.0f, &sp78, &sp74,
+                                                       &playerProxy)) {
+                            wallHeight = 399.96002f;
+                        } else {
+                            D_80854798.y = (sp64 + 5.0f) - playerProxy.world.pos.y;
+
+                            if (func_80839768(globalCtx, this, &D_80854798, &sp78, &sp74, &D_80858AA8) &&
+                                (temp3 = playerProxy.wallYaw - Math_Atan2S(sp78->normal.z, sp78->normal.x),
+                                 ABS(temp3) < 0x4000) &&
+                                !func_80041E18(&globalCtx->colCtx, sp78, sp74)) {
+                                wallHeight = 399.96002f;
+                            } else if (func_80041DE4(&globalCtx->colCtx, wallPoly, playerProxy.wallBgId) == 0) {
+                                sp68.y = sp64;
+                                playerProxy.world.pos = sp68;
+                                willGrabLedge = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            continue;
+        }
+
+        playerProxy.velocity.y = defaultYVelocity;
+
+        if (fallInfo->willFall) {
+            f32 landingSpotHeightDifference = playerProxy.world.pos.y - fallStartHeight;
+            DynaPolyActor* floorActor = DynaPoly_GetActor(&globalCtx->colCtx, playerProxy.floorBgId);
+            bool isSafeSpot = false;
+            if (floorActor != NULL) {
+                switch (floorActor->actor.id) {
+                    case ACTOR_BG_YDAN_SP: // deku tree web
+                        isSafeSpot = (landingSpotHeightDifference < -750.0f);
+                        break;
+                    case ACTOR_BG_YDAN_HASI: // deku tree platforms
+                        isSafeSpot = (floorActor->actor.params != 1);
+                    case ACTOR_BG_HIDAN_FSLIFT:
+                    case ACTOR_OBJ_LIFT:
+                        isSafeSpot = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (landingSpotHeightDifference > -safeJumpHeightDiffThreshold || isSafeSpot) {
+                fallInfo->willLandSafely = true;
+            }
+            break;
+        } else if (i >= numWarnAheadFrames) {
+            break;
+        }
+    }
+
+    if (CVar_GetS32("gDebugEnabled", 0)) {
+        DebugDisplay_AddObject(playerProxy.world.pos.x, playerProxy.world.pos.y + 26.0f, playerProxy.world.pos.z,
+                               0x4000, 0, 0, 1.0f, 1.0f, 1.0f, (fallInfo->willFall && !fallInfo->willLandSafely) ? 255 : 0,
+                               (!fallInfo->willFall || willGrabLedge) ? 255 : 0, (fallInfo->willLandSafely) ? 255 : 0, 255,
+                               4,
+                               globalCtx->state.gfxCtx);
+    }
+}
+
+void Player_UpdateFallCue(Player* this, GlobalContext* globalCtx) {
     bool isPlayerOnFloor = this->actor.bgCheckFlags & 1;
     bool isPlayerAiming = !!func_8002DD78(this);
     bool isPlayerPushingBlock = this->stateFlags2 & PLAYER_STATE2_0;
     bool isPlayerClimbing = this->stateFlags1 & PLAYER_STATE1_21;
     bool isPlayerHanging = this->stateFlags1 & (PLAYER_STATE1_13 | PLAYER_STATE1_14);
     bool isPlayerRidingHorse = this->stateFlags1 & (PLAYER_STATE1_23);
-    s16 prevYaw = this->actor.world.rot.y;
+    bool isPlayerSwimming = this->stateFlags1 & PLAYER_STATE1_27;
 
-    sLedgeCueIsActive = false;
+    struct FallCueInfo fallInfo = { 0 };
 
-    if (isPlayerOnFloor && !isPlayerAiming && !isPlayerRidingHorse && !isPlayerHanging &&
-        !isPlayerClimbing && !Player_InBlockingCsMode(globalCtx, this)) {
-        const int numHeightSamples = 5;
-        const f32 maxCheckAngle = 60.0f / 180.0f * M_PI;
-        const f32 ledgeHeightAlarmThreshold = 25.0f;
-        const f32 ledgeWarnAheadFrames = 20.0f;
+    if (isPlayerClimbing) {
+        Player_UpdateFallCueClimbing(this, globalCtx, &fallInfo);
+    } else if (!isPlayerAiming && !isPlayerRidingHorse && !isPlayerHanging &&
+        !isPlayerSwimming) {
+        Player_UpdateFallCueNormal(this, globalCtx, &fallInfo);
+    }
 
-        Vec3f vecStep;
-        f32 linearVelocity;
-        
-        if (this->linearVelocity > 0.0f) {
-            linearVelocity = this->linearVelocity;
+    sFallCue.active = false;
+    sFallWarningCue.active = false;
+
+    if (fallInfo.willFall && (isPlayerOnFloor || isPlayerClimbing)) {
+        if (fallInfo.willLandSafely) {
+            sFallCue.sfxId = NA_SE_SY_MESSAGE_WOMAN;
         } else {
-            const f32 hypotheticalCheckSpeed = 2.5f;
-            linearVelocity = hypotheticalCheckSpeed;
+            if (fallInfo.willLandInWater) {
+                sFallCue.sfxId = NA_SE_PL_JUMP_WATER2;
+            } else {
+                sFallCue.sfxId = NA_SE_IT_ARROW_STICK_HRAD;
+            }
         }
-        vecStep.x = Math_SinS(this->currentYaw);
-        vecStep.z = Math_CosS(this->currentYaw);
-        vecStep.y = 0.0f;
-        Math_Vec3f_Scale(&vecStep, linearVelocity * ledgeWarnAheadFrames / numHeightSamples);
 
-        f32 stepLength = Math3D_Vec3fMagnitude(&vecStep);
-        f32 checkHeight = stepLength * Math_FTanF(maxCheckAngle);
+        SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &fallInfo.fallPosition, &sFallWarningCue.position);
+        Math_Vec3f_Diff(&sFallWarningCue.position, &this->actor.projectedPos, &sFallWarningCue.position);
 
-        vecResult = this->actor.world.pos;
-        f32 prevHeight = vecResult.y;
-
-        for (int i = 0; i < numHeightSamples; i++) {
-            Math_Vec3f_Sum(&vecResult, &vecStep, &vecA);
-
-            vecA.y += 20.0f;
-            vecB.y += 20.0f;
-            if (BgCheck_AnyLineTest2(&globalCtx->colCtx, &vecResult, &vecA, &vecB, &outPoly, true, false, false,
-                                     1)) {
-                //don't check past walls
-                break;
-            }
-            vecA.y -= 20.0f;
-            vecB.y -= 20.0f;
-            vecB = vecA;
-            vecA.y += checkHeight;
-            vecB.y -= checkHeight;
-
-            if (!BgCheck_AnyLineTest2(&globalCtx->colCtx, &vecA, &vecB, &vecResult, &outPoly, true, true, false, 1) ||
-                prevHeight - vecResult.y > ledgeHeightAlarmThreshold) {
-
-                if (BgCheck_AnyLineTest2(&globalCtx->colCtx, &this->actor.world.pos, &vecA, &vecResult, &outPoly,
-                                         true, false, false, 1)) {
-                    // one last check to prevent some edge cases where walls aren't detected
-                    break;
-                }
-
-                SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &this->actor.world.pos, &vecA);
-                vecB.y = this->actor.world.pos.y;
-                SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &vecB, &vecResult);
-                Math_Vec3f_Diff(&vecResult, &vecA, &sLedgePosition);
-
-                if (this->linearVelocity > 0.1f) {
-                    sLedgeCuePitch = 2.2f;
-                    Audio_PlaySoundGeneral(NA_SE_IT_ARROW_STICK_HRAD, &sLedgePosition, 4,
-                                        &sLedgeCuePitch, &D_801333E0,
-                                        &D_801333E8);
-                } else {
-                    sLedgeCuePitch = 0.7f;
-                    sLedgeCueVolume = LERP(0.1f, 1.0f, Math_Vec3f_DistXZ(&vecResult, &vecA));
-                    sLedgeCueIsActive = true;
-                }
-
-
-                break;
-            }
-
-            if (vecResult.y < prevHeight) {
-                prevHeight = vecResult.y;
-            }
+        if (this->linearVelocity > 0.1f || isPlayerClimbing) {
+            sFallCue.active = true;
+        } else {
+            /*sFallWarningCue.volume =
+                LERP(0.1f, 1.0f, Math_Vec3f_DistXZ(&this->actor.world.pos, &sFallWarningCue.position) / 30.0f);*/
+            sFallWarningCue.active = true;
         }
     }
 
-    if (sLedgeCueIsActive && (!sLedgeCueIsPlaying || globalCtx->gameplayFrames % 20 == sLedgeAlarmFrameOffset)) {
-        Audio_PlaySoundGeneral(NA_SE_PL_HOBBERBOOTS_LV, &sLedgePosition, 4, &sLedgeCuePitch,
-                               &D_801333E0,
-                               &D_801333E8);
-        sLedgeCueIsPlaying = true;
-        sLedgeAlarmFrameOffset = globalCtx->gameplayFrames % 20;
-    } else if (sLedgeCueIsPlaying && !sLedgeCueIsActive) {
-        Audio_StopSfxById(NA_SE_PL_HOBBERBOOTS_LV);
-        sLedgeCueIsPlaying = false;
-    }
+    SoundCue_Update(&sFallCue, globalCtx);
+    SoundCue_Update(&sFallWarningCue, globalCtx);
 }
 
-static Vec3f sWallCuePosition;
-static f32 sWallCuePitch;
-static f32 sWallCueVolume;
-static bool sWallCueIsPlaying;
+static struct WallCueHit {
+    f32 distance;
+    Vec3f vecHitPos;
+    s32 bgId;
+    CollisionPoly* colPoly;
+};
+static struct WallCueHit sWallCueHits[2];
+static SoundCue sWallCues[2] = 
+{
+    { //walls
+        false,
+        { 0.0f, 0.0f, 0.0f },
+        1.0f,
+        1.0f,
+        NA_SE_OC_OCARINA,
+        0,
+        20,
+        0.1f,
+        20,
+        false,
+        0,
+        0
+    },
+    { //climbable walls
+        false,
+        { 0.0f, 0.0f, 0.0f },
+        1.0f,
+        1.0f,
+        NA_SE_IT_SHIELD_CHARGE_LV1,
+        0,
+        40,
+        0.0f,
+        1,
+        false,
+        0,
+        0
+    }
+};
 
 void Player_UpdateWallCue(Player* this, GlobalContext* globalCtx) {
     Vec3f vecA;
@@ -1402,19 +1845,31 @@ void Player_UpdateWallCue(Player* this, GlobalContext* globalCtx) {
     Vec3f vecResult;
     CollisionPoly* outPoly;
     f32 dist = FLT_MAX;
+    s32 bgId;
 
     bool isPlayerOnFloor = this->actor.bgCheckFlags & 1;
     bool isPlayerAiming = !!func_8002DD78(this);
-    bool isPlayerPushingBlock = this->stateFlags2 & PLAYER_STATE2_0;
+    bool isPlayerPushingBlock = CHECK_FLAG_ALL(this->stateFlags2, PLAYER_STATE2_0 | PLAYER_STATE2_6 | PLAYER_STATE2_8);
     bool isPlayerClimbing = this->stateFlags1 & PLAYER_STATE1_21;
     bool isPlayerHanging = this->stateFlags1 & (PLAYER_STATE1_13 | PLAYER_STATE1_14);
     bool isPlayerRidingHorse = this->stateFlags1 & (PLAYER_STATE1_23);
+    bool isPlayerInCrawlspace = this->stateFlags2 & PLAYER_STATE2_18;
     s16 prevYaw = this->actor.world.rot.y;
 
-    if (!isPlayerHanging && !isPlayerPushingBlock && !isPlayerAiming && !Player_InBlockingCsMode(globalCtx, this)) {
+    const f32 climbRadarRange = 100.0f;
+    const f32 normalRadarRange = 200.0f;
+    const f32 horseRadarRange = 600.0f;
+    f32 radarRange = normalRadarRange;
+
+    const f32 wallCheckHeight = 26.0f; //z_player.c:9798
+
+    struct WallCueHit* closestWall = &sWallCueHits[0];
+    struct WallCueHit* closestClimbableWall = &sWallCueHits[1];
+
+    if (!isPlayerHanging && !isPlayerPushingBlock && !isPlayerAiming && !isPlayerInCrawlspace) {
         if (isPlayerClimbing && this->actor.wallPoly != NULL) {
             const int radarSamples = 8;
-            const f32 radarRange = 100.0f;
+            radarRange = climbRadarRange;
 
             MtxF rotationMtx;
 
@@ -1424,13 +1879,19 @@ void Player_UpdateWallCue(Player* this, GlobalContext* globalCtx) {
             vecUp.z = 0.0f;
 
             Vec3f wallNormal;
-            wallNormal.x = (f32)this->actor.wallPoly->normal.x / SHT_MAX;
-            wallNormal.y = (f32)this->actor.wallPoly->normal.y / SHT_MAX;
-            wallNormal.z = (f32)this->actor.wallPoly->normal.z / SHT_MAX;
+            wallNormal.x = COLPOLY_GET_NORMAL(this->actor.wallPoly->normal.x);
+            wallNormal.y = COLPOLY_GET_NORMAL(this->actor.wallPoly->normal.y);
+            wallNormal.z = COLPOLY_GET_NORMAL(this->actor.wallPoly->normal.z);
 
             f32 minDist = FLT_MAX;
             Vec3f vecClosest;
-            vecA = this->bodyPartsPos[PLAYER_BODYPART_HEAD];
+
+            vecA = this->actor.world.pos;
+            vecA.y += wallCheckHeight;
+
+            closestWall->distance = FLT_MAX;
+            closestClimbableWall->distance = FLT_MAX;
+
             s16 angle = 0;
             for (int i = 0; i < radarSamples; i++) {
                 SkinMatrix_SetRotateAxis(&rotationMtx, angle, wallNormal.x,
@@ -1439,118 +1900,171 @@ void Player_UpdateWallCue(Player* this, GlobalContext* globalCtx) {
                 Math_Vec3f_Scale(&vecB, radarRange);
                 Math_Vec3f_Sum(&vecA, &vecB, &vecB);
 
-                if (BgCheck_AnyLineTest2(&globalCtx->colCtx, &vecA, &vecB, &vecResult, &outPoly, false, true, true,
-                                         1)) {
+                if (BgCheck_AnyLineTest3(&globalCtx->colCtx, &vecA, &vecB, &vecResult, &outPoly, false, true, true,
+                                         1, &bgId)) {
                     dist = Math_Vec3f_DistXYZ(&vecA, &vecResult);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        vecClosest = vecResult;
+                    if (dist < closestWall->distance) {
+                        closestWall->distance = dist;
+                        closestWall->vecHitPos = vecResult;
+                        closestWall->colPoly = outPoly;
+                        closestWall->bgId = bgId;
                     }
                 }
 
                 angle += SHT_MAX / radarSamples * 2;
             }
 
-            if (minDist < radarRange) {
-                Math_Vec3f_Diff(&vecClosest, &vecA, &vecB);
-                f32 intoWall = Math3D_Vec3fMagnitude(&vecB);
+            // if (closestWall->distance < radarRange) {
+            //     Math_Vec3f_Diff(&closestWall->vecHitPos, &vecA, &vecB);
+            //     f32 intoWall = Math3D_Vec3fMagnitude(&vecB);
 
-                sWallCuePitch = LERP(0.1f, 0.5f, 0.5f); //(intoWall + 60.0f) / 120.0f);
-                sWallCueVolume = LERP(0.1f, 1.2f, SQ((radarRange - minDist) / radarRange));
+            //     sWallCuePitch = LERP(0.1f, 0.5f, 0.5f); //(intoWall + 60.0f) / 120.0f);
+            //     sWallCueVolume = LERP(0.1f, 1.2f, SQ((radarRange - minDist) / radarRange));
 
-                SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &vecA, &vecB);
-                SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &vecClosest, &vecA);
-                Math_Vec3f_Diff(&vecA, &vecB, &sWallCuePosition);
-                dist = minDist;
-            } else {
-                dist = 0.0f;
-            }
+            //     SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &vecA, &vecB);
+            //     SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &vecClosest, &vecA);
+            //     Math_Vec3f_Diff(&vecA, &vecB, &sWallCuePosition);
+            //     dist = minDist;
+            // }
         } else {
             const int radarSamples = 16;
-            const f32 normalRadarRange = 200.0f;
-            const f32 horseRadarRange = 600.0f;
-            f32 radarRange = (isPlayerRidingHorse) ? horseRadarRange : normalRadarRange;
+            const s32 numOffsetSubdivisions = 4;
+            f32 sampleOffset = (float)(globalCtx->gameplayFrames % numOffsetSubdivisions) / numOffsetSubdivisions;
+            radarRange = (isPlayerRidingHorse) ? horseRadarRange : normalRadarRange;
 
-            f32 minDist = FLT_MAX;
-            Vec3f vecClosest;
-            CollisionPoly* polyClosest;
-            vecA = this->bodyPartsPos[PLAYER_BODYPART_HEAD];
+            vecA = this->actor.world.pos;
+            vecA.y += wallCheckHeight;
+
+            if (globalCtx->gameplayFrames % numOffsetSubdivisions == 0) {
+                //only reset the hit after accumulating all of the offset angles
+                closestWall->distance = FLT_MAX;
+                closestClimbableWall->distance = FLT_MAX;
+            }
+
             for (int i = 0; i < radarSamples; i++) {
-                f32 angle = 2.0f * M_PI * (float)i / radarSamples;
+                f32 angle = 2.0f * M_PI * ((float)i + sampleOffset) / radarSamples;
                 vecB.x = Math_CosF(angle);
                 vecB.y = 0.0f;
                 vecB.z = Math_SinF(angle);
                 Math_Vec3f_Scale(&vecB, radarRange);
                 Math_Vec3f_Sum(&vecA, &vecB, &vecB);
 
-                if (BgCheck_AnyLineTest2(&globalCtx->colCtx, &vecA, &vecB, &vecResult, &outPoly, true, false, false,
-                                         1)) {
+                if (BgCheck_AnyLineTest3(&globalCtx->colCtx, &vecA, &vecB, &vecResult, &outPoly, true, false, false, 1,
+                                         &bgId)) {
                     dist = Math_Vec3f_DistXZ(&vecA, &vecResult);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        vecClosest = vecResult;
-                        polyClosest = outPoly;
+
+                    if (dist < closestWall->distance) {
+                        closestWall->distance = dist;
+                        closestWall->vecHitPos = vecResult;
+                        closestWall->colPoly = outPoly;
+                        closestWall->bgId = bgId;
+                    }
+
+                    if (dist < closestClimbableWall->distance) {
+                        if (func_80041DB8(&globalCtx->colCtx, outPoly, bgId) & (8 | 2)) {
+                            closestClimbableWall->distance = dist;
+                            closestClimbableWall->vecHitPos = vecResult;
+                            closestClimbableWall->colPoly = outPoly;
+                            closestClimbableWall->bgId = bgId;
+                        } else if (LINK_IS_ADULT && (func_80041DB8(&globalCtx->colCtx, outPoly, bgId) & 0x30)) {
+                            //crawlspace possibly
+                            closestClimbableWall->distance = dist;
+                            closestClimbableWall->vecHitPos = vecResult;
+                            closestClimbableWall->colPoly = outPoly;
+                            closestClimbableWall->bgId = bgId;
+                        } else {
+                            Vec3f wallNormal;
+                            wallNormal.x = COLPOLY_GET_NORMAL(outPoly->normal.x);
+                            wallNormal.y = COLPOLY_GET_NORMAL(outPoly->normal.y);
+                            wallNormal.z = COLPOLY_GET_NORMAL(outPoly->normal.z);
+                            f32 wallDistance = Math3D_UDistPlaneToPos(wallNormal.x, wallNormal.y, wallNormal.z,
+                                                                      outPoly->dist,
+                                                                      &this->actor.world.pos);
+                            f32 testDistance = wallDistance + 10.0f;
+                            Vec3f vecTestPoint;
+                            vecTestPoint.x = this->actor.world.pos.x - (testDistance * wallNormal.x);
+                            vecTestPoint.z = this->actor.world.pos.z - (testDistance * wallNormal.z);
+                            vecTestPoint.y = this->actor.world.pos.y + this->ageProperties->unk_0C;
+
+                            CollisionPoly* floorPoly;
+                            f32 floorHeight =
+                                BgCheck_EntityRaycastFloor1(&globalCtx->colCtx, &floorPoly, &vecTestPoint);
+                            f32 wallHeight = floorHeight - this->actor.world.pos.y;
+                            if (wallHeight > 18.0f) { // z_player.c:9962
+                                if ((func_80041DE4(&globalCtx->colCtx, outPoly, bgId) == 0) &&
+                                    this->ageProperties->unk_1C <= wallHeight) {
+                                    if (ABS(floorPoly->normal.y) > 28000) {
+                                        closestClimbableWall->distance = dist;
+                                        closestClimbableWall->vecHitPos = vecResult;
+                                        closestClimbableWall->colPoly = outPoly;
+                                        closestClimbableWall->bgId = bgId;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            if (minDist < radarRange) {
-                Vec3f vecTestDir;
-                if (false) {
-                    f32 stickRadius = this->unk_A7C;
-                    s16 stickAngle = this->unk_A80;
-                    Camera* currentCamera = GET_ACTIVE_CAM(globalCtx);
-                    stickAngle = this->currentYaw; // stickAngle + currentCamera->camDir.y;
-                    vecTestDir.x = Math_SinS(stickAngle);
-                    vecTestDir.y = 0.0f;
-                    vecTestDir.z = Math_CosS(stickAngle);
-                    Math_Vec3f_Scale(&vecTestDir, -stickRadius);
-                } else {
-                    if (isPlayerRidingHorse && this->rideActor != NULL) {
-                        vecTestDir = this->rideActor->velocity;
-                    } else {
-                        vecTestDir = this->actor.velocity;
-                    }
-                    vecTestDir.y = 0.0f;
-                    Math_Vec3f_Scale(&vecTestDir, -1.0);
-                }
+            // if (closestWall.distance < radarRange) {
+            //     Vec3f vecTestDir;
+            //     if (false) {
+            //         f32 stickRadius = this->unk_A7C;
+            //         s16 stickAngle = this->unk_A80;
+            //         Camera* currentCamera = GET_ACTIVE_CAM(globalCtx);
+            //         stickAngle = this->currentYaw; // stickAngle + currentCamera->camDir.y;
+            //         vecTestDir.x = Math_SinS(stickAngle);
+            //         vecTestDir.y = 0.0f;
+            //         vecTestDir.z = Math_CosS(stickAngle);
+            //         Math_Vec3f_Scale(&vecTestDir, -stickRadius);
+            //     } else {
+            //         if (isPlayerRidingHorse && this->rideActor != NULL) {
+            //             vecTestDir = this->rideActor->velocity;
+            //         } else {
+            //             vecTestDir = this->actor.velocity;
+            //         }
+            //         vecTestDir.y = 0.0f;
+            //         Math_Vec3f_Scale(&vecTestDir, -1.0);
+            //     }
 
-                Vec3f wallNormal;
-                wallNormal.x = polyClosest->normal.x / (f32)SHT_MAX;
-                wallNormal.y = 0.0f;
-                wallNormal.z = polyClosest->normal.z / (f32)SHT_MAX;
+            //     // Vec3f wallNormal;
+            //     // wallNormal.x = COLPOLY_GET_NORMAL(closestWall.colPoly->normal.x);
+            //     // wallNormal.y = COLPOLY_GET_NORMAL(closestWall.colPoly->normal.y);
+            //     // wallNormal.z = COLPOLY_GET_NORMAL(closestWall.colPoly->normal.z);
 
-                // Math_Vec3f_Scale(&intendedMove, 20.0f);
-                f32 intoWall = DOTXYZ(wallNormal, vecTestDir); // Math3D_Vec3fMagnitude(&vecB);
-                sWallCuePitch = LERP(0.05f, 0.8f, (intoWall + 60.0f) / 120.0f);
+            //     // // Math_Vec3f_Scale(&intendedMove, 20.0f);
 
-                sWallCueVolume = LERP(0.1f, 1.2f, SQ((radarRange - minDist) / radarRange));
-                SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &vecA, &vecB);
-                SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &vecClosest, &vecA);
-                Math_Vec3f_Diff(&vecA, &vecB, &sWallCuePosition);
-                dist = minDist;
-            } else {
-                dist = 0.0f;
-            }
+            //     // f32 intoWall = DOTXYZ(wallNormal, vecTestDir) / 60.0f;
+            //     // sWallCuePitch = LERP(0.05f, 0.8f, (intoWall + 1.0f) / 2.0f);
+            //     // sWallCueVolume = LERP(0.1f, 0.6f, SQ((radarRange - closestWall.distance) / radarRange));
+            // }
         }
-    } else {
-        dist = 0.0f;
     }
 
-    if (dist > 0.0f) {
-        if (!sWallCueIsPlaying || globalCtx->gameplayFrames % 20 == 0) {
-            Audio_PlaySoundGeneral(NA_SE_IT_SWORD_CHARGE, &sWallCuePosition, 4, &sWallCuePitch, &sWallCueVolume,
-                                   &D_801333E8);
-            sWallCueIsPlaying = true;
+    for (int i = 0; i < 2; i++) {
+        struct WallCueHit* hit = &sWallCueHits[i];
+        SoundCue* cue = &sWallCues[i];
+
+        if (hit->distance < radarRange) {
+            cue->pitch = LERP(0.1f, 0.5f, 0.5f); //(intoWall + 60.0f) / 120.0f);
+            cue->volume = LERP(0.1f, 0.5f, SQ((radarRange - hit->distance) / radarRange));
+
+            SkinMatrix_Vec3fMtxFMultXYZ(&globalCtx->viewProjectionMtxF, &hit->vecHitPos, &cue->position);
+            cue->active = true;
+        } else {
+            cue->active = false;
         }
-    } else if (sWallCueIsPlaying) {
-        Audio_StopSfxById(NA_SE_IT_SWORD_CHARGE);
-        sWallCueIsPlaying = false;
+
+        SoundCue_Update(cue, globalCtx);
     }
 }
 
 void Player_UpdateSpatialCues(Player* this, GlobalContext* globalCtx) {
-    Player_UpdateLedgeCue(this, globalCtx);
+    if (Player_InBlockingCsMode(globalCtx, this)) {
+        return;
+    }
+
+    Player_UpdateFallCue(this, globalCtx);
     Player_UpdateWallCue(this, globalCtx);
 }
 
@@ -1558,9 +2072,52 @@ void Player_UpdateSpatialCues(Player* this, GlobalContext* globalCtx) {
 static ColliderQuad sAimCueCollider[AIMCUE_COLLIDER_COUNT];
 static s32 sAimSurfaceHookshotable;
 static s32 sAimLastHookshotableState;
-static f32 sAimCuePitch;
-static f32 sAimCueVolume;
-static Vec3f sAimCueTargetPos;
+
+static SoundCue sTargetCues[3] =
+{
+    { //ranged aiming
+        false,
+        { 0.0f, 0.0f, 0.0f },
+        1.0f,
+        1.0f,
+        NA_SE_EN_BIMOS_LAZER,
+        0,
+        20,
+        0.0f,
+        1,
+        false,
+        0,
+        0
+    },
+    { //position searching
+        false,
+        { 0.0f, 0.0f, 0.0f },
+        1.0f,
+        1.0f,
+        NA_SE_PL_SPIRAL_HEAL_BEAM,
+        0,
+        20,
+        0.0f,
+        1,
+        false,
+        0,
+        0
+    },
+    { //entrances
+        false,
+        { 0.0f, 0.0f, 0.0f },
+        1.0f,
+        1.0f,
+        NA_SE_EV_GOTO_HEAVEN,
+        0,
+        80,
+        0.0f,
+        1,
+        false,
+        0,
+        0
+    }
+};
 
 static ColliderQuadInit sSensingColliderInit = {
     {
@@ -1573,7 +2130,7 @@ static ColliderQuadInit sSensingColliderInit = {
     },
     {
         ELEMTYPE_SENSING,
-        { 0xFFFFFFFF, 0x00, 0x00 },
+        { 0xFFFFFFFF, 0x02, 0x00 },
         { 0xFFFFFFFF, 0x00, 0x00 },
         TOUCH_ON | TOUCH_NEAREST | TOUCH_SFX_NONE,
         BUMP_NONE,
@@ -1589,7 +2146,99 @@ void Player_InitAimCueCollision(Player* this, GlobalContext* globalCtx) {
     }
 }
 
-Actor* Player_UpdateSwimAimCue(Player* this, GlobalContext* globalCtx) {
+Actor* Player_UpdateStickTargetCue(Player* this, GlobalContext* globalCtx) {
+    bool isStickBurning = (this->unk_860 != 0);
+    Vec3f vecStickTipPos = this->swordInfo[0].tip;
+
+    Actor* closestActor = NULL;
+    const f32 maxDist = 1500.0f;
+    f32 closestActorXYZDistSq = SQ(maxDist);
+
+    ActorContext* actorCtx = &globalCtx->actorCtx;
+    ActorListEntry* actorListEntry;
+    actorListEntry = &actorCtx->actorLists[0];
+    Actor* actor;
+
+    for (int i = 0; i < ARRAY_COUNT(actorCtx->actorLists); i++, actorListEntry++) {
+        actor = actorListEntry->head;
+
+        while (actor != NULL) {
+            if (actor->xyzDistToPlayerSq < closestActorXYZDistSq &&
+                ABS(actor->yDistToPlayer) < 20.0f) {
+                if (actor->id == ACTOR_OBJ_SYOKUDAI) {
+                    ObjSyokudai* torchActor = (ObjSyokudai*)actor;
+                    if ((isStickBurning && torchActor->litTimer == 0) ||
+                        (!isStickBurning && torchActor->litTimer != 0)) {
+                        closestActor = actor;
+                        closestActorXYZDistSq = actor->xyzDistToPlayerSq;
+                    }
+                } else if (actor->id == ACTOR_BG_YDAN_SP && isStickBurning) {
+                    closestActor = actor;
+                    closestActorXYZDistSq = actor->xyzDistToPlayerSq;
+                }
+            }
+
+            actor = actor->next;
+        }
+    }
+
+    
+    if (closestActor != NULL) {
+        SoundCue* soundCue = &sTargetCues[1];
+        f32 closestActorDist = Math_Vec3f_DistXYZ(&closestActor->world.pos, &vecStickTipPos);
+        //soundCue->volume = LERP(0.1f, 1.5f, SQ(1.0f - closestActorDist / maxDist));
+        soundCue->pitch = 0.8;
+        Math_Vec3f_Copy(&soundCue->position, &closestActor->projectedPos);
+        soundCue->active = true;
+    }
+
+    return closestActor;
+}
+
+Actor* Player_UpdateEntranceTargetCue(Player* this, GlobalContext* globalCtx) {
+    Actor* closestActor = NULL;
+    const f32 maxDist = 250.0f;
+    f32 closestActorXYZDistSq = SQ(maxDist);
+
+    ActorContext* actorCtx = &globalCtx->actorCtx;
+    ActorListEntry* actorListEntry;
+    actorListEntry = &actorCtx->actorLists[0];
+    Actor* actor;
+
+    for (int i = 0; i < ARRAY_COUNT(actorCtx->actorLists); i++, actorListEntry++) {
+        actor = actorListEntry->head;
+
+        while (actor != NULL) {
+            if (actor->id != ACTOR_PLAYER &&
+                ((actor->category == ACTORCAT_DOOR && actor->id != ACTOR_EN_HOLL) ||
+                 actor->id == ACTOR_SCENE_EXIT) &&
+                actor->xyzDistToPlayerSq < closestActorXYZDistSq) {
+
+                closestActor = actor;
+                closestActorXYZDistSq = actor->xyzDistToPlayerSq;
+            }
+
+            actor = actor->next;
+        }
+    }
+
+    if (closestActor != NULL) {
+        SoundCue* soundCue = &sTargetCues[2];
+        f32 closestActorDist = sqrtf(closestActorXYZDistSq);
+        soundCue->volume = LERP(0.3f, 1.2f, SQ(1.0f - closestActorDist / maxDist));
+        if (closestActorDist < 30.0f) {
+            soundCue->pitch = 1.2;
+        } else {
+            soundCue->pitch = 0.5;
+        }
+        Math_Vec3f_Copy(&soundCue->position, &closestActor->projectedPos);
+        soundCue->active = true;
+    }
+
+    return closestActor;
+}
+
+Actor* Player_UpdateSwimTargetCue(Player* this, GlobalContext* globalCtx) {
     Actor* closestActor = NULL;
     const f32 maxDist = 500.0f;
     f32 closestActorXZDist = maxDist;
@@ -1617,37 +2266,24 @@ Actor* Player_UpdateSwimAimCue(Player* this, GlobalContext* globalCtx) {
     }
 
     if (closestActor != NULL) {
-        sAimCueVolume = LERP(0.1f, 1.5f, SQ(1.0f - closestActorXZDist / maxDist));
+        SoundCue* soundCue = &sTargetCues[1];
+        soundCue->volume = LERP(0.1f, 1.5f, SQ(1.0f - closestActorXZDist / maxDist));
         u16 soundEffect;
-        if (closestActorXZDist < 30.0f) {
-            soundEffect = NA_SE_PL_SPIRAL_HEAL_BEAM;
-            sAimCuePitch = 1.2;
+        if (closestActorXZDist < 28.0f) {
+            soundCue->pitch = 1.2;
         } else {
-            soundEffect = NA_SE_PL_SPIRAL_HEAL_BEAM;
-            sAimCuePitch = 0.8;
+            soundCue->pitch = 0.8;
         }
-        Math_Vec3f_Copy(&sAimCueTargetPos, &closestActor->projectedPos);
-        if (globalCtx->state.frames % 20 == 0) {
-            Audio_PlaySoundGeneral(soundEffect, &sAimCueTargetPos, 4, &sAimCuePitch, &sAimCueVolume,
-                                   &D_801333E8);
-        }
-    } else {
-        Audio_StopSfxById(NA_SE_PL_SPIRAL_HEAL_BEAM);
+        Math_Vec3f_Copy(&soundCue->position, &closestActor->projectedPos);
+        soundCue->active = true;
     }
 
     return closestActor;
 }
 
-void Player_UpdateAimCue(Player* this, GlobalContext* globalCtx) {
+Actor* Player_UpdateAimTargetCue(Player* this, GlobalContext* globalCtx) {
     Actor* hitActor = NULL;
-
-    bool isPlayerSwimming = this->stateFlags1 & PLAYER_STATE1_27;
-    bool isPlayerOnFloor = this->actor.bgCheckFlags & 1;
-    bool isPlayerInFirstPersonMode = this->stateFlags1 & PLAYER_STATE1_20;
-    if (isPlayerSwimming && !isPlayerOnFloor && !isPlayerInFirstPersonMode) {
-        Player_UpdateSwimAimCue(this, globalCtx);
-        return;
-    }
+    SoundCue* soundCue = &sTargetCues[0];
 
     for (int i = 0; i < AIMCUE_COLLIDER_COUNT; i++) {
         if (sAimCueCollider[i].base.atFlags & AT_HIT) {
@@ -1663,35 +2299,29 @@ void Player_UpdateAimCue(Player* this, GlobalContext* globalCtx) {
                 continue;
             }
 
-            u16 soundEffect;
             if (i == 0) { //target centered
-                soundEffect = NA_SE_EN_BIMOS_LAZER;
-                sAimCuePitch = 1.3;
-                sAimCueVolume = 1.0;
+                soundCue->pitch = 1.3;
             } else {
-                soundEffect = NA_SE_EN_BIMOS_LAZER;
-                sAimCuePitch = 0.8;
-                sAimCueVolume = 1.0;
+                soundCue->pitch = 0.8;
             }
+
+            Math_Vec3f_Copy(&soundCue->position, &hitActor->projectedPos);
 
             if (hitActor->category == ACTORCAT_ENEMY || hitActor->category == ACTORCAT_BOSS) {
-                Audio_PlaySoundGeneral(soundEffect, &D_801333D4, 4, &sAimCuePitch, &sAimCueVolume, &D_801333E8);
+                soundCue->active = true;
             } else if (hitActor->category == ACTORCAT_SWITCH) {
-                Audio_PlaySoundGeneral(soundEffect, &D_801333D4, 4, &sAimCuePitch, &sAimCueVolume, &D_801333E8);
+                soundCue->active = true;
             } else if (hitActor->category == ACTORCAT_NPC) {
-                Audio_PlaySoundGeneral(soundEffect, &D_801333D4, 4, &sAimCuePitch, &sAimCueVolume, &D_801333E8);
+                soundCue->active = true;
             } else if (hitActor->category == ACTORCAT_PROP &&
                            (hitActor->id == ACTOR_EN_DNT_NOMAL && hitActor->params == 0) ||
-                       hitActor->id == ACTOR_EN_G_SWITCH) {
+                       hitActor->id == ACTOR_EN_G_SWITCH ||
+                       hitActor->id == ACTOR_OBJ_SYOKUDAI ||
+                       hitActor->id == ACTOR_BG_YDAN_MARUTA) {
                 // lost woods slingshot target, shooting gallery rupees
-                Audio_PlaySoundGeneral(soundEffect, &D_801333D4, 4, &sAimCuePitch, &sAimCueVolume, &D_801333E8);
+                soundCue->active = true;
             }
         }
-    }
-
-    if (hitActor == NULL) {
-        Audio_StopSfxById(NA_SE_EV_SHIP_BELL);
-        Audio_StopSfxById(NA_SE_EN_BIMOS_LAZER);
     }
 
     if (sAimSurfaceHookshotable != sAimLastHookshotableState) {
@@ -1701,6 +2331,43 @@ void Player_UpdateAimCue(Player* this, GlobalContext* globalCtx) {
             Audio_PlaySoundGeneral(NA_SE_SY_LOCK_OFF, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
         }
         sAimLastHookshotableState = sAimSurfaceHookshotable;
+    }
+
+    return hitActor;
+}
+
+void Player_UpdateTargetCues(Player* this, GlobalContext* globalCtx) {
+    Actor* hitActor = NULL;
+
+    for (int i = 0; i < 3; i++) {
+        sTargetCues[i].active = false;
+    }
+
+    if (Player_InBlockingCsMode(globalCtx, this)) {
+        return;
+    }
+
+    Player_UpdateEntranceTargetCue(this, globalCtx);
+
+    bool isPlayerSwimming = this->stateFlags1 & PLAYER_STATE1_27;
+    bool isPlayerOnFloor = this->actor.bgCheckFlags & 1;
+    bool isPlayerInFirstPersonMode = this->stateFlags1 & PLAYER_STATE1_20;
+
+    bool isPlayerHoldingStick = (this->heldItemActionParam == PLAYER_AP_STICK);
+    bool isPlayerHoldingBurningStick = isPlayerHoldingStick && (this->unk_860 != 0);
+
+    bool isPlayerAiming = !!func_8002DD78(this);
+
+    if (isPlayerSwimming && !isPlayerOnFloor && !isPlayerInFirstPersonMode) {
+        Player_UpdateSwimTargetCue(this, globalCtx);
+    } else if (isPlayerOnFloor && isPlayerHoldingStick) {
+        Player_UpdateStickTargetCue(this, globalCtx);
+    } else if (isPlayerAiming) {
+        Player_UpdateAimTargetCue(this, globalCtx);
+    }
+
+    for (int i = 0; i < 3; i++) {
+        SoundCue_Update(&sTargetCues[i], globalCtx);
     }
 }
 
@@ -1814,7 +2481,15 @@ void Player_ComputeHandAimCue(Player* this, GlobalContext* globalCtx, s32 limbIn
     Matrix_Pop();
 }
 
-static Actor* prevActorInView;
+union VisibleItem {
+    Actor* actor;
+    u32 polyFlags;
+};
+static union VisibleItem sTopVisibleItems[10];
+static union VisibleItem sPrevFocusedVisibleItem;
+static s32 sFocusedVisibleItemIdx;
+static bool sFocusedItemBeaconActive;
+
 extern Actor* gActorIdTable[ACTOR_NUMBER_MAX];
 extern int fbSceneInfo;
 static u8* sceneInfoFramebuffer = NULL;
@@ -1823,9 +2498,24 @@ static s32 sceneInfoFbHeight;
 static bool sFirstPersonStart;
 static bool sSceneInfoContinuous;
 
-//without a way to get buffer sizes right now, this adds a bit of padding
-//to account for the difference between the window size and the framebuffer size
-static const float tmpBufferPadding = 120.0f;
+//TODO: temp, replace with SoundCue
+static f32 sBeaconFreq;
+
+static SoundCue sBeaconCue = 
+{
+    false,
+    { 0.0f, 0.0f, 0.0f },
+    1.0f,
+    1.0f,
+    NA_SE_EV_SHIP_BELL,
+    0,
+    20,
+    0.0f,
+    20,
+    false,
+    0,
+    0
+};
 
 void Player_UpdateVisionCue(Player* this, GlobalContext* globalCtx, Input* input) {
     bool isPlayerInFirstPersonMode = this->stateFlags1 & PLAYER_STATE1_20;
@@ -1834,27 +2524,52 @@ void Player_UpdateVisionCue(Player* this, GlobalContext* globalCtx, Input* input
         sFirstPersonStart = true;
         sSceneInfoContinuous = true;
     } else if (!isPlayerInFirstPersonMode && sFirstPersonStart) {
-        prevActorInView = NULL;
         sFirstPersonStart = false;
         sSceneInfoContinuous = false;
     }
 
-    bool readNow = sSceneInfoContinuous && (globalCtx->state.frames % 20 == 0);
-    bool readMultipleItems = false;
+    bool needsUpdate = false;
 
-    if (CHECK_BTN_ALL(input->cur.button, BTN_DDOWN)) {
-        prevActorInView = NULL;
+    if (CHECK_BTN_ALL(input->press.button, BTN_DUP)) {
         sSceneInfoContinuous = false;
-        readNow = true;
+        sPrevFocusedVisibleItem.actor = NULL;
+        needsUpdate = true;
     }
-    if (CHECK_BTN_ALL(input->cur.button, BTN_DRIGHT)) {
-        prevActorInView = NULL;
+    if (CHECK_BTN_ALL(input->press.button, BTN_DDOWN)) {
         sSceneInfoContinuous = false;
-        readMultipleItems = true;
-        readNow = true;
+        if (!sFocusedItemBeaconActive && sPrevFocusedVisibleItem.actor != NULL) {
+            sFocusedItemBeaconActive = true;
+        } else {
+            sFocusedItemBeaconActive = false;
+        }
+    }
+    if (CHECK_BTN_ALL(input->press.button, BTN_DLEFT)) {
+        sSceneInfoContinuous = false;
+        if (sFocusedVisibleItemIdx == 0) {
+            //Audio_PlaySoundGeneral(NA_SE_IT_SWORD_IMPACT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        } else {
+            Audio_PlaySoundGeneral(NA_SE_SY_CURSOR, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+            sFocusedVisibleItemIdx--;
+        }
+    }
+    if (CHECK_BTN_ALL(input->press.button, BTN_DRIGHT)) {
+        sSceneInfoContinuous = false;
+        if (sFocusedVisibleItemIdx == ARRAY_COUNT(sTopVisibleItems) - 1 ||
+            sTopVisibleItems[sFocusedVisibleItemIdx + 1].actor == NULL) {
+            //Audio_PlaySoundGeneral(NA_SE_IT_SWORD_IMPACT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        }
+        else {
+            Audio_PlaySoundGeneral(NA_SE_SY_CURSOR, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+            sFocusedVisibleItemIdx++;
+        }
     }
 
-    if (readNow) {
+    needsUpdate = needsUpdate || (sSceneInfoContinuous && (globalCtx->state.frames % 10 == 0));
+
+    if (needsUpdate) {
+        sFocusedVisibleItemIdx = 0;
+        memset(&sTopVisibleItems, 0, sizeof(sTopVisibleItems));
+
         if (sceneInfoFbWidth != OTRGetFramebufferWidth(fbSceneInfo) ||
             sceneInfoFbHeight != OTRGetFramebufferHeight(fbSceneInfo)) {
             if (sceneInfoFramebuffer != NULL) {
@@ -1865,97 +2580,129 @@ void Player_UpdateVisionCue(Player* this, GlobalContext* globalCtx, Input* input
             sceneInfoFbHeight = OTRGetFramebufferHeight(fbSceneInfo);
             sceneInfoFramebuffer = malloc(sceneInfoFbWidth * sceneInfoFbHeight * 4);
         }
-        OTRReadFramebufferPixels(fbSceneInfo, 0, 0, sceneInfoFbWidth, sceneInfoFbHeight - tmpBufferPadding, 0,
+        OTRReadFramebufferPixels(fbSceneInfo, 0, 0, sceneInfoFbWidth, sceneInfoFbHeight, 0,
                                     sceneInfoFramebuffer);
 
-        struct VisibleItem {
+        struct VisibleId {
             u32 id;
             u32 pixelCount;
         };
-        struct VisibleItem topItems[256] = {0};
+        struct VisibleId topIds[256] = {0};
 
         u32 width = sceneInfoFbWidth;
-        u32 height = sceneInfoFbHeight - tmpBufferPadding;
+        u32 height = sceneInfoFbHeight;
         u32 x;
         u32 y;
         u32 offset;
         u32 id;
 
-        u32 widthMargin = width / 8;
-        u32 heightMargin = height / 8;
+        u32 widthMargin = (sSceneInfoContinuous) ? width / 4 : 0;
+        u32 heightMargin = (sSceneInfoContinuous) ? height / 4 : 0;
         for (x = widthMargin; x < width - widthMargin; x++) {
             for (y = heightMargin; y < height - heightMargin; y++) {
                 offset = (x + y * width) * 4;
-                id = sceneInfoFramebuffer[offset + 2] & 0xFF;
-                
+                id = (sceneInfoFramebuffer[offset + 0] << 16) |
+                     (sceneInfoFramebuffer[offset + 1] << 8) |
+                     sceneInfoFramebuffer[offset + 2];
+
                 if (id == 0)
                     continue;
 
                 s32 itemIndex = 0;
                 u32 currItemCount = 0;
                 while (itemIndex < 256) {
-                    if (topItems[itemIndex].id == id) {
-                        topItems[itemIndex].pixelCount++;
-                        currItemCount = topItems[itemIndex].pixelCount;
+                    if (topIds[itemIndex].id == id) {
+                        topIds[itemIndex].pixelCount++;
+                        currItemCount = topIds[itemIndex].pixelCount;
                         break;
-                    } else if (topItems[itemIndex].id == 0) {
-                        topItems[itemIndex].id = id;
-                        topItems[itemIndex].pixelCount = 1;
-                        currItemCount = topItems[itemIndex].pixelCount;
+                    } else if (topIds[itemIndex].id == 0) {
+                        topIds[itemIndex].id = id;
+                        topIds[itemIndex].pixelCount = 1;
+                        currItemCount = topIds[itemIndex].pixelCount;
                         break;
                     }
                     ++itemIndex;
                 }
                 while (--itemIndex >= 0) {
-                    if (topItems[itemIndex].pixelCount > currItemCount) {
+                    if (topIds[itemIndex].pixelCount > currItemCount) {
                         break;
                     }
                     //swap
-                    struct VisibleItem tmp = topItems[itemIndex];
-                    topItems[itemIndex] = topItems[itemIndex + 1];
-                    topItems[itemIndex + 1] = tmp;
+                    struct VisibleId tmp = topIds[itemIndex];
+                    topIds[itemIndex] = topIds[itemIndex + 1];
+                    topIds[itemIndex + 1] = tmp;
                 }
             }
         }
 
-        Actor* topVisibleActors[5] = {0};
-        for (int i = 0; i < 5; i++) {
-            topVisibleActors[i] = (topItems[0].id > 0) ? gActorIdTable[topItems[i].id - 1] : NULL;
-        }
+        s32 topItemIndex = 0;
+        
+        for (int i = 0; i < ARRAY_COUNT(topIds); i++) {
+            if (topIds[i].id == 0)
+                break;
 
-        if (topVisibleActors[0] != NULL && topVisibleActors[0] != prevActorInView) {
-            u8 announceStr[256];
-            s32 announceStrLength = 0;
-            announceStr[0] = '\0';
-            u8 arg[32];
-            for (int i = 0; i < 5; i++) {
-                if (topVisibleActors[i] == NULL)
+            u32 itemType = topIds[i].id & 0xFF0000;
+            if (itemType == 0x500000) {
+                Actor* actor = gActorIdTable[(topIds[i].id & 0xFF) - 1];
+                if (actor->id == ACTOR_PLAYER || actor->id == ACTOR_EN_ELF)
                     continue;
-                if (topVisibleActors[i]->id == ACTOR_PLAYER || topVisibleActors[i]->id == ACTOR_EN_ELF)
-                    continue;
-                if (topVisibleActors[i]->id == ACTOR_SCENE_EXIT) {
-                    u16 exitId = topVisibleActors[i]->params;
-                    u16 sceneId = gEntranceTable[globalCtx->setupExitList[exitId - 1]].scene;
-                    size_t result =
-                        sprintf(arg, "%s",
-                                OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng",
-                                                                0x0300 + sceneId));
-                    ASSERT(result < sizeof(arg), "Text arg buffer exceeded", __FILE__, __LINE__);
-                } else {
-                    arg[0] = '\0';
-                }
-                size_t result = sprintf(announceStr + announceStrLength, "%s, ", OTRMessage_GetAccessibilityText("text/accessibility_text/accessibility_text_eng",
-                                                                0x1000 + topVisibleActors[i]->id, arg));
-                ASSERT(result < sizeof(announceStr) - announceStrLength, "Text str buffer exceeded", __FILE__,
-                        __LINE__);
-                announceStrLength += result;
-                if (!readMultipleItems)
-                    break;
+                sTopVisibleItems[topItemIndex].actor = actor;
+                // topItems[topItemIndex].polyFlags = 0;
+            } else if (itemType == 0xA00000) {
+                // topItems[topItemIndex].actor = NULL;
+                sTopVisibleItems[topItemIndex].polyFlags = topIds[i].id & 0xFF;
             }
 
-            OTRTextToSpeechCallback(announceStr);
+            if (++topItemIndex == ARRAY_COUNT(sTopVisibleItems)) {
+                break;
+            }
         }
-        prevActorInView = topVisibleActors[0];
+    }
+
+    union VisibleItem focusedVisibleItem = sTopVisibleItems[sFocusedVisibleItemIdx];
+
+    sBeaconCue.active = false;
+    if (sFocusedItemBeaconActive && ((focusedVisibleItem.polyFlags & 0xFFFFFF00) != 0)) {
+        sBeaconCue.active = true;
+        sBeaconCue.pitch = LERP(0.08f, 0.2f, 1.0f - MAX(0.1f, MIN(1.0f, focusedVisibleItem.actor->xyzDistToPlayerSq / SQ(500.0f))));
+        Math_Vec3f_Diff(&focusedVisibleItem.actor->projectedPos, &this->actor.projectedPos, &sBeaconCue.position);
+    }
+    SoundCue_Update(&sBeaconCue, globalCtx);
+
+    if (focusedVisibleItem.actor != NULL &&
+        focusedVisibleItem.actor != sPrevFocusedVisibleItem.actor) {
+
+        u8 announceStr[256];
+        s32 announceStrLength = 0;
+        announceStr[0] = '\0';
+        u8 arg[48];
+        arg[0] = '\0';
+
+        u32 textId;
+        if ((focusedVisibleItem.polyFlags & 0xFFFFFF00) == 0) {
+            textId = 0x900 + focusedVisibleItem.polyFlags;
+        } else {
+            if (focusedVisibleItem.actor->id == ACTOR_SCENE_EXIT) {
+                u16 exitId = focusedVisibleItem.actor->params;
+                u16 sceneId = gEntranceTable[globalCtx->setupExitList[exitId - 1]].scene;
+                size_t result = sprintf(arg, "%s", OTRGetAccessibilityText(0x0300 + sceneId));
+                ASSERT(result < sizeof(arg), "Text arg buffer exceeded", __FILE__, __LINE__);
+
+                textId = 0x1000 + focusedVisibleItem.actor->id;
+            } else {
+                textId = (focusedVisibleItem.actor->params << 16) | (0x1000 + focusedVisibleItem.actor->id);
+            }
+        }
+        char* accessibilityText = OTRGetAccessibilityText(textId, arg);
+        if (accessibilityText != NULL) {
+            size_t result = sprintf(announceStr + announceStrLength, "%s", accessibilityText);
+            ASSERT(result < sizeof(announceStr) - announceStrLength, "Text str buffer exceeded", __FILE__, __LINE__);
+            announceStrLength += result;
+        }
+
+        OTRTextToSpeechCallback(announceStr);
+
+        sPrevFocusedVisibleItem.actor = focusedVisibleItem.actor;
     }
 }
 

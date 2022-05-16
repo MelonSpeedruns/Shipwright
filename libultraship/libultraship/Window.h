@@ -27,6 +27,7 @@ namespace Ship {
 			void SetFullscreen(bool bIsFullscreen);
 			void ShowCursor(bool hide);
 			void ReadText(const char textToRead[]);
+			const std::string& GetAccessibilityText(uint32_t textId, const std::string& arg);
 			uint32_t GetFramebufferWidth(int fb);
 			uint32_t GetFramebufferHeight(int fb);
 			void ReadFramebufferPixels(int fb, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t type, void* data);
@@ -46,6 +47,8 @@ namespace Ship {
 			static void OnFullscreenChanged(bool bIsNowFullscreen);
 			void SetAudioPlayer();
 
+			void LoadAccessibilityText();
+
 			std::weak_ptr<GlobalCtx2> Context;
 			std::shared_ptr<AudioPlayer> APlayer;
 
@@ -54,6 +57,9 @@ namespace Ship {
 			bool bIsFullscreen;
 			uint32_t dwWidth;
 			uint32_t dwHeight;
+
+			std::unordered_multimap<uint16_t, std::pair<uint32_t, std::string>> accessibilityText;
+			std::string accessibilityTextInterpolated;
 	};
 }
 

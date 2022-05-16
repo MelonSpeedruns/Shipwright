@@ -889,6 +889,13 @@ extern "C" void OTRTextToSpeechCallback(char* text) {
     OTRGlobals::Instance->context->GetWindow()->ReadText(text);
 }
 
+extern "C" const char* OTRGetAccessibilityText(u32 textId, const char* arg) {
+    std::string strArg;
+    if (arg != nullptr)
+        strArg = arg;
+    return OTRGlobals::Instance->context->GetWindow()->GetAccessibilityText(textId, strArg).c_str();
+}
+
 extern "C" void OTRControllerCallback(ControllerCallback* controller) {
     auto controllers = OTRGlobals::Instance->context->GetWindow()->Controllers;
     for (int i = 0; i < controllers.size(); i++) {

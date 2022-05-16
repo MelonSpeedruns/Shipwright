@@ -25,6 +25,8 @@
 #include "SohHooks.h"
 #include "SohConsole.h"
 
+#include "Lib/tinyxml2/tinyxml2.h"
+
 #include <iostream>
 #include <sapi.h>
 #include <thread>
@@ -284,6 +286,7 @@ namespace Ship {
         HRESULT a = CoInitializeEx(NULL, COINIT_MULTITHREADED);
         HRESULT CoInitializeEx(LPVOID pvReserved, DWORD dwCoInit);
         hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+        LoadAccessibilityText();
 
         gfx_init(WmApi, RenderingApi, GetContext()->GetName().c_str(), bIsFullscreen);
         WmApi->set_fullscreen_changed_callback(Window::OnFullscreenChanged);
@@ -310,6 +313,86 @@ namespace Ship {
         std::string textCopy(textToRead);
         std::thread t1(task1, textCopy);
         t1.detach();
+    }
+
+    void Window::LoadAccessibilityText()
+    {
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError eResult = doc.LoadFile("./accessibility_text_eng.xml");
+
+        if (eResult != tinyxml2::XML_SUCCESS)
+        {
+            fprintf(stderr, "Warning: Unable to load accessibility text with error code %i\n", eResult);
+            return;
+        }
+
+        //tinyxml2::XMLNode* root = doc.FirstChild();
+
+        //if (root == nullptr)
+        //    return;
+
+        for (tinyxml2::XMLElement* child = doc.FirstChildElement(); child != nullptr;
+            child = child->NextSiblingElement())
+        {
+            uint16_t id = 0;
+            uint32_t param = 0;
+
+            const char* data;
+
+            if ((data = child->Attribute("id")))
+            {
+                id = stoi(std::string(data), 0);
+            }
+            if ((data = child->Attribute("mask")))
+            {
+                param = stoi(std::string(data), 0) << 16;
+            }
+            if ((data = child->Attribute("param")))
+            {
+                param |= stoi(std::string(data), 0) & 0xFFFF;
+            }
+
+            if ((data = child->GetText()) == nullptr)
+            {
+                continue;
+            }
+
+            accessibilityText.insert(
+                std::make_pair(id, std::make_pair(param, std::string(data))));
+        }
+    }
+
+    const std::string& Window::GetAccessibilityText(uint32_t textId, const std::string& arg)
+    {
+        std::string* result = nullptr;
+
+        auto range = accessibilityText.equal_range(textId & 0xFFFF);
+        uint16_t param = textId >> 16;
+        for (auto it = range.first; it != range.second; ++it) {
+            uint16_t itemParam = it->second.first >> 16;
+            uint16_t itemMask = it->second.first & 0xFFFF;
+            if ((param & itemMask) == itemParam) {
+                result = &it->second.second;
+                break;
+            }
+        }
+
+        if (result == nullptr) {
+            accessibilityTextInterpolated.clear();
+            return accessibilityTextInterpolated;
+        }
+
+        if (arg.length() > 0) {
+            accessibilityTextInterpolated = *result;
+            std::string searchString = "$0";
+            size_t index = accessibilityTextInterpolated.find(searchString);
+            if (index != std::string::npos) {
+                accessibilityTextInterpolated.replace(index, searchString.size(), arg);
+                return accessibilityTextInterpolated;
+            }
+        }
+
+        return *result;
     }
 
     void Window::StartFrame() {
