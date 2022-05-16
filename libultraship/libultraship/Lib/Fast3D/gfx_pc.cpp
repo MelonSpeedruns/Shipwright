@@ -26,6 +26,8 @@
 #include "gfx_rendering_api.h"
 #include "gfx_screen_config.h"
 #include "../../SohHooks.h"
+#include "../../GlobalCtx2.h"
+#include "../../TextureMod.h"
 
 #include "../../luslog.h"
 #include "../StrHash64.h"
@@ -100,8 +102,8 @@ struct ColorCombiner {
     uint8_t shader_input_mapping[2][7];
 };
 
-static map<uint64_t, struct ColorCombiner> color_combiner_pool;
-static map<uint64_t, struct ColorCombiner>::iterator prev_combiner = color_combiner_pool.end();
+static unordered_map<uint64_t, struct ColorCombiner> color_combiner_pool;
+static unordered_map<uint64_t, struct ColorCombiner>::iterator prev_combiner = color_combiner_pool.end();
 
 static struct RSP {
     float modelview_matrix_stack[11][4][4];
@@ -208,8 +210,8 @@ struct FBInfo {
 };
 
 static bool fbActive = 0;
-static map<int, FBInfo>::iterator active_fb;
-static map<int, FBInfo> framebuffers;
+static unordered_map<int, FBInfo>::iterator active_fb;
+static unordered_map<int, FBInfo> framebuffers;
 
 static set<pair<float, float>> get_pixel_depth_pending;
 static map<pair<float, float>, uint16_t> get_pixel_depth_cached;
@@ -223,6 +225,7 @@ static unsigned long get_time(void)
 #else
 #include <time.h>
 #include <string>
+#include "../../GlobalCtx2.h"
 static unsigned long get_time(void) {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -831,8 +834,12 @@ static void import_texture(int i, int tile) {
     uint8_t siz = rdp.texture_tile[tile].siz;
     uint32_t tmem_index = rdp.texture_tile[tile].tmem_index;
 
-    if (gfx_texture_cache_lookup(i, tile))
-    {
+    Ship::TextureModule* tex_module = Ship::GlobalCtx2::GetInstance()->GetModManager()->TextureMod;
+    if(tex_module->LookupTexture(i, rdp.loaded_texture[tmem_index].otr_path, gfx_get_current_rendering_api(), &rendering_state.textures[i], fmt, siz, rdp.texture_tile[tile].palette, rdp.loaded_texture[tmem_index].addr)) {
+        return;
+    }
+
+    if (gfx_texture_cache_lookup(i, tile)) {
         return;
     }
 
@@ -843,7 +850,7 @@ static void import_texture(int i, int tile) {
         } else if (siz == G_IM_SIZ_32b) {
             import_texture_rgba32(tile);
         } else {
-            //abort(); // OTRTODO: Sometimes, seemingly randomly, we end up here. Could be a bad dlist, could be something F3D does not have supported. Further investigation is needed.
+            abort(); // OTRTODO: Sometimes, seemingly randomly, we end up here. Could be a bad dlist, could be something F3D does not have supported. Further investigation is needed.
         }
     } else if (fmt == G_IM_FMT_IA) {
         if (siz == G_IM_SIZ_4b) {
@@ -861,7 +868,7 @@ static void import_texture(int i, int tile) {
         } else if (siz == G_IM_SIZ_8b) {
             import_texture_ci8(tile);
         } else {
-            abort();
+           abort();
         }
     } else if (fmt == G_IM_FMT_I) {
         if (siz == G_IM_SIZ_4b) {
@@ -871,11 +878,12 @@ static void import_texture(int i, int tile) {
         } else {
             abort();
         }
-    } else {
-        abort();
     }
-    int t1 = get_time();
-    //printf("Time diff: %d\n", t1 - t0);
+
+    abort();
+
+    // int t1 = get_time();
+    // printf("Time diff: %d\n", t1 - t0);
 }
 
 static void gfx_normalize_vector(float v[3]) {
@@ -1621,7 +1629,7 @@ static void gfx_dp_set_scissor(uint32_t mode, uint32_t ulx, uint32_t uly, uint32
     rdp.viewport_or_scissor_changed = true;
 }
 
-static void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width, const void* addr, char* otr_path) {
+void gfx_dp_set_texture_image(uint32_t format, uint32_t size, uint32_t width, const void* addr, char* otr_path) {
     rdp.texture_to_load.addr = (const uint8_t*)addr;
     rdp.texture_to_load.siz = size;
     rdp.texture_to_load.width = width;
@@ -1718,7 +1726,10 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes = size_bytes;
     //assert(size_bytes <= 4096 && "bug: too big texture");
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr = rdp.texture_to_load.addr;
-    rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path = rdp.texture_to_load.otr_path;
+
+    if(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path)
+        free(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path);
+    rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path = _strdup(rdp.texture_to_load.otr_path);
     rdp.textures_changed[rdp.texture_tile[tile].tmem_index] = true;
 }
 
@@ -1751,7 +1762,9 @@ static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t 
 
     assert(size_bytes <= 4096 && "bug: too big texture");
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr = rdp.texture_to_load.addr + start_offset;
-    rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path = rdp.texture_to_load.otr_path;
+    if(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path)
+        free(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path);
+    rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path = _strdup(rdp.texture_to_load.otr_path);
     rdp.texture_tile[tile].uls = uls;
     rdp.texture_tile[tile].ult = ult;
     rdp.texture_tile[tile].lrs = lrs;

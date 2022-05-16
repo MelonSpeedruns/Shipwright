@@ -1888,7 +1888,7 @@ void KaleidoScope_UpdateNamePanel(GlobalContext* globalCtx) {
                     sp2A += 12;
                 }
 
-                memcpy(pauseCtx->nameSegment, ResourceMgr_LoadTexByName(mapNameTextures[sp2A]), 0x400);
+                memcpy(pauseCtx->nameSegment, mapNameTextures[sp2A], strlen(mapNameTextures[sp2A]) + 1);
             } else {
                 osSyncPrintf("zoom_name=%d\n", pauseCtx->namedItem);
 
@@ -1901,7 +1901,7 @@ void KaleidoScope_UpdateNamePanel(GlobalContext* globalCtx) {
 
                 osSyncPrintf("J_N=%d  point=%d\n", gSaveContext.language, sp2A);
 
-                memcpy(pauseCtx->nameSegment, ResourceMgr_LoadTexByName(iconNameTextures[sp2A]), 0x400);
+                memcpy(pauseCtx->nameSegment, iconNameTextures[sp2A], strlen(iconNameTextures[sp2A]) + 1);
             }
 
             pauseCtx->nameDisplayTimer = 0;
@@ -2995,7 +2995,10 @@ void KaleidoScope_UpdateCursorSize(PauseContext* pauseCtx) {
 
 void KaleidoScope_LoadDungeonMap(GlobalContext* globalCtx) {
     InterfaceContext* interfaceCtx = &globalCtx->interfaceCtx;
-
+    /*
+    memcpy(interfaceCtx->mapSegment, sDungeonMapTexs[R_MAP_TEX_INDEX], strlen(sDungeonMapTexs[R_MAP_TEX_INDEX]) + 1);
+    memcpy(interfaceCtx->mapSegment + 0x800, sDungeonMapTexs[R_MAP_TEX_INDEX + 1],  strlen(sDungeonMapTexs[R_MAP_TEX_INDEX + 1]) + 1);
+    */
     memcpy(interfaceCtx->mapSegment, ResourceMgr_LoadTexByName(sDungeonMapTexs[R_MAP_TEX_INDEX]), 0x800);
     memcpy(interfaceCtx->mapSegment + 0x800, ResourceMgr_LoadTexByName(sDungeonMapTexs[R_MAP_TEX_INDEX + 1]), 0x800);
 }
@@ -3177,7 +3180,7 @@ void KaleidoScope_Update(GlobalContext* globalCtx)
 
             if (((void)0, gSaveContext.worldMapArea) < 22) {
                 if (gSaveContext.language == LANGUAGE_ENG) {
-                    memcpy(pauseCtx->nameSegment + 0x400, ResourceMgr_LoadTexByName(mapNameTextures[36 + gSaveContext.worldMapArea]), 0xA00);
+                    memcpy(pauseCtx->nameSegment + 0x400, mapNameTextures[36 + gSaveContext.worldMapArea], strlen(mapNameTextures[36 + gSaveContext.worldMapArea]) + 1);
                 } else if (gSaveContext.language == LANGUAGE_GER) {
                     memcpy(pauseCtx->nameSegment + 0x400, ResourceMgr_LoadTexByName(mapNameTextures[58 + gSaveContext.worldMapArea]), 0xA00);
                 } else {
