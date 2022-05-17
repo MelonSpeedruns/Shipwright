@@ -355,7 +355,7 @@ static bool GetCVarHandler(const std::vector<std::string>& args) {
     if (args.size() < 2)
         return CMD_FAILED;
 
-    CVar* cvar = CVar_GetVar((char*) args[1].c_str());
+    CVar* cvar = CVar_Get((char*) args[1].c_str());
 
     if (cvar != nullptr)
     {

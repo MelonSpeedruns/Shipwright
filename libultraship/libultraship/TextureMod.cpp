@@ -38,7 +38,7 @@ namespace Ship {
 		// this->LoadedOTRS.erase(std::find(this->LoadedOTRS.begin(), this->LoadedOTRS.end(), otr));
 	}
 
-	bool TextureModule::LookupTexture(int tile, char* path, GfxRenderingAPI* api, TextureCacheNode** node, uint32_t fmt, uint32_t siz, uint32_t palette, const uint8_t* orig_addr) {
+	bool TextureModule::LookupTexture(int tile, const char* path, GfxRenderingAPI* api, TextureCacheNode** node, uint32_t fmt, uint32_t siz, uint32_t palette, const uint8_t* orig_addr) {
 
 		if (path == nullptr || (path != nullptr && (strlen(path) > 128 || path[0] == '\0')))
 			return false;
@@ -53,7 +53,7 @@ namespace Ship {
 		TextureData* tex_data = nullptr;
 		if (!this->TexturePool.contains(path)) {
 			for(auto &otr : LoadedOTRS) {
-				const auto fix_path = normalize(path) + ".png";
+				const auto fix_path = path + std::string(".png");
 				std::shared_ptr<File> raw_data = std::make_shared<File>();
 				if (!otr->HasFile(fix_path)) continue;
 
@@ -112,7 +112,7 @@ namespace Ship {
 		TextureData* tex_data = nullptr;
 		if (!this->TexturePool.contains(path)) {
 			for(auto &otr : LoadedOTRS) {
-				const auto fix_path = normalize(path) + ".png";
+				const auto fix_path = path + std::string(".png");
 				std::shared_ptr<File> raw_data = std::make_shared<File>();
 				if (!otr->HasFile(fix_path)) continue;
 

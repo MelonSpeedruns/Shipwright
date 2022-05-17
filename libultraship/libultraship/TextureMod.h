@@ -23,7 +23,7 @@ namespace Ship {
 	class TextureModule : public ModModule {
 	public:
 		explicit TextureModule(ModManager* Manager) : ModModule(Manager) {}
-		bool LookupTexture(int tile, char* path, GfxRenderingAPI* api, TextureCacheNode** node, uint32_t fmt, uint32_t siz, uint32_t palette, const uint8_t* addr);
+		bool LookupTexture(int tile, const char* path, GfxRenderingAPI* api, TextureCacheNode** node, uint32_t fmt, uint32_t siz, uint32_t palette, const uint8_t* addr);
 	private:
 		std::vector<std::shared_ptr<Archive>> LoadedOTRS;
 		std::unordered_map<std::string, TextureData*> TexturePool;

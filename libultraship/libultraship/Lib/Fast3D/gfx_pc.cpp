@@ -884,8 +884,6 @@ static void import_texture(int i, int tile) {
         }
     }
 
-    abort();
-
     // int t1 = get_time();
     // printf("Time diff: %d\n", t1 - t0);
 }
@@ -1742,8 +1740,7 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
     //assert(size_bytes <= 4096 && "bug: too big texture");
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr = rdp.texture_to_load.addr;
 
-    if(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path)
-        free(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path);
+
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path = _strdup(rdp.texture_to_load.otr_path);
     rdp.textures_changed[rdp.texture_tile[tile].tmem_index] = true;
 }
@@ -1775,10 +1772,9 @@ static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t 
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].full_image_line_size_bytes = full_image_line_size_bytes;
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].line_size_bytes = line_size_bytes;
 
-    assert(size_bytes <= 4096 && "bug: too big texture");
+    //assert(size_bytes <= 4096 && "bug: too big texture");
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].addr = rdp.texture_to_load.addr + start_offset;
-    if(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path)
-        free(rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path);
+
     rdp.loaded_texture[rdp.texture_tile[tile].tmem_index].otr_path = _strdup(rdp.texture_to_load.otr_path);
     rdp.texture_tile[tile].uls = uls;
     rdp.texture_tile[tile].ult = ult;

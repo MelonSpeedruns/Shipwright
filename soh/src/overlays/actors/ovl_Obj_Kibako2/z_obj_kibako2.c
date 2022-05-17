@@ -7,6 +7,7 @@
 #include "z_obj_kibako2.h"
 #include "objects/object_kibako2/object_kibako2.h"
 #include "overlays/effects/ovl_Effect_Ss_Kakera/z_eff_ss_kakera.h"
+#include <custom_models/LargeCrateHD.h>
 
 #define FLAGS 0
 
@@ -176,5 +177,5 @@ void ObjKibako2_Update(Actor* thisx, GlobalContext* globalCtx) {
 }
 
 void ObjKibako2_Draw(Actor* thisx, GlobalContext* globalCtx) {
-    Gfx_DrawDListOpa(globalCtx, gLargeCrateDL);
+    Gfx_DrawDListOpa(globalCtx, LargeCrateHD);
 }
