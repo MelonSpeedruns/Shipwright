@@ -30,9 +30,11 @@ namespace Ship {
         }
 
         void Server::ReceiveRupees(ENetPacket* packet) {
-            Ship::Online::OnlinePacket_Rupees* rupees = (Ship::Online::OnlinePacket_Rupees*)packet->data;
-            rupeesReceived = 1;
-            Rupees_ChangeBy(rupees->rupeeAmountChanged);
+            if (server != nullptr) {
+                Ship::Online::OnlinePacket_Rupees* rupees = (Ship::Online::OnlinePacket_Rupees*)packet->data;
+                rupeesReceived = 1;
+                Rupees_ChangeBy(rupees->rupeeAmountChanged);
+            }
         }
 
         void Server::RunServer() {
@@ -134,10 +136,12 @@ namespace Ship {
         }
 
         void Client::SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet) {
-            ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
+            if (client != nullptr) {
+                ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
 
-            for (int i = 0; i < client->connectedPeers; i++) {
-                enet_peer_send(&client->peers[i], 0, packetToSend);
+                for (int i = 0; i < client->connectedPeers; i++) {
+                    enet_peer_send(&client->peers[i], 0, packetToSend);
+                }
             }
         }
 
