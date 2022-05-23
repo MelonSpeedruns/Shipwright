@@ -30,15 +30,15 @@ namespace Ship {
         }
 
         void Server::ReceiveRupees(ENetPacket* packet) {
-            if (server != nullptr) {
-                Ship::Online::OnlinePacket_Rupees* rupees = (Ship::Online::OnlinePacket_Rupees*)packet->data;
-                rupeesReceived = 1;
-                Rupees_ChangeBy(rupees->rupeeAmountChanged);
-            }
+            Ship::Online::OnlinePacket_Rupees* rupees = (Ship::Online::OnlinePacket_Rupees*)packet->data;
+            rupeesReceived = 1;
+            Rupees_ChangeBy(rupees->rupeeAmountChanged);
         }
 
         void Server::RunServer() {
             /* Wait up to 1000 milliseconds for an event. (WARNING: blocking) */
+            isEnabled = true;
+
             while (true) {
                 while (enet_host_service(server, &event, 1000) > 0) {
                     switch (event.type) {
@@ -111,6 +111,8 @@ namespace Ship {
             /* Allow up to 3 seconds for the disconnect to succeed
              * and drop any packets received packets.
              */
+            isEnabled = true;
+
             while (true) {
                 while (enet_host_service(client, &event, 3000) > 0) {
                     switch (event.type) {
@@ -136,12 +138,10 @@ namespace Ship {
         }
 
         void Client::SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet) {
-            if (client != nullptr) {
-                ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
+            ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
 
-                for (int i = 0; i < client->connectedPeers; i++) {
-                    enet_peer_send(&client->peers[i], 0, packetToSend);
-                }
+            for (int i = 0; i < client->connectedPeers; i++) {
+                enet_peer_send(&client->peers[i], 0, packetToSend);
             }
         }
 

@@ -39,6 +39,8 @@ namespace Ship {
 		public:
 			int port;
 
+			bool isEnabled = false;
+
 			Server();
 
 			void ReceiveRupees(ENetPacket* packet);
@@ -61,6 +63,8 @@ namespace Ship {
 		public:
 			std::string ipAddress;
 			int port;
+
+			bool isEnabled = false;
 
 			Client();
 
