@@ -1,6 +1,7 @@
 #include "Online.h"
 #include <spdlog/spdlog.h>
 #include <PR/ultra64/gbi.h>
+#include "SohImGuiImpl.h"
 
 #define MAX_CLIENTS 2
 
@@ -26,13 +27,13 @@ namespace Ship {
                 while (enet_host_service(server, &event, 1000) > 0) {
                     switch (event.type) {
                     case ENET_EVENT_TYPE_CONNECT:
-                        printf("A new client connected from %x:%u.\n", event.peer->address.host, event.peer->address.port);
+                        SohImGui::overlay->TextDrawNotification(5.0f, true, "A new client connected from %x:%u.\n", event.peer->address.host, event.peer->address.port);
                         /* Store any relevant client information here. */
                         GetPlayerInfo(event.peer);
                         break;
 
                     case ENET_EVENT_TYPE_RECEIVE:
-                        printf("A packet has been received!",
+                        SohImGui::overlay->TextDrawNotification(5.0f, true, "A packet has been received!",
                             event.packet->dataLength,
                             event.packet->data,
                             event.peer->data,
@@ -44,13 +45,13 @@ namespace Ship {
                         break;
 
                     case ENET_EVENT_TYPE_DISCONNECT:
-                        printf("%s disconnected.\n", event.peer->data);
+                        SohImGui::overlay->TextDrawNotification(5.0f, true, "%s disconnected.\n", event.peer->data);
                         /* Reset the peer's client information. */
                         event.peer->data = NULL;
                         break;
 
                     case ENET_EVENT_TYPE_DISCONNECT_TIMEOUT:
-                        printf("%s disconnected due to timeout.\n", event.peer->data);
+                        SohImGui::overlay->TextDrawNotification(5.0f, true, "%s disconnected due to timeout.\n", event.peer->data);
                         /* Reset the peer's client information. */
                         event.peer->data = NULL;
                         break;
@@ -68,24 +69,24 @@ namespace Ship {
 
         void Server::CreateServer() {
             if (enet_initialize() != 0) {
-                printf("An error occurred while initializing ENet.\n");
+                SohImGui::overlay->TextDrawNotification(5.0f, true, "An error occurred while initializing ENet.\n");
                 return;
             }
 
             ENetAddress address = { 0 };
 
             address.host = ENET_HOST_ANY; /* Bind the server to the default localhost.     */
-            address.port = 25565; /* Bind the server to port 7777. */
+            address.port = port; /* Bind the server to port 7777. */
 
             /* create a server */
             server = enet_host_create(&address, MAX_CLIENTS, 1, 0, 0);
 
             if (server == NULL) {
-                printf("An error occurred while trying to create an ENet server host.\n");
+                SohImGui::overlay->TextDrawNotification(5.0f, true, "An error occurred while trying to create an ENet server host.\n");
                 return;
             }
 
-            printf("Started a server!\n");
+            SohImGui::overlay->TextDrawNotification(5.0f, true, "Started a server!\n");
 
             onlineThread = std::thread(&Server::RunServer, this);
         }
@@ -124,12 +125,14 @@ namespace Ship {
             /* Send the packet to the peer over channel id 0. */
             /* One could also broadcast the packet by         */
             /* enet_host_broadcast (host, 0, packet);         */
-            enet_peer_send(peer, 0, packetToSend);
+            if (peer != nullptr) {
+                enet_peer_send(peer, 0, packetToSend);
+            }
         }
 
         void Client::ConnectToServer() {
             if (enet_initialize() != 0) {
-                fprintf(stderr, "An error occurred while initializing ENet.\n");
+                SohImGui::overlay->TextDrawNotification(5.0f, true, "An error occurred while initializing ENet.\n");
                 return;
             }
 
@@ -140,27 +143,26 @@ namespace Ship {
                 0 /* assume any amount of outgoing bandwidth */);
 
             if (client == NULL) {
-                fprintf(stderr,
-                    "An error occurred while trying to create an ENet client host.\n");
+                SohImGui::overlay->TextDrawNotification(5.0f, true, "An error occurred while trying to create an ENet client host.\n");
                 exit(EXIT_FAILURE);
             }
 
             ENetAddress address = { 0 };
 
             /* Connect to some.server.net:1234. */
-            enet_address_set_host(&address, "127.0.0.1");
-            address.port = 25565;
+            enet_address_set_host(&address, ipAddress.c_str());
+            address.port = port;
             /* Initiate the connection, allocating the two channels 0 and 1. */
             peer = enet_host_connect(client, &address, 1, 0);
             if (peer == NULL) {
-                fprintf(stderr,
-                    "No available peers for initiating an ENet connection.\n");
+                SohImGui::overlay->TextDrawNotification(5.0f, true, "No available peers for initiating an ENet connection.\n");
                 exit(EXIT_FAILURE);
             }
             /* Wait up to 5 seconds for the connection attempt to succeed. */
             if (enet_host_service(client, &event, 5000) > 0 &&
                 event.type == ENET_EVENT_TYPE_CONNECT) {
                 puts("Connection to some.server.net:1234 succeeded.");
+                onlineThread = std::thread(&Client::RunClient, this);
             }
             else {
                 /* Either the 5 seconds are up or a disconnect event was */
@@ -169,8 +171,6 @@ namespace Ship {
                 enet_peer_reset(peer);
                 puts("Connection to some.server.net:1234 failed.");
             }
-
-            onlineThread = std::thread(&Client::RunClient, this);
         }
 
         Client::Client() {
