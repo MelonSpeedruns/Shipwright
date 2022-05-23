@@ -5,6 +5,8 @@
 
 #define MAX_CLIENTS 32
 
+extern "C" void SpawnLinkPuppet(u32 player_id);
+extern "C" void SetLinkPuppetData(float x, float y, float z, u8 player_id);
 extern "C" void Rupees_ChangeBy(s16 rupeeChange);
 extern "C" u8 rupeesReceived;
 
@@ -21,18 +23,29 @@ namespace Ship {
             player_count++;
         }
 
-        void Server::SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet) {
-            ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
+        void SendPacketMessage(OnlinePacket* packet) {
+            if (host != nullptr) {
+                ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
 
-            for (int i = 0; i < server->connectedPeers; i++) {
-                enet_peer_send(&server->peers[i], 0, packetToSend);
+                for (int i = 0; i < host->connectedPeers; i++) {
+                    enet_peer_send(&host->peers[i], 0, packetToSend);
+                }
             }
         }
 
-        void Server::ReceiveRupees(ENetPacket* packet) {
-            Ship::Online::OnlinePacket_Rupees* rupees = (Ship::Online::OnlinePacket_Rupees*)packet->data;
-            rupeesReceived = 1;
-            Rupees_ChangeBy(rupees->rupeeAmountChanged);
+        void ReceiveData(ENetPacket* packet, ENetPeer* peer) {
+            if (host != nullptr) {
+                Ship::Online::OnlinePacket* data = (Ship::Online::OnlinePacket*)packet->data;
+
+                if (rupeesReceived != 0) {
+                    rupeesReceived = 1;
+                    Rupees_ChangeBy(data->rupeeAmountChanged);
+                }
+
+                if (data->posX != -1 && data->posY != -1 && data->posZ != -1) {
+                    SetLinkPuppetData(data->posX, data->posY, data->posZ, data->player_id);
+                }
+            }
         }
 
         void Server::RunServer() {
@@ -40,12 +53,13 @@ namespace Ship {
             isEnabled = true;
 
             while (true) {
-                while (enet_host_service(server, &event, 1000) > 0) {
+                while (enet_host_service(host, &event, 1000) > 0) {
                     switch (event.type) {
                     case ENET_EVENT_TYPE_CONNECT:
                         SohImGui::overlay->TextDrawNotification(5.0f, true, "A new client connected from %x:%u.\n", event.peer->address.host, event.peer->address.port);
                         /* Store any relevant client information here. */
                         GetPlayerInfo(event.peer);
+                        SpawnLinkPuppet(event.peer->connectID);
                         break;
 
                     case ENET_EVENT_TYPE_RECEIVE:
@@ -55,7 +69,7 @@ namespace Ship {
                             event.peer->data,
                             event.channelID);
                         /* Clean up the packet now that we're done using it. */
-                        ReceiveRupees(event.packet);
+                        ReceiveData(event.packet, event.peer);
                         enet_packet_destroy(event.packet);
                         break;
 
@@ -78,7 +92,7 @@ namespace Ship {
             }
 
             player_count = 0;
-            enet_host_destroy(server);
+            enet_host_destroy(host);
             enet_deinitialize();
         }
 
@@ -94,9 +108,9 @@ namespace Ship {
             address.port = port; /* Bind the server to port 7777. */
 
             /* create a server */
-            server = enet_host_create(&address, MAX_CLIENTS, 2, 0, 0);
+            host = enet_host_create(&address, MAX_CLIENTS, 2, 0, 0);
 
-            if (server == NULL) {
+            if (host == NULL) {
                 SohImGui::overlay->TextDrawNotification(5.0f, true, "An error occurred while trying to create an ENet server host.\n");
                 return;
             }
@@ -114,11 +128,11 @@ namespace Ship {
             isEnabled = true;
 
             while (true) {
-                while (enet_host_service(client, &event, 3000) > 0) {
+                while (enet_host_service(host, &event, 3000) > 0) {
                     switch (event.type) {
                     case ENET_EVENT_TYPE_RECEIVE:
+                        ReceiveData(event.packet, event.peer);
                         enet_packet_destroy(event.packet);
-                        ReceiveRupees(event.packet);
                         break;
                     case ENET_EVENT_TYPE_DISCONNECT:
                         puts("Disconnection succeeded.");
@@ -133,22 +147,8 @@ namespace Ship {
                 enet_peer_reset(peer);
             }
 
-            enet_host_destroy(client);
+            enet_host_destroy(host);
             enet_deinitialize();
-        }
-
-        void Client::SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet) {
-            ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
-
-            for (int i = 0; i < client->connectedPeers; i++) {
-                enet_peer_send(&client->peers[i], 0, packetToSend);
-            }
-        }
-
-        void Client::ReceiveRupees(ENetPacket* packet) {
-            Ship::Online::OnlinePacket_Rupees* rupees = (Ship::Online::OnlinePacket_Rupees*)packet->data;
-            rupeesReceived = 1;
-            Rupees_ChangeBy(rupees->rupeeAmountChanged);
         }
 
         void Client::ConnectToServer() {
@@ -157,13 +157,13 @@ namespace Ship {
                 return;
             }
 
-            client = enet_host_create(NULL /* create a client host */,
+            host = enet_host_create(NULL /* create a client host */,
                 1 /* only allow 1 outgoing connection */,
                 1 /* allow up 2 channels to be used, 0 and 1 */,
                 0 /* assume any amount of incoming bandwidth */,
                 0 /* assume any amount of outgoing bandwidth */);
 
-            if (client == NULL) {
+            if (host == NULL) {
                 SohImGui::overlay->TextDrawNotification(5.0f, true, "An error occurred while trying to create an ENet client host.\n");
                 exit(EXIT_FAILURE);
             }
@@ -174,14 +174,15 @@ namespace Ship {
             enet_address_set_host(&address, ipAddress.c_str());
             address.port = port;
             /* Initiate the connection, allocating the two channels 0 and 1. */
-            peer = enet_host_connect(client, &address, 2, 0);
+            peer = enet_host_connect(host, &address, 2, 0);
             if (peer == NULL) {
                 SohImGui::overlay->TextDrawNotification(5.0f, true, "No available peers for initiating an ENet connection.\n");
                 exit(EXIT_FAILURE);
             }
             /* Wait up to 5 seconds for the connection attempt to succeed. */
-            if (enet_host_service(client, &event, 5000) > 0 &&
+            if (enet_host_service(host, &event, 5000) > 0 &&
                 event.type == ENET_EVENT_TYPE_CONNECT) {
+                SpawnLinkPuppet(event.peer->connectID);
                 puts("Connection to some.server.net:1234 succeeded.");
                 onlineThread = std::thread(&Client::RunClient, this);
             }

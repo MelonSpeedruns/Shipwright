@@ -20,17 +20,22 @@ namespace Ship {
 		struct OnlinePacket {
 			uint8_t client_id;
 			uint16_t packet_id;
+			int player_id;
 			time_t timestamp;
+			uint16_t rupeeAmountChanged;
+			float posX;
+			float posY;
+			float posZ;
 		};
 
-		struct OnlinePacket_Rupees {
-			uint16_t rupeeAmountChanged;
-		};
+		void ReceiveData(ENetPacket* packet, ENetPeer* peer);
+		void SendPacketMessage(OnlinePacket* packet);
+			
+		ENetHost* host = { 0 };
 
 		class Server {
 		private:
 			ENetEvent event;
-			ENetHost* server;
 
 			uint8_t player_count;
 
@@ -43,8 +48,6 @@ namespace Ship {
 
 			Server();
 
-			void ReceiveRupees(ENetPacket* packet);
-			void SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet);
 			void GetPlayerInfo(ENetPeer* peer);
 			void CreateServer();
 			void RunServer();
@@ -52,7 +55,6 @@ namespace Ship {
 
 		class Client {
 		private:
-			ENetHost* client = { 0 };
 			ENetEvent event = { ENetEventType::ENET_EVENT_TYPE_NONE };
 			ENetPeer* peer = { 0 };
 
@@ -68,8 +70,6 @@ namespace Ship {
 
 			Client();
 
-			void ReceiveRupees(ENetPacket* packet);
-			void SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet);
 			void ConnectToServer();
 			void RunClient();
 		};

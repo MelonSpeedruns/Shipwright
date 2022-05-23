@@ -2269,9 +2269,8 @@ void Rupees_ChangeBy(s16 rupeeChange) {
     gSaveContext.rupeeAccumulator += rupeeChange;
 
     if (rupeesReceived == 0) {
-        OTRSendPacketRupees(rupeeChange);
+        OTRSendPacket(rupeeChange, -1, -1, -1);
     }
-
     rupeesReceived = 0;
 }
 

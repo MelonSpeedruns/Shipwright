@@ -410,9 +410,22 @@ void Gameplay_Init(GameState* thisx) {
         DmaMgr_DmaRomToRam(0x03FEB000, D_8012D1F0, sizeof(D_801614D0));
     }
 #endif
+}
 
-    Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_LINK_PUPPET, player->actor.world.pos.x,
-                player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, 0);
+Actor* puppets[4];
+
+void SetLinkPuppetData(float x, float y, float z, u8 player_id) {
+    if (puppets[player_id]->id == ACTOR_LINK_PUPPET) {
+        puppets[player_id]->world.pos.x = x;
+        puppets[player_id]->world.pos.y = y;
+        puppets[player_id]->world.pos.z = z;
+    }
+}
+
+void SpawnLinkPuppet(u32 player_id) {
+    puppets[player_id] =
+        Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_LINK_PUPPET, GET_PLAYER(gGlobalCtx)->actor.world.pos.x,
+                    GET_PLAYER(gGlobalCtx)->actor.world.pos.y, GET_PLAYER(gGlobalCtx)->actor.world.pos.z, 0, 0, 0, 0);
 }
 
 void Gameplay_Update(GlobalContext* globalCtx) {
