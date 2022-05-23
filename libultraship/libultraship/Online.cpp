@@ -5,11 +5,9 @@
 
 #define MAX_CLIENTS 32
 
-extern "C" void SpawnLinkPuppet(u32 player_id);
 extern "C" void SetLinkPuppetData(f32 x, f32 y, f32 z, u8 player_id);
 extern "C" void Rupees_ChangeBy(s16 rupeeChange);
 extern "C" u8 rupeesReceived;
-extern "C" u8 puppetSpawned;
 
 namespace Ship {
     namespace Online {
@@ -51,13 +49,6 @@ namespace Ship {
                     case ENET_EVENT_TYPE_CONNECT:
                         SohImGui::overlay->TextDrawNotification(5.0f, true, "A new client connected from %x:%u.\n", event.peer->address.host, event.peer->address.port);
                         /* Store any relevant client information here. */
-                        SpawnLinkPuppet(player_count);
-
-                        while (puppetSpawned == 0) {
-
-                        }
-
-                        player_count++;
                         break;
 
                     case ENET_EVENT_TYPE_RECEIVE:
@@ -89,7 +80,6 @@ namespace Ship {
                 }
             }
 
-            player_count = 0;
             enet_host_destroy(server);
             enet_deinitialize();
         }
@@ -180,13 +170,6 @@ namespace Ship {
             /* Wait up to 5 seconds for the connection attempt to succeed. */
             if (enet_host_service(client, &event, 5000) > 0 &&
                 event.type == ENET_EVENT_TYPE_CONNECT) {
-                SpawnLinkPuppet(player_count);
-
-                while (puppetSpawned == 0) {
-
-                }
-
-                player_count++;
                 puts("Connection to some.server.net:1234 succeeded.");
                 onlineThread = std::thread(&Client::RunClient, this);
             }

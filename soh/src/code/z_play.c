@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "soh/Enhancements/gameconsole.h"
+#include <overlays/actors/ovl_Link_Puppet/z_link_puppet.h>
 
 void* D_8012D1F0 = NULL;
 //UNK_TYPE D_8012D1F4 = 0; // unused
@@ -189,6 +190,24 @@ void Gameplay_Destroy(GameState* thisx) {
     ZeldaArena_Cleanup();
     Fault_RemoveClient(&D_801614B8);
     gGlobalCtx = NULL;
+}
+
+LinkPuppet* puppets[4];
+
+void SetLinkPuppetData(f32 x, f32 y, f32 z, u8 player_id) {
+    if (puppets[player_id] != NULL) {
+        puppets[player_id]->posx = x;
+        puppets[player_id]->posy = y;
+        puppets[player_id]->posz = z;
+    }
+}
+
+void SpawnLinkPuppet(u8 player_id) {
+    puppets[player_id] =
+        Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_LINK_PUPPET, -32767.0f, -32767.0f, -32767.0f, 0, 0, 0, 0);
+    puppets[player_id]->posx = -32767.0f;
+    puppets[player_id]->posy = -32767.0f;
+    puppets[player_id]->posz = -32767.0f;
 }
 
 void Gameplay_Init(GameState* thisx) {
@@ -396,6 +415,11 @@ void Gameplay_Init(GameState* thisx) {
         globalCtx->unk_1242B = 0;
     }
 
+    SpawnLinkPuppet(0);
+    SpawnLinkPuppet(1);
+    SpawnLinkPuppet(2);
+    SpawnLinkPuppet(3);
+
     Interface_SetSceneRestrictions(globalCtx);
     Environment_PlaySceneSequence(globalCtx);
     gSaveContext.seqId = globalCtx->sequenceCtx.seqId;
@@ -410,31 +434,6 @@ void Gameplay_Init(GameState* thisx) {
         DmaMgr_DmaRomToRam(0x03FEB000, D_8012D1F0, sizeof(D_801614D0));
     }
 #endif
-}
-
-Actor* puppets[4];
-
-f32 posx;
-f32 posy;
-f32 posz;
-
-void SetLinkPuppetData(f32 x, f32 y, f32 z, u8 player_id) {
-    if (puppets[player_id] != NULL) {
-        if (puppets[player_id]->id == ACTOR_LINK_PUPPET) {
-            posx = x;
-            posy = y;
-            posz = z;
-        }
-    }
-}
-
-u8 puppetSpawned = 0;
-
-void SpawnLinkPuppet(u8 player_id) {
-    puppets[player_id] =
-        Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_LINK_PUPPET, GET_PLAYER(gGlobalCtx)->actor.world.pos.x,
-                    GET_PLAYER(gGlobalCtx)->actor.world.pos.y, GET_PLAYER(gGlobalCtx)->actor.world.pos.z, 0, 0, 0, 0);
-    puppetSpawned = 1;
 }
 
 void Gameplay_Update(GlobalContext* globalCtx) {

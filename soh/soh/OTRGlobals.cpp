@@ -115,7 +115,6 @@ extern "C" uint64_t GetPerfCounter() {
 
 extern "C" void OTRSendPacket(u16 rupeeChange, Vec3f linkPos) {
     Ship::Online::OnlinePacket* packet = new Ship::Online::OnlinePacket();
-    packet->player_id = 0;
     packet->rupeeAmountChanged = rupeeChange;
 
     packet->posX = linkPos.x;

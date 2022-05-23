@@ -35,7 +35,7 @@ namespace Ship {
 
 			ENetHost* server = { 0 };
 
-			uint8_t player_count = 0;
+			uint8_t my_player_id = 0;
 
 			bool isEnabled = false;
 
@@ -60,7 +60,7 @@ namespace Ship {
 
 			ENetHost* client = { 0 };
 
-			uint8_t player_count = 0;
+			uint8_t my_player_id = 0;
 
 			bool isEnabled = false;
 

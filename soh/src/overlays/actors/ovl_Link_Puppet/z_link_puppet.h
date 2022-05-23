@@ -12,4 +12,7 @@ typedef struct LinkPuppet {
     ColliderCylinder collider;
     Vec3f leftFootPos;
     Vec3f rightFootPos;
+    f32 posx;
+    f32 posy;
+    f32 posz;
 } LinkPuppet;
