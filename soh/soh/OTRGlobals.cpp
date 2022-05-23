@@ -113,15 +113,20 @@ extern "C" uint64_t GetPerfCounter() {
 }
 #endif
 
-extern "C" void OTRSendPacket(u16 rupeeChange, float x, float y, float z) {
+extern "C" void OTRSendPacket(u16 rupeeChange, Vec3f linkPos) {
     Ship::Online::OnlinePacket* packet = new Ship::Online::OnlinePacket();
+    packet->player_id = 0;
     packet->rupeeAmountChanged = rupeeChange;
 
-    packet->posX = x;
-    packet->posY = y;
-    packet->posZ = z;
+    packet->posX = linkPos.x;
+    packet->posY = linkPos.y;
+    packet->posZ = linkPos.z;
 
-    Ship::Online::SendPacketMessage(packet);
+    if (OTRGlobals::Instance->context->GetWindow()->GetClient()->isEnabled) {
+        Ship::Online::SendPacketMessage(packet, OTRGlobals::Instance->context->GetWindow()->GetClient()->client);
+    } else if (OTRGlobals::Instance->context->GetWindow()->GetServer()->isEnabled) {
+        Ship::Online::SendPacketMessage(packet, OTRGlobals::Instance->context->GetWindow()->GetServer()->server);
+    }
 }
 
 // C->C++ Bridge

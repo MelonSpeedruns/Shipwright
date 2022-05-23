@@ -1,6 +1,7 @@
 #include "vt.h"
 #include "z_link_puppet.h"
 #include <objects/gameplay_keep/gameplay_keep.h>
+#include <code/z_play.c>
 
 #define FLAGS ACTOR_FLAG_4
 
@@ -49,8 +50,6 @@ void LinkPuppet_Init(Actor* thisx, GlobalContext* globalCtx) {
     SkelAnime_InitLink(globalCtx, &this->linkSkeleton, gPlayerSkelHeaders[((void)0, gSaveContext.linkAge)],
                        gPlayerAnim_003240, 9, this->jointTable, this->morphTable, PLAYER_LIMB_MAX);
 
-    this->actor.gravity = -0.2f;
-
     Collider_InitCylinder(globalCtx, &this->collider);
     Collider_SetCylinder(globalCtx, &this->collider, &this->actor, &sCylinderInit);
 }
@@ -70,6 +69,10 @@ void LinkPuppet_Update(Actor* thisx, GlobalContext* globalCtx) {
 
     Collider_UpdateCylinder(thisx, &this->collider);
     CollisionCheck_SetOC(globalCtx, &globalCtx->colChkCtx, &this->collider.base);
+
+    this->actor.world.pos.x = posx;
+    this->actor.world.pos.y = posy;
+    this->actor.world.pos.z = posz;
 }
 
 Vec3f FEET_POS[] = {

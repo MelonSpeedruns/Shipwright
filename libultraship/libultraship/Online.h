@@ -13,42 +13,34 @@ namespace Ship {
 			LINK_UPDATE = 1,
 		};
 
-		struct PlayerInfo {
-			uint8_t player_id;
-		};
-
 		struct OnlinePacket {
-			uint8_t client_id;
-			uint16_t packet_id;
-			int player_id;
-			time_t timestamp;
+			uint8_t player_id;
 			uint16_t rupeeAmountChanged;
 			float posX;
 			float posY;
 			float posZ;
 		};
 
-		void ReceiveData(ENetPacket* packet, ENetPeer* peer);
-		void SendPacketMessage(OnlinePacket* packet);
+		void ReceiveData(ENetPacket* packet, ENetPeer* peer, ENetHost* host);
+		void SendPacketMessage(OnlinePacket* packet, ENetHost* host);
 			
-		ENetHost* host = { 0 };
-
 		class Server {
 		private:
 			ENetEvent event;
-
-			uint8_t player_count;
 
 			std::thread onlineThread;
 
 		public:
 			int port;
 
+			ENetHost* server = { 0 };
+
+			uint8_t player_count = 0;
+
 			bool isEnabled = false;
 
 			Server();
 
-			void GetPlayerInfo(ENetPeer* peer);
 			void CreateServer();
 			void RunServer();
 		};
@@ -65,6 +57,10 @@ namespace Ship {
 		public:
 			std::string ipAddress;
 			int port;
+
+			ENetHost* client = { 0 };
+
+			uint8_t player_count = 0;
 
 			bool isEnabled = false;
 

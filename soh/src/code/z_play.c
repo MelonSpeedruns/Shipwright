@@ -414,18 +414,27 @@ void Gameplay_Init(GameState* thisx) {
 
 Actor* puppets[4];
 
-void SetLinkPuppetData(float x, float y, float z, u8 player_id) {
-    if (puppets[player_id]->id == ACTOR_LINK_PUPPET) {
-        puppets[player_id]->world.pos.x = x;
-        puppets[player_id]->world.pos.y = y;
-        puppets[player_id]->world.pos.z = z;
+f32 posx;
+f32 posy;
+f32 posz;
+
+void SetLinkPuppetData(f32 x, f32 y, f32 z, u8 player_id) {
+    if (puppets[player_id] != NULL) {
+        if (puppets[player_id]->id == ACTOR_LINK_PUPPET) {
+            posx = x;
+            posy = y;
+            posz = z;
+        }
     }
 }
 
-void SpawnLinkPuppet(u32 player_id) {
+u8 puppetSpawned = 0;
+
+void SpawnLinkPuppet(u8 player_id) {
     puppets[player_id] =
         Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_LINK_PUPPET, GET_PLAYER(gGlobalCtx)->actor.world.pos.x,
                     GET_PLAYER(gGlobalCtx)->actor.world.pos.y, GET_PLAYER(gGlobalCtx)->actor.world.pos.z, 0, 0, 0, 0);
+    puppetSpawned = 1;
 }
 
 void Gameplay_Update(GlobalContext* globalCtx) {
@@ -1390,6 +1399,8 @@ void Gameplay_Main(GameState* thisx) {
     if ((HREG(80) != 10) || (HREG(81) != 0)) {
         Gameplay_Update(globalCtx);
     }
+
+    OTRSendPacket(0, GET_PLAYER(gGlobalCtx)->actor.world.pos);
 
     if (1 && HREG(63)) {
         LOG_NUM("1", 1, "../z_play.c", 4583);
