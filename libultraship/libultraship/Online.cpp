@@ -3,7 +3,7 @@
 #include <PR/ultra64/gbi.h>
 #include "SohImGuiImpl.h"
 
-#define MAX_CLIENTS 2
+#define MAX_CLIENTS 32
 
 extern "C" void Rupees_ChangeBy(s16 rupeeChange);
 extern "C" u8 rupeesReceived;
@@ -19,6 +19,20 @@ namespace Ship {
             player_info->player_id = player_count;
             peer->data = player_info;
             player_count++;
+        }
+
+        void Server::SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet) {
+            ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
+
+            for (int i = 0; i < server->connectedPeers; i++) {
+                enet_peer_send(&server->peers[i], 0, packetToSend);
+            }
+        }
+
+        void Server::ReceiveRupees(ENetPacket* packet) {
+            Ship::Online::OnlinePacket_Rupees* rupees = (Ship::Online::OnlinePacket_Rupees*)packet->data;
+            rupeesReceived = 1;
+            Rupees_ChangeBy(rupees->rupeeAmountChanged);
         }
 
         void Server::RunServer() {
@@ -39,8 +53,7 @@ namespace Ship {
                             event.peer->data,
                             event.channelID);
                         /* Clean up the packet now that we're done using it. */
-                        rupeesReceived = 1;
-                        Rupees_ChangeBy(1);
+                        ReceiveRupees(event.packet);
                         enet_packet_destroy(event.packet);
                         break;
 
@@ -79,7 +92,7 @@ namespace Ship {
             address.port = port; /* Bind the server to port 7777. */
 
             /* create a server */
-            server = enet_host_create(&address, MAX_CLIENTS, 1, 0, 0);
+            server = enet_host_create(&address, MAX_CLIENTS, 2, 0, 0);
 
             if (server == NULL) {
                 SohImGui::overlay->TextDrawNotification(5.0f, true, "An error occurred while trying to create an ENet server host.\n");
@@ -101,6 +114,7 @@ namespace Ship {
                     switch (event.type) {
                     case ENET_EVENT_TYPE_RECEIVE:
                         enet_packet_destroy(event.packet);
+                        ReceiveRupees(event.packet);
                         break;
                     case ENET_EVENT_TYPE_DISCONNECT:
                         puts("Disconnection succeeded.");
@@ -122,12 +136,15 @@ namespace Ship {
         void Client::SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet) {
             ENetPacket* packetToSend = enet_packet_create(packet, sizeof(packet), ENET_PACKET_FLAG_RELIABLE);
 
-            /* Send the packet to the peer over channel id 0. */
-            /* One could also broadcast the packet by         */
-            /* enet_host_broadcast (host, 0, packet);         */
-            if (peer != nullptr) {
-                enet_peer_send(peer, 0, packetToSend);
+            for (int i = 0; i < client->connectedPeers; i++) {
+                enet_peer_send(&client->peers[i], 0, packetToSend);
             }
+        }
+
+        void Client::ReceiveRupees(ENetPacket* packet) {
+            Ship::Online::OnlinePacket_Rupees* rupees = (Ship::Online::OnlinePacket_Rupees*)packet->data;
+            rupeesReceived = 1;
+            Rupees_ChangeBy(rupees->rupeeAmountChanged);
         }
 
         void Client::ConnectToServer() {
@@ -153,7 +170,7 @@ namespace Ship {
             enet_address_set_host(&address, ipAddress.c_str());
             address.port = port;
             /* Initiate the connection, allocating the two channels 0 and 1. */
-            peer = enet_host_connect(client, &address, 1, 0);
+            peer = enet_host_connect(client, &address, 2, 0);
             if (peer == NULL) {
                 SohImGui::overlay->TextDrawNotification(5.0f, true, "No available peers for initiating an ENet connection.\n");
                 exit(EXIT_FAILURE);
@@ -176,11 +193,6 @@ namespace Ship {
         Client::Client() {
             ipAddress = "127.0.0.1";
             port = 25565;
-        }
-
-        void OnlinePacket_Rupees::OnExecute()
-        {
-            Rupees_ChangeBy(rupeeAmountChanged);
         }
     }
 }

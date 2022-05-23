@@ -116,8 +116,6 @@ extern "C" uint64_t GetPerfCounter() {
 extern "C" void OTRSendPacketRupees(u16 rupeeChange) {
     Ship::Online::OnlinePacket_Rupees* packet = new Ship::Online::OnlinePacket_Rupees();
     packet->rupeeAmountChanged = rupeeChange;
-    packet->client_id = 1;
-
     OTRGlobals::Instance->context->GetWindow()->GetClient()->SendPacketMessage(packet);
 }
 
