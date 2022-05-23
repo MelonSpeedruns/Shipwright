@@ -1,6 +1,8 @@
 #pragma once
 
-#include "SDL_net.h"
+#define ENET_IMPLEMENTATION
+
+#include "enet.h"
 #include <thread>
 #include <mutex>
 
@@ -9,6 +11,10 @@ namespace Ship {
 		enum PACKET_ID {
 			CHANGE_RUPEES = 0,
 			LINK_UPDATE = 1,
+		};
+
+		struct PlayerInfo {
+			uint8_t player_id;
 		};
 
 		struct OnlinePacket {
@@ -25,58 +31,40 @@ namespace Ship {
 
 		class Server {
 		private:
-			bool done;
-			bool stopThreads;
+			ENetEvent event;
+			ENetHost* server;
 
-			UDPsocket udpsock;
-			UDPpacket* recv_packet;
-			SDLNet_SocketSet socketset;
-			int numused;
-			const int MAX_PACKET_SIZE = 512;
+			uint8_t player_count;
 
 			std::thread onlineThread;
-
-			const char* text = "HELLO CLIENT!\n";
-
-			IPaddress ip;
-
-			TCPsocket server;
-			TCPsocket client;
 
 		public:
 			int port;
 
 			Server();
 
-			void ReceivePacketMessage();
+			void GetPlayerInfo(ENetPeer* peer);
 			void CreateServer();
 			void RunServer();
 		};
 
 		class Client {
 		private:
-			bool done;
-			bool stopThreads;
+			ENetHost* client = { 0 };
+			ENetEvent event = { ENetEventType::ENET_EVENT_TYPE_NONE };
+			ENetPeer* peer = { 0 };
 
-			UDPsocket udpsock;
-			UDPpacket* recv_packet;
-			SDLNet_SocketSet socketset;
-			int numused;
-			const int MAX_PACKET_SIZE = 512;
+			uint8_t disconnected = false;
 
 			std::thread onlineThread;
 
-			TCPsocket server;
-			TCPsocket client;
-
 		public:
-			IPaddress ip;
 			std::string ipAddress;
 			int port;
 
 			Client();
 
-			void SendPacketMessage(OnlinePacket* packet);
+			void SendPacketMessage(Ship::Online::OnlinePacket_Rupees* packet);
 			void ConnectToServer();
 			void RunClient();
 		};

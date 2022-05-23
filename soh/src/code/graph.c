@@ -418,6 +418,7 @@ void Graph_Update(GraphicsContext* gfxCtx, GameState* gameState) {
 }
 
 uint64_t GetFrequency();
+void OTRSendPacketRupees(u16 rupeeChange);
 uint64_t GetPerfCounter();
 
 static struct RunFrameContext {

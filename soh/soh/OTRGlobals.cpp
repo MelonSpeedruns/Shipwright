@@ -121,7 +121,7 @@ extern "C" void OTRSendPacketRupees(u16 rupeeChange) {
     OTRGlobals::Instance->context->GetWindow()->GetClient()->SendPacketMessage(packet);
 }
 
-extern "C" void OTRSendPacket(Ship::Online::OnlinePacket* packet) {
+extern "C" void OTRSendPacket(Ship::Online::OnlinePacket_Rupees* packet) {
     OTRGlobals::Instance->context->GetWindow()->GetClient()->SendPacketMessage(packet);
 }
 

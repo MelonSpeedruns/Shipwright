@@ -914,6 +914,9 @@
     <ClInclude Include="Online.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lib\Enet\include\enet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Lib\SDL\SDL2\SDL_config.h.cmake" />
