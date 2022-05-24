@@ -5,7 +5,7 @@
 
 #define MAX_CLIENTS 32
 
-extern "C" void SetLinkPuppetData(f32 x, f32 y, f32 z, u8 player_id);
+extern "C" void SetLinkPuppetData(Ship::Online::OnlinePacket * packet, u8 player_id);
 extern "C" void Rupees_ChangeBy(s16 rupeeChange);
 extern "C" u8 rupeesReceived;
 
@@ -18,7 +18,7 @@ namespace Ship {
         void SendPacketMessage(OnlinePacket* packet, ENetHost* host) {
             if (host != nullptr) {
                 for (int i = 0; i < host->connectedPeers; i++) {
-                    ENetPacket* packetToSend = enet_packet_create(packet, 16, ENET_PACKET_FLAG_RELIABLE);
+                    ENetPacket* packetToSend = enet_packet_create(packet, sizeof(OnlinePacket), ENET_PACKET_FLAG_RELIABLE);
                     enet_peer_send(&host->peers[i], 0, packetToSend);
                 }
             }
@@ -33,9 +33,7 @@ namespace Ship {
                     Rupees_ChangeBy(data->rupeeAmountChanged);
                 }
 
-                if (!(data->posX == 0 && data->posY == 0 && data->posZ == 0)) {
-                    SetLinkPuppetData(data->posX, data->posY, data->posZ, data->player_id);
-                }
+                SetLinkPuppetData(data, 0);
             }
         }
 

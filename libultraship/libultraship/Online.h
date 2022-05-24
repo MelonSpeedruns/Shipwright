@@ -8,18 +8,33 @@
 
 namespace Ship {
 	namespace Online {
-		enum PACKET_ID {
-			CHANGE_RUPEES = 0,
-			LINK_UPDATE = 1,
-		};
+		typedef struct {
+			float x, y, z;
+		} Vec3float; // size = 0x0C
 
-		struct OnlinePacket {
+		typedef struct {
+			int16_t x, y, z;
+		} Vec3short; // size = 0x0C
+
+		typedef struct {
+			Vec3float pos;
+			Vec3short rot;
+		} PosRotOnline;
+
+		typedef struct OnlinePacket {
 			uint8_t player_id;
 			uint16_t rupeeAmountChanged;
-			float posX;
-			float posY;
-			float posZ;
-		};
+			PosRotOnline posRot;
+
+			//SkelAnime Data
+			float currentFrame;
+			char animName[128];
+			uint8_t animMode;
+
+			float currentFrame2;
+			char animName2[128];
+			uint8_t animMode2;
+		} OnlinePacket;
 
 		void ReceiveData(ENetPacket* packet, ENetPeer* peer, ENetHost* host);
 		void SendPacketMessage(OnlinePacket* packet, ENetHost* host);

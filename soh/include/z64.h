@@ -94,6 +94,23 @@ typedef struct {
     /* 0x12408 */ u16 tailMagic; // GFXPOOL_TAIL_MAGIC
 } GfxPool; // size = 0x24820
 
+typedef struct OnlinePacket {
+    uint8_t player_id;
+    uint16_t rupeeAmountChanged;
+    PosRot posRot;
+
+    // SkelAnime Data
+    float currentFrame;
+    char animName[128];
+    uint8_t animMode;
+
+    float currentFrame2;
+    char animName2[128];
+    uint8_t animMode2;
+} OnlinePacket;
+
+OnlinePacket gPacket;
+
 typedef struct {
     /* 0x0000 */ u32    size;
     /* 0x0004 */ void*    bufp;

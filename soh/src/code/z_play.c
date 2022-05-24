@@ -194,20 +194,25 @@ void Gameplay_Destroy(GameState* thisx) {
 
 LinkPuppet* puppets[4];
 
-void SetLinkPuppetData(f32 x, f32 y, f32 z, u8 player_id) {
+void SetLinkPuppetData(OnlinePacket* packet, u8 player_id) {
     if (puppets[player_id] != NULL) {
-        puppets[player_id]->posx = x;
-        puppets[player_id]->posy = y;
-        puppets[player_id]->posz = z;
+        puppets[player_id]->packet.posRot = packet->posRot;
+        puppets[player_id]->packet.animMode = packet->animMode;
+        memcpy(puppets[player_id]->packet.animName, packet->animName, 128);
+        puppets[player_id]->packet.currentFrame = packet->currentFrame;
+
+        puppets[player_id]->packet.animMode2 = packet->animMode2;
+        memcpy(puppets[player_id]->packet.animName2, packet->animName2, 128);
+        puppets[player_id]->packet.currentFrame2 = packet->currentFrame2;
     }
 }
 
 void SpawnLinkPuppet(u8 player_id) {
     puppets[player_id] =
         Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_LINK_PUPPET, -32767.0f, -32767.0f, -32767.0f, 0, 0, 0, 0);
-    puppets[player_id]->posx = -32767.0f;
-    puppets[player_id]->posy = -32767.0f;
-    puppets[player_id]->posz = -32767.0f;
+    puppets[player_id]->packet.posRot.pos.x = -32767.0f;
+    puppets[player_id]->packet.posRot.pos.y = -32767.0f;
+    puppets[player_id]->packet.posRot.pos.z = -32767.0f;
 }
 
 void Gameplay_Init(GameState* thisx) {
@@ -1399,7 +1404,17 @@ void Gameplay_Main(GameState* thisx) {
         Gameplay_Update(globalCtx);
     }
 
-    OTRSendPacket(0, GET_PLAYER(gGlobalCtx)->actor.world.pos);
+    gPacket.posRot = GET_PLAYER(gGlobalCtx)->actor.world;
+
+    gPacket.currentFrame = GET_PLAYER(gGlobalCtx)->skelAnime.curFrame;
+    gPacket.animMode = GET_PLAYER(gGlobalCtx)->skelAnime.mode;
+    memcpy(&gPacket.animName, GET_PLAYER(gGlobalCtx)->skelAnime.animation, 128);
+
+    gPacket.currentFrame2 = GET_PLAYER(gGlobalCtx)->skelAnime2.curFrame;
+    gPacket.animMode2 = GET_PLAYER(gGlobalCtx)->skelAnime2.mode;
+    memcpy(&gPacket.animName2, GET_PLAYER(gGlobalCtx)->skelAnime2.animation, 128);
+
+    OTRSendPacket();
 
     if (1 && HREG(63)) {
         LOG_NUM("1", 1, "../z_play.c", 4583);

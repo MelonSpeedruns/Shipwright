@@ -328,8 +328,6 @@ namespace SohImGui {
         DefaultAssets[name] = asset;
     }
 
-    extern "C" void OTRSendPacketRupees(u16 rupeeChange);
-
     void Init(WindowImpl window_impl) {
         Game::LoadSettings();
         impl = window_impl;

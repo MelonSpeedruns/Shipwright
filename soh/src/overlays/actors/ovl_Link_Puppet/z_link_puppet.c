@@ -1,6 +1,7 @@
 #include "vt.h"
 #include "z_link_puppet.h"
 #include <objects/gameplay_keep/gameplay_keep.h>
+#include <string.h>
 
 #define FLAGS ACTOR_FLAG_4
 
@@ -69,9 +70,18 @@ void LinkPuppet_Update(Actor* thisx, GlobalContext* globalCtx) {
     Collider_UpdateCylinder(thisx, &this->collider);
     CollisionCheck_SetOC(globalCtx, &globalCtx->colChkCtx, &this->collider.base);
 
-    this->actor.world.pos.x = this->posx;
-    this->actor.world.pos.y = this->posy;
-    this->actor.world.pos.z = this->posz;
+    this->actor.world = this->packet.posRot;
+    this->actor.shape.rot = this->packet.posRot.rot;
+
+    this->actor.world.pos.x += 25.0f;
+    this->actor.world.pos.z += 25.0f;
+
+    if (strlen(this->packet.animName) != 0) {
+        if (strncmp(this->packet.animName, this->linkSkeleton.animation, 128) == 0) {
+            LinkAnimation_Change(globalCtx, &this->linkSkeleton, this->packet.animName, 1.0f, this->packet.currentFrame,
+                                 Animation_GetLastFrame(this->packet.animName), this->packet.animMode, 0.0f);
+        }
+    }
 }
 
 Vec3f FEET_POS[] = {
