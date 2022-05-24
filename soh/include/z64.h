@@ -107,6 +107,11 @@ typedef struct OnlinePacket {
     float currentFrame2;
     char animName2[128];
     uint8_t animMode2;
+
+    uint8_t sheathType;
+    uint8_t shieldType;
+    uint8_t leftHandType;
+    uint8_t rightHandType;
 } OnlinePacket;
 
 OnlinePacket gPacket;

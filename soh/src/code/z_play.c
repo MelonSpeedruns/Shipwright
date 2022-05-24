@@ -196,14 +196,7 @@ LinkPuppet* puppets[4];
 
 void SetLinkPuppetData(OnlinePacket* packet, u8 player_id) {
     if (puppets[player_id] != NULL) {
-        puppets[player_id]->packet.posRot = packet->posRot;
-        puppets[player_id]->packet.animMode = packet->animMode;
-        memcpy(puppets[player_id]->packet.animName, packet->animName, 128);
-        puppets[player_id]->packet.currentFrame = packet->currentFrame;
-
-        puppets[player_id]->packet.animMode2 = packet->animMode2;
-        memcpy(puppets[player_id]->packet.animName2, packet->animName2, 128);
-        puppets[player_id]->packet.currentFrame2 = packet->currentFrame2;
+        memcpy(&puppets[player_id]->packet, packet, sizeof(OnlinePacket));
     }
 }
 
@@ -1413,6 +1406,11 @@ void Gameplay_Main(GameState* thisx) {
     gPacket.currentFrame2 = GET_PLAYER(gGlobalCtx)->skelAnime2.curFrame;
     gPacket.animMode2 = GET_PLAYER(gGlobalCtx)->skelAnime2.mode;
     memcpy(&gPacket.animName2, GET_PLAYER(gGlobalCtx)->skelAnime2.animation, 128);
+
+    gPacket.shieldType = GET_PLAYER(gGlobalCtx)->currentShield;
+    gPacket.sheathType = GET_PLAYER(gGlobalCtx)->sheathType;
+    gPacket.leftHandType = GET_PLAYER(gGlobalCtx)->leftHandType;
+    gPacket.rightHandType = GET_PLAYER(gGlobalCtx)->rightHandType;
 
     OTRSendPacket();
 

@@ -5,7 +5,8 @@ struct LinkPuppet;
 
 typedef struct LinkPuppet {
     Actor actor;
-    SkelAnime linkSkeleton;
+    SkelAnime linkSkeleton1;
+    SkelAnime linkSkeleton2;
     Vec3s jointTable[24];
     Vec3s morphTable[24];
     Vec3s blendTable[24];
