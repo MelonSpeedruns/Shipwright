@@ -1,10 +1,10 @@
 #pragma once
 
-#define ENET_IMPLEMENTATION
-
-#include "enet.h"
 #include <thread>
 #include <mutex>
+
+#define ENET_IMPLEMENTATION
+#include <enet.h>
 
 namespace Ship {
 	namespace Online {
@@ -25,15 +25,10 @@ namespace Ship {
 			uint8_t player_id;
 			uint16_t rupeeAmountChanged;
 			PosRotOnline posRot;
+			uint8_t biggoron_broken;
 
 			//SkelAnime Data
-			float currentFrame;
-			char animName[128];
-			uint8_t animMode;
-
-			float currentFrame2;
-			char animName2[128];
-			uint8_t animMode2;
+			Vec3short* jointTable;
 
 			uint8_t sheathType;
 			uint8_t shieldType;
@@ -91,3 +86,5 @@ namespace Ship {
 		};
 	}
 }
+
+#define ENET_IMPLEMENTATION_DONE

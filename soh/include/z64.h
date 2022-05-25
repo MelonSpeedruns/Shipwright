@@ -98,15 +98,10 @@ typedef struct OnlinePacket {
     uint8_t player_id;
     uint16_t rupeeAmountChanged;
     PosRot posRot;
+    uint8_t biggoron_broken;
 
     // SkelAnime Data
-    float currentFrame;
-    char animName[128];
-    uint8_t animMode;
-
-    float currentFrame2;
-    char animName2[128];
-    uint8_t animMode2;
+    Vec3s* jointTable;
 
     uint8_t sheathType;
     uint8_t shieldType;

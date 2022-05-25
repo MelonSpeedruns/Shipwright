@@ -1397,15 +1397,10 @@ void Gameplay_Main(GameState* thisx) {
         Gameplay_Update(globalCtx);
     }
 
-    gPacket.posRot = GET_PLAYER(gGlobalCtx)->actor.world;
-
-    gPacket.currentFrame = GET_PLAYER(gGlobalCtx)->skelAnime.curFrame;
-    gPacket.animMode = GET_PLAYER(gGlobalCtx)->skelAnime.mode;
-    memcpy(&gPacket.animName, GET_PLAYER(gGlobalCtx)->skelAnime.animation, 128);
-
-    gPacket.currentFrame2 = GET_PLAYER(gGlobalCtx)->skelAnime2.curFrame;
-    gPacket.animMode2 = GET_PLAYER(gGlobalCtx)->skelAnime2.mode;
-    memcpy(&gPacket.animName2, GET_PLAYER(gGlobalCtx)->skelAnime2.animation, 128);
+    gPacket.posRot.pos = GET_PLAYER(gGlobalCtx)->actor.world.pos;
+    gPacket.posRot.rot = GET_PLAYER(gGlobalCtx)->actor.shape.rot;
+    gPacket.jointTable = GET_PLAYER(gGlobalCtx)->skelAnime.jointTable;
+    gPacket.biggoron_broken = (gSaveContext.swordHealth <= 0.0f);
 
     gPacket.shieldType = GET_PLAYER(gGlobalCtx)->currentShield;
     gPacket.sheathType = GET_PLAYER(gGlobalCtx)->sheathType;
