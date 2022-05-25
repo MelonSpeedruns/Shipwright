@@ -28,8 +28,8 @@ namespace Ship {
 			uint8_t biggoron_broken;
 
 			//SkelAnime Data
-			Vec3short* jointTable;
-
+			Vec3short jointTable[0x16];
+			
 			uint8_t sheathType;
 			uint8_t shieldType;
 			uint8_t leftHandType;

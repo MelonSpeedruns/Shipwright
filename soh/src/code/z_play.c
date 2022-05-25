@@ -1399,7 +1399,7 @@ void Gameplay_Main(GameState* thisx) {
 
     gPacket.posRot.pos = GET_PLAYER(gGlobalCtx)->actor.world.pos;
     gPacket.posRot.rot = GET_PLAYER(gGlobalCtx)->actor.shape.rot;
-    gPacket.jointTable = GET_PLAYER(gGlobalCtx)->skelAnime.jointTable;
+    memcpy(gPacket.jointTable, GET_PLAYER(gGlobalCtx)->skelAnime.jointTable, 6 * PLAYER_LIMB_MAX);
     gPacket.biggoron_broken = (gSaveContext.swordHealth <= 0.0f);
 
     gPacket.shieldType = GET_PLAYER(gGlobalCtx)->currentShield;

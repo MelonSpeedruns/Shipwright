@@ -101,7 +101,7 @@ typedef struct OnlinePacket {
     uint8_t biggoron_broken;
 
     // SkelAnime Data
-    Vec3s* jointTable;
+    Vec3s jointTable[0x16];
 
     uint8_t sheathType;
     uint8_t shieldType;

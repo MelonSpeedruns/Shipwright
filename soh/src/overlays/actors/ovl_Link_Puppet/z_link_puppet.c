@@ -50,6 +50,8 @@ extern func_80833338(Player* this);
 void LinkPuppet_Init(Actor* thisx, GlobalContext* globalCtx) {
     LinkPuppet* this = (LinkPuppet*)thisx;
 
+    this->actor.room = -1;
+
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, 90.0f);
 
     SkelAnime_InitLink(globalCtx, &this->linkSkeleton, gPlayerSkelHeaders[((void)0, gSaveContext.linkAge)],
@@ -77,10 +79,6 @@ void LinkPuppet_Update(Actor* thisx, GlobalContext* globalCtx) {
     this->actor.world.pos = this->packet.posRot.pos;
 
     this->actor.shape.rot = this->packet.posRot.rot;
-
-    if (!LINK_IS_ADULT) {
-        this->actor.world.pos.y -= 12.5f;
-    }
 
     if (this->packet.jointTable != NULL) {
         this->linkSkeleton.jointTable = this->packet.jointTable;
