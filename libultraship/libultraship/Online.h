@@ -34,6 +34,8 @@ namespace Ship {
 			uint8_t shieldType;
 			uint8_t leftHandType;
 			uint8_t rightHandType;
+
+			uint8_t didDamage;
 		} OnlinePacket;
 
 		void ReceiveData(ENetPacket* packet, ENetPeer* peer, ENetHost* host);
