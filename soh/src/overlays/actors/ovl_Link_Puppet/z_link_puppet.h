@@ -8,4 +8,7 @@ typedef struct LinkPuppet {
     SkelAnime linkSkeleton;
     ColliderCylinder collider;
     OnlinePacket packet;
+    ColliderQuad swordQuads[2];
+    ColliderQuad shieldQuad;
+    uint8_t damageTimer;
 } LinkPuppet;

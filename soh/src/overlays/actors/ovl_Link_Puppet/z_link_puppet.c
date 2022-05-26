@@ -3,7 +3,7 @@
 #include <objects/gameplay_keep/gameplay_keep.h>
 #include <string.h>
 
-#define FLAGS ACTOR_FLAG_4
+#define FLAGS (ACTOR_FLAG_0 | ACTOR_FLAG_3 | ACTOR_FLAG_4)
 
 void LinkPuppet_Init(Actor* thisx, GlobalContext* globalCtx);
 void LinkPuppet_Destroy(Actor* thisx, GlobalContext* globalCtx);
@@ -87,6 +87,7 @@ void LinkPuppet_Init(Actor* thisx, GlobalContext* globalCtx) {
     LinkPuppet* this = (LinkPuppet*)thisx;
 
     this->actor.room = -1;
+    this->actor.targetMode = 1;
 
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, 90.0f);
 
@@ -109,18 +110,26 @@ void LinkPuppet_Destroy(Actor* thisx, GlobalContext* globalCtx) {
 void LinkPuppet_Update(Actor* thisx, GlobalContext* globalCtx) {
     LinkPuppet* this = (LinkPuppet*)thisx;
 
+    Actor_SetFocus(this, 60.0f);
+
     Actor_UpdateBgCheckInfo(globalCtx, &this->actor, 15.0f, 30.0f, 60.0f, 0x1D);
 
-    if (this->packet.didDamage == 1) {
-        this->packet.didDamage = 0;
-        Player_InflictDamage(globalCtx, -16);
-        func_80837C0C(globalCtx, GET_PLAYER(globalCtx), 1, 1, 1, 1, 1);
+    if (this->damageTimer > 0) {
+        this->damageTimer--;
     }
 
-    if (this->collider.base.acFlags & AC_HIT) {
+    if (this->packet.didDamage == 1 && GET_PLAYER(globalCtx)->invincibilityTimer <= 0) {
+        this->packet.didDamage = 0;
+        Player_InflictDamage(globalCtx, -16);
+        func_80837C0C(globalCtx, GET_PLAYER(globalCtx), 0, 0, 0, 0, 0);
+        GET_PLAYER(globalCtx)->invincibilityTimer = 28;
+    }
+
+    if (this->collider.base.acFlags & AC_HIT && this->damageTimer <= 0) {
         this->collider.base.acFlags &= ~AC_HIT;
         gPacket.didDamage = 1;
         Audio_PlayActorSound2(&this->actor, NA_SE_EN_NUTS_CUTBODY);
+        this->damageTimer = 28;
     }
 
     Collider_UpdateCylinder(thisx, &this->collider);
@@ -128,7 +137,6 @@ void LinkPuppet_Update(Actor* thisx, GlobalContext* globalCtx) {
     CollisionCheck_SetAC(globalCtx, &globalCtx->colChkCtx, &this->collider.base);
 
     this->actor.world.pos = this->packet.posRot.pos;
-
     this->actor.shape.rot = this->packet.posRot.rot;
 
     if (this->packet.jointTable != NULL) {
