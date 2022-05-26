@@ -412,6 +412,12 @@ void Gameplay_Init(GameState* thisx) {
         DmaMgr_DmaRomToRam(0x03FEB000, D_8012D1F0, sizeof(D_801614D0));
     }
     #endif
+
+    Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_CROWD_CONTROL, 0, 0, 0, 0, 0, 0, 0);
+}
+
+void SetCrowdControlData(CCPacketZ64 packet) {
+    gGlobalCrowdControlPacket = packet;
 }
 
 void Gameplay_Update(GlobalContext* globalCtx) {

@@ -254,6 +254,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Blob.cpp" />
+    <ClCompile Include="CrowdControl.cpp" />
     <ClCompile Include="Cvar.cpp" />
     <ClCompile Include="Environment.cpp" />
     <ClCompile Include="GameOverlay.cpp" />
@@ -342,6 +343,7 @@
     <ClInclude Include="abi.h" />
     <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="Blob.h" />
+    <ClInclude Include="CrowdControl.h" />
     <ClInclude Include="Cvar.h" />
     <ClInclude Include="Environment.h" />
     <ClInclude Include="GameOverlay.h" />
@@ -349,6 +351,9 @@
     <ClInclude Include="GameVersions.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="Lib\SDL\SDL2\chat.h" />
+    <ClInclude Include="Lib\SDL\SDL2\SDLnetsys.h" />
+    <ClInclude Include="Lib\SDL\SDL2\SDL_net.h" />
     <ClInclude Include="Lib\stb\stb_image_write.h" />
     <ClInclude Include="luslog.h" />
     <ClInclude Include="mixer.h" />

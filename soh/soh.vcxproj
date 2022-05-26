@@ -107,10 +107,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libultraship.lib;ZAPDUtils.lib;opengl32.lib;glu32.lib;SDL2.lib;SDL2main.lib;glfw3dll.lib;glew32s.lib;winmm.lib;imm32.lib;version.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libultraship.lib;ZAPDUtils.lib;opengl32.lib;glu32.lib;SDL2.lib;SDL2main.lib;glfw3dll.lib;glew32s.lib;winmm.lib;imm32.lib;version.lib;setupapi.lib;SDL2_net.lib;Ws2_32.lib;MSVCRT.lib;Iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>8777216</StackReserveSize>
       <GenerateMapFile>true</GenerateMapFile>
       <MapExports>true</MapExports>
+      <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -131,7 +132,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libultraship.lib;ZAPDUtils.lib;opengl32.lib;glu32.lib;SDL2.lib;SDL2main.lib;glfw3dll.lib;glew32s.lib;winmm.lib;imm32.lib;version.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libultraship.lib;ZAPDUtils.lib;opengl32.lib;glu32.lib;SDL2.lib;SDL2main.lib;glfw3dll.lib;glew32s.lib;winmm.lib;imm32.lib;version.lib;setupapi.lib;SDL2_net.lib;Ws2_32.lib;MSVCRT.lib;Iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -515,6 +516,7 @@
     <ClCompile Include="src\overlays\actors\ovl_Boss_Sst\z_boss_sst_colchk.c" />
     <ClCompile Include="src\overlays\actors\ovl_Boss_Tw\z_boss_tw.c" />
     <ClCompile Include="src\overlays\actors\ovl_Boss_Va\z_boss_va.c" />
+    <ClCompile Include="src\overlays\actors\ovl_Crowd_Control\z_crowd_control.c" />
     <ClCompile Include="src\overlays\actors\ovl_Demo_6K\z_demo_6k.c" />
     <ClCompile Include="src\overlays\actors\ovl_Demo_Du\z_demo_du.c" />
     <ClCompile Include="src\overlays\actors\ovl_Demo_Du\z_demo_du_cutscene_data.c" />
@@ -1074,6 +1076,7 @@
     <ClInclude Include="src\overlays\actors\ovl_Boss_Sst\z_boss_sst.h" />
     <ClInclude Include="src\overlays\actors\ovl_Boss_Tw\z_boss_tw.h" />
     <ClInclude Include="src\overlays\actors\ovl_Boss_Va\z_boss_va.h" />
+    <ClInclude Include="src\overlays\actors\ovl_Crowd_Control\z_crowd_control.h" />
     <ClInclude Include="src\overlays\actors\ovl_Demo_6K\z_demo_6k.h" />
     <ClInclude Include="src\overlays\actors\ovl_Demo_Du\z_demo_du.h" />
     <ClInclude Include="src\overlays\actors\ovl_Demo_Ec\z_demo_ec.h" />

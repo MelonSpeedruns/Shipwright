@@ -66,6 +66,13 @@ extern "C"
 {
 #endif
 
+typedef struct CCPacketZ64 {
+    uint8_t effectType;
+    uint32_t effectData;
+} CCPacketZ64;
+
+CCPacketZ64 gGlobalCrowdControlPacket;
+
 typedef struct{
     /* 0x00 */ char unk[0x4];
     /* 0x04 */ MtxF mf;

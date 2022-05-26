@@ -25,6 +25,7 @@
 #include "Lib/Fast3D/gfx_rendering_api.h"
 #include "Lib/spdlog/include/spdlog/common.h"
 #include "Utils/StringHelper.h"
+#include "CrowdControl.h"
 
 #ifdef ENABLE_OPENGL
 #include "Lib/ImGui/backends/imgui_impl_opengl3.h"
@@ -52,6 +53,8 @@ bool oldCursorState = true;
 #define TOGGLE_BTN ImGuiKey_F1
 #define HOOK(b) if(b) needs_save = true;
 OSContPad* pads;
+
+Ship::CrowdControl::CrowdControl* crowdControlInstance;
 
 std::map<std::string, GameAsset*> DefaultAssets;
 
@@ -372,6 +375,16 @@ namespace SohImGui {
             Game::SaveSettings();
             needs_save = false;
         }
+
+        if (CVar_GetS32("gCrowdControl", 0) == 1 && crowdControlInstance == nullptr) {
+            CVar_SetS32("gCuccoCrowd", 1);
+            crowdControlInstance = new Ship::CrowdControl::CrowdControl();
+            crowdControlInstance->InitCrowdControl();
+        }
+        else if (CVar_GetS32("gCrowdControl", 0) == 0 && crowdControlInstance != nullptr) {
+            crowdControlInstance = nullptr;
+        }
+
         ImGuiProcessEvent(event);
     }
 
@@ -769,6 +782,11 @@ namespace SohImGui {
                 EnhancementCheckbox("Freeze Time", "gFreezeTime");
                 Tooltip("Freezes the time of day");
 
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Crowd Control")) {
+                EnhancementCheckbox("Enable Crowd Control", "gCrowdControl");
                 ImGui::EndMenu();
             }
 

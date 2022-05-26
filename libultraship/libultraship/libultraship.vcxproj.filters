@@ -91,6 +91,9 @@
     <Filter Include="Source Files\CustomImpl\Overlay">
       <UniqueIdentifier>{3285ab8a-06d8-4dac-9af9-efb2a9723ab1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\CrowdControl">
+      <UniqueIdentifier>{767a6cea-09f0-4745-abb5-e685563d592c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\MaterialFactory.cpp">
@@ -344,6 +347,9 @@
     </ClCompile>
     <ClCompile Include="GameOverlay.cpp">
       <Filter>Source Files\CustomImpl\Overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="CrowdControl.cpp">
+      <Filter>Source Files\CrowdControl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -637,6 +643,18 @@
     </ClInclude>
     <ClInclude Include="GameOverlay.h">
       <Filter>Source Files\CustomImpl\Overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\SDL\SDL2\chat.h">
+      <Filter>Source Files\Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\SDL\SDL2\SDL_net.h">
+      <Filter>Source Files\Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\SDL\SDL2\SDLnetsys.h">
+      <Filter>Source Files\Lib</Filter>
+    </ClInclude>
+    <ClInclude Include="CrowdControl.h">
+      <Filter>Source Files\CrowdControl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
