@@ -17,32 +17,6 @@ namespace Ship {
             ccThreadReceive = std::thread(&CrowdControl::ReceiveFromCrowdControl, this);
         }
 
-        long long CrowdControl::GetElapsedTime()
-        {
-            return GetElapsedTime(start_time);
-        }
-
-        long long CrowdControl::GetElapsedTime(std::chrono::steady_clock::time_point time)
-        {
-            return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - time).count();
-        }
-
-        std::vector<std::string> CrowdControl::BufferSocketResponse(const char* buf, size_t buf_size)
-        {
-            socketBuffer.append(buf, buf_size);
-            std::vector<std::string> buffer_array;
-
-            size_t index = socketBuffer.find('\0');
-            while (index != std::string::npos)
-            {
-                buffer_array.push_back(socketBuffer.substr(0, index));
-                socketBuffer = socketBuffer.substr(index + 1);
-                index = socketBuffer.find('\0');
-            }
-
-            return buffer_array;
-        }
-
         void CrowdControl::RunCrowdControl() {
             while (connected) {
                 if (commandsInQueue.size() > 0) {
@@ -61,7 +35,7 @@ namespace Ship {
 
                     std::string data3 = data2.dump();
 
-                    SDLNet_TCP_Send(tcpsock, &data3, 512);
+                    SDLNet_TCP_Send(tcpsock, &data3, sizeof(data3) + 1);
 
                     sendId++;
                 }
