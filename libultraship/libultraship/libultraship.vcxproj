@@ -351,6 +351,7 @@
     <ClInclude Include="GameVersions.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="Lib\json.hpp" />
     <ClInclude Include="Lib\SDL\SDL2\chat.h" />
     <ClInclude Include="Lib\SDL\SDL2\SDLnetsys.h" />
     <ClInclude Include="Lib\SDL\SDL2\SDL_net.h" />

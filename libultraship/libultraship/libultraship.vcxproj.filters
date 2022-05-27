@@ -656,5 +656,8 @@
     <ClInclude Include="CrowdControl.h">
       <Filter>Source Files\CrowdControl</Filter>
     </ClInclude>
+    <ClInclude Include="Lib\json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
