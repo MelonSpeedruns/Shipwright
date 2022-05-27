@@ -6,6 +6,8 @@
 #include "soh/Enhancements/gameconsole.h"
 
 #include "soh/frame_interpolation.h"
+#include <overlays/actors/ovl_Crowd_Control/z_crowd_control.h>
+#include <overlays/actors/ovl_En_Niw/z_en_niw.h>
 
 void* D_8012D1F0 = NULL;
 //UNK_TYPE D_8012D1F4 = 0; // unused
@@ -197,7 +199,7 @@ void Gameplay_Init(GameState* thisx) {
     GlobalContext* globalCtx = (GlobalContext*)thisx;
     GraphicsContext* gfxCtx = globalCtx->state.gfxCtx;
     gGlobalCtx = globalCtx;
-    //globalCtx->state.gfxCtx = NULL;
+    // globalCtx->state.gfxCtx = NULL;
     u32 zAlloc;
     u32 zAllocAligned;
     size_t zAllocSize;
@@ -405,22 +407,13 @@ void Gameplay_Init(GameState* thisx) {
     func_8002DF18(globalCtx, GET_PLAYER(globalCtx));
     AnimationContext_Update(globalCtx, &globalCtx->animationCtx);
     gSaveContext.respawnFlag = 0;
-    #if 0
+#if 0
     if (dREG(95) != 0) {
         D_8012D1F0 = D_801614D0;
         osSyncPrintf("\nkawauso_data=[%x]", D_8012D1F0);
         DmaMgr_DmaRomToRam(0x03FEB000, D_8012D1F0, sizeof(D_801614D0));
     }
-    #endif
-}
-
-u8 SetCrowdControlData(const char* code) {
-    if (strcmp(code, "kill") == 0) {
-        gSaveContext.health = 0;
-        return 1;
-    }
-
-    return 0;
+#endif
 }
 
 void Gameplay_Update(GlobalContext* globalCtx) {
@@ -1397,6 +1390,71 @@ void Gameplay_Main(GameState* thisx) {
     if (1 && HREG(63)) {
         LOG_NUM("1", 1, "../z_play.c", 4587);
     }
+}
+
+    u8 PlayerGrounded(Player* player) {
+    return (player->actor.world.pos.y - player->actor.floorHeight) == 0;
+}
+
+extern func_80AB70A0(EnNiw* this, GlobalContext* globalCtx);
+
+u8 ExecuteCommand(const char* effectId, uint32_t value) {
+    if (gGlobalCtx == NULL) {
+        return;
+    }
+
+    Player* player = GET_PLAYER(gGlobalCtx);
+
+    if (player != NULL && !Player_InBlockingCsMode(gGlobalCtx, player)) {
+        if (strcmp(effectId, "kill") == 0) {
+            if (PlayerGrounded(player)) {
+                gSaveContext.health = 0;
+                return 1;
+            }
+            return 0;
+        } else if (strcmp(effectId, "cucco") == 0) {
+            EnNiw* cucco =
+                (EnNiw*)Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_EN_NIW, player->actor.world.pos.x,
+                                       player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, 0);
+            cucco->actionFunc = func_80AB70A0;
+            return 1;
+        } else if (strcmp(effectId, "damage") == 0) {
+            Health_ChangeBy(gGlobalCtx, value * 16);
+            func_80837C0C(gGlobalCtx, player, 0, 0, 0, 0, 0);
+            player->invincibilityTimer = 28;
+            return 1;
+        } else if (strcmp(effectId, "heal") == 0) {
+            Health_ChangeBy(gGlobalCtx, value * 16);
+            return 1;
+        } else if (strcmp(effectId, "freeze") == 0) {
+            if (PlayerGrounded(player)) {
+                func_80837C0C(gGlobalCtx, player, 3, 0, 0, 0, 0);
+                return 1;
+            }
+            return 0;
+        } else if (strcmp(effectId, "knockback") == 0) {
+            func_8002F71C(gGlobalCtx, &player->actor, value * 5, player->actor.world.rot.y + 0x8000, value * 5);
+            return 1;
+        } else if (strcmp(effectId, "burn") == 0) {
+            if (PlayerGrounded(player)) {
+                for (int i = 0; i < 18; i++) {
+                    player->flameTimers[i] = Rand_S16Offset(0, 200);
+                }
+                player->isBurning = true;
+                func_80837C0C(gGlobalCtx, player, 0, 0, 0, 0, 0);
+                return 1;
+            }
+            return 0;
+        } else if (strcmp(effectId, "electrocute") == 0) {
+            if (PlayerGrounded(player)) {
+                func_80837C0C(gGlobalCtx, player, 4, 0, 0, 0, 0);
+                return 1;
+            }
+            return 0;
+        }
+    }
+
+    return 0;
 }
 
 // original name: "Game_play_demo_mode_check"

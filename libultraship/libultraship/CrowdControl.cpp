@@ -3,7 +3,7 @@
 #include "Lib/json.hpp"
 #include <spdlog/spdlog.h>
 
-extern "C" u8 SetCrowdControlData(const char* code);
+extern "C" u8 ExecuteCommand(const char* effectId, uint32_t value);
 
 namespace Ship {
     namespace CrowdControl {
@@ -20,18 +20,11 @@ namespace Ship {
         void CrowdControl::RunCrowdControl() {
             while (connected) {
                 if (commandsInQueue.size() > 0) {
-                    nlohmann::json data = nlohmann::json::parse(commandsInQueue[0].recvbuf);
-                    u8 returnSuccess = SetCrowdControlData(data["code"].get<std::string>().c_str());
+                    u8 returnSuccess = ExecuteCommand(commandsInQueue[0].effectType, commandsInQueue[0].effectValue);
 
                     nlohmann::json data2;
-                    data2["id"] = sendId;
-
-                    if (returnSuccess == 0) {
-                        data2["status"] = 1;
-                    }
-                    else {
-                        data2["status"] = 0;
-                    }
+                    data2["id"] = commandsInQueue[0].packetId;
+                    data2["status"] = returnSuccess;
 
                     std::string data3 = data2.dump();
 
@@ -59,14 +52,21 @@ namespace Ship {
             ccThreadRun = std::thread(&CrowdControl::RunCrowdControl, this);
 
             while (connected && CVar_GetS32("gCrowdControl", 0) == 1 && tcpsock) {
-                int len = SDLNet_TCP_Recv(tcpsock, &receivedPacket, 512);
+                int len = SDLNet_TCP_Recv(tcpsock, &received, 512);
 
-                if (!len) {
+                if (!len || !tcpsock) {
                     printf("SDLNet_TCP_Recv: %s\n", SDLNet_GetError());
                     break;
                 }
 
-                commandsInQueue.push_back(receivedPacket);
+                CCPacket* packet = new CCPacket();
+                nlohmann::json data = nlohmann::json::parse(received);
+
+                packet->packetId = data["id"];
+                memcpy(&packet->effectType, data["code"].get<std::string>().c_str(), 64);
+                packet->effectValue = data["type"];
+
+                commandsInQueue.push_back(*packet);
             }
 
             if (connected) {

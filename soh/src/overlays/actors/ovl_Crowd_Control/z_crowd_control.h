@@ -8,6 +8,8 @@ struct CrowdControl;
 
 typedef struct CrowdControl {
     Actor actor;
+    uint16_t effectType;
+    uint32_t effectValue;
 } CrowdControl;
 
 #endif

@@ -10,7 +10,9 @@
 namespace Ship {
     namespace CrowdControl {
         typedef struct CCPacket {
-            char recvbuf[512];
+            uint32_t packetId;
+            char effectType[64];
+            uint32_t effectValue;
         } CCPacket;
 
         class CrowdControl {
@@ -27,7 +29,6 @@ namespace Ship {
             char received[512];
 
             std::vector<CCPacket> commandsInQueue;
-            CCPacket receivedPacket;
 
             void RunCrowdControl();
             void ReceiveFromCrowdControl();
