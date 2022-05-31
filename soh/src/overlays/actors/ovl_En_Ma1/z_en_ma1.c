@@ -289,6 +289,11 @@ void EnMa1_Init(Actor* thisx, GlobalContext* globalCtx) {
         this->actionFunc = func_80AA0D88;
         EnMa1_ChangeAnim(this, ENMA1_ANIM_2);
     } else {
+        // if we're rando'd skip to the "my mother composed this song" text
+        if(gSaveContext.n64ddFlag) {
+            gSaveContext.eventChkInf[1] |= 0x40;
+        }
+
         this->actionFunc = func_80AA0F44;
         EnMa1_ChangeAnim(this, ENMA1_ANIM_2);
     }
@@ -348,12 +353,13 @@ void func_80AA0EFC(EnMa1* this, GlobalContext* globalCtx) {
 }
 
 u8 malonSuccess;
-void GivePlayerRandoRewardMalon(EnMa1* zelda, GlobalContext* globalCtx, RandomizerCheck check) {
+void GivePlayerRandoRewardMalon(EnMa1* malon, GlobalContext* globalCtx, RandomizerCheck check) {
+    
     if (!Player_InBlockingCsMode(globalCtx, GET_PLAYER(globalCtx))) {
         if (malonSuccess == 0) {
-            GetItemID getItemId = GetRandomizedItemIdFromKnownCheck(check, GI_LETTER_ZELDA);
+            GetItemID getItemId = GetRandomizedItemIdFromKnownCheck(check, GI_EPONAS_SONG);
 
-            if (func_8002F434(&zelda->actor, globalCtx, getItemId, 100.0f, 50.0f) == true) {
+            if (func_8002F434(&malon->actor, globalCtx, getItemId, 100.0f, 50.0f) == true) {
                 malonSuccess = 1;
             }
         } else if (malonSuccess == 1) {
@@ -377,7 +383,22 @@ void func_80AA0F44(EnMa1* this, GlobalContext* globalCtx) {
     }
 
     if (gSaveContext.eventChkInf[1] & 0x40) {
+        // check if we pulled out the ocarina
         if (player->stateFlags2 & 0x1000000) {
+            if(gSaveContext.n64ddFlag) {
+                // set the ocarina flag back to zero
+                player->stateFlags2 &= 0xEFFFFFF;
+
+                // this happens in all the functions we're skipping and seems important
+                player->stateFlags2 |= 0x800000;
+
+                // ocarina mode?
+                globalCtx->msgCtx.ocarinaMode = OCARINA_MODE_05;
+
+                this->actionFunc = func_80AA1150;
+                return;
+            }
+
             player->stateFlags2 |= 0x2000000;
             player->unk_6A8 = &this->actor;
             this->actor.textId = 0x2061;
@@ -416,6 +437,7 @@ void func_80AA1150(EnMa1* this, GlobalContext* globalCtx) {
         gSaveContext.nextCutsceneIndex = 0xFFF1;
         globalCtx->fadeTransition = 42;
         globalCtx->sceneLoadFlag = 0x14;
+        // GivePlayerRandoRewardMalon(this, globalCtx, SONG_FROM_MALON);
         this->actionFunc = EnMa1_DoNothing;
     }
 }
