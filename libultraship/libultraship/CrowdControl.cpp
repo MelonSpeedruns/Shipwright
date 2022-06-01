@@ -2,6 +2,7 @@
 #include "Cvar.h"
 #include "Lib/json.hpp"
 #include <spdlog/spdlog.h>
+#include <regex>
 
 extern "C" u8 ExecuteCommand(const char* effectId, uint32_t value);
 
@@ -19,19 +20,16 @@ namespace Ship {
 
         void CrowdControl::RunCrowdControl() {
             while (connected) {
-                if (commandsInQueue.size() > 0) {
-                    u8 returnSuccess = ExecuteCommand(commandsInQueue[0].effectType, commandsInQueue[0].effectValue);
+                u8 returnSuccess = PauseUnpauseCommands(dataReceived["code"].get<std::string>().c_str(), packet.effectValue);
 
-                    nlohmann::json data2;
-                    data2["id"] = commandsInQueue[0].packetId;
-                    data2["status"] = returnSuccess;
+                nlohmann::json dataSend;
+                dataSend["id"] = packet.packetId;
+                dataSend["status"] = returnSuccess == 1 ? EffectResult::Success : EffectResult::Retry;
+                dataSend["timeRemaining"] = 0;
+                dataSend["type"] = 0;
 
-                    std::string data3 = data2.dump();
-
-                    SDLNet_TCP_Send(tcpsock, &data3, sizeof(data3) + 1);
-
-                    sendId++;
-                }
+                std::string jsonResponse = dataSend.dump();
+                SDLNet_TCP_Send(tcpsock, const_cast<char*> (jsonResponse.data()), jsonResponse.size() + 1);
             }
         }
 
@@ -59,14 +57,22 @@ namespace Ship {
                     break;
                 }
 
-                CCPacket* packet = new CCPacket();
-                nlohmann::json data = nlohmann::json::parse(received);
+                CCPacket packet;
+                nlohmann::json dataReceived = nlohmann::json::parse(received);
 
-                packet->packetId = data["id"];
-                memcpy(&packet->effectType, data["code"].get<std::string>().c_str(), 64);
-                packet->effectValue = data["type"];
+                packet.packetId = dataReceived["id"];
+                packet.effectValue = dataReceived["type"];
 
-                commandsInQueue.push_back(*packet);
+                u8 returnSuccess = ExecuteCommand(dataReceived["code"].get<std::string>().c_str(), packet.effectValue);
+
+                nlohmann::json dataSend;
+                dataSend["id"] = packet.packetId;
+                dataSend["status"] = returnSuccess == 1 ? EffectResult::Success : EffectResult::Retry;
+                dataSend["timeRemaining"] = 0;
+                dataSend["type"] = 0;
+
+                std::string jsonResponse = dataSend.dump();
+                SDLNet_TCP_Send(tcpsock, const_cast<char*> (jsonResponse.data()), jsonResponse.size() + 1);
             }
 
             if (connected) {
