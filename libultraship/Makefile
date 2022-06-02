@@ -10,13 +10,15 @@ DEBUG ?= 1
 OPTFLAGS ?= -O0
 LTO ?= 0
 
-WARN := -Wall -Wextra -Werror \
-	-Wno-unused-variable \
-	-Wno-unused-parameter \
-	-Wno-unused-function \
-	-Wno-parentheses \
-	-Wno-narrowing \
-	-Wno-missing-field-initializers
+# WARN := -Wall -Wextra -Werror \
+# 	-Wno-unused-variable \
+# 	-Wno-unused-parameter \
+# 	-Wno-unused-function \
+# 	-Wno-parentheses \
+# 	-Wno-narrowing \
+# 	-Wno-missing-field-initializers
+
+WARN := -w
 
 CXXFLAGS := $(WARN) -std=c++20 -D_GNU_SOURCE -DENABLE_OPENGL -DSPDLOG_ACTIVE_LEVEL=0 -m32
 CFLAGS := $(WARN) -std=c99 -D_GNU_SOURCE -DENABLE_OPENGL -DSPDLOG_ACTIVE_LEVEL=0 -m32
@@ -47,7 +49,10 @@ CXX_FILES := \
 	libultraship/Lib/ImGui/backends/imgui_impl_opengl3.cpp \
 	libultraship/Lib/ImGui/backends/imgui_impl_sdl.cpp \
 	libultraship/Lib/StrHash64.cpp \
-	libultraship/Lib/tinyxml2/tinyxml2.cpp
+	libultraship/Lib/tinyxml2/tinyxml2.cpp \
+	../soh/include/randomizer/rando_main.cpp \
+	../soh/include/randomizer/spoiler_log.cpp
+
 
 C_FILES := \
 	libultraship/mixer.c \
@@ -65,7 +70,12 @@ LIB       := libultraship.a
 
 INC_DIRS := $(addprefix -I, \
 	../ZAPDTR/ZAPDUtils \
+	../soh/include \
+	../soh/include/randomizer \
+	../soh/soh/Enhancements \
 	libultraship/Lib/Fast3D/U64 \
+	libultraship/Lib/Fast3D/U64/PR \
+	libultraship/Lib/Fast3D/U64/PR/ultra64 \
 	libultraship/Lib/spdlog \
 	libultraship/Lib/spdlog/include \
 	libultraship \

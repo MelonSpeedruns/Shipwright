@@ -4,7 +4,9 @@
 #ifndef __cplusplus
 #define NULL ((void*)0)
 #else
+#ifndef NULL
 #define NULL nullptr
+#endif
 #endif
 
 #if 0
