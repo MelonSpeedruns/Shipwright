@@ -5,6 +5,7 @@
 #include <regex>
 
 extern "C" u8 ExecuteCommand(const char* effectId, uint32_t value);
+extern "C" u8 ExecuteTimedCommands();
 
 namespace Ship {
     namespace CrowdControl {
@@ -20,16 +21,7 @@ namespace Ship {
 
         void CrowdControl::RunCrowdControl() {
             while (connected) {
-                u8 returnSuccess = PauseUnpauseCommands(dataReceived["code"].get<std::string>().c_str(), packet.effectValue);
-
-                nlohmann::json dataSend;
-                dataSend["id"] = packet.packetId;
-                dataSend["status"] = returnSuccess == 1 ? EffectResult::Success : EffectResult::Retry;
-                dataSend["timeRemaining"] = 0;
-                dataSend["type"] = 0;
-
-                std::string jsonResponse = dataSend.dump();
-                SDLNet_TCP_Send(tcpsock, const_cast<char*> (jsonResponse.data()), jsonResponse.size() + 1);
+                u8 returnSuccess = ExecuteTimedCommands();
             }
         }
 
@@ -79,6 +71,7 @@ namespace Ship {
                 SDLNet_TCP_Close(tcpsock);
                 SDLNet_Quit();
                 connected = false;
+                ccThreadRun.join();
             }
         }
     }

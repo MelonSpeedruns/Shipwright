@@ -1398,6 +1398,10 @@ void Gameplay_Main(GameState* thisx) {
 
 extern func_80AB70A0(EnNiw* this, GlobalContext* globalCtx);
 
+u8 ExecuteTimedCommands() {
+
+}
+
 u8 ExecuteCommand(const char* effectId, uint32_t value) {
     if (gGlobalCtx == NULL) {
         return;
@@ -1415,7 +1419,7 @@ u8 ExecuteCommand(const char* effectId, uint32_t value) {
         } else if (strcmp(effectId, "cucco") == 0) {
             EnNiw* cucco =
                 (EnNiw*)Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_EN_NIW, player->actor.world.pos.x,
-                                       player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, 0);
+                                    player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, 0);
             cucco->actionFunc = func_80AB70A0;
             return 1;
         } else if (strcmp(effectId, "damage") == 0) {
@@ -1450,6 +1454,10 @@ u8 ExecuteCommand(const char* effectId, uint32_t value) {
                 func_80837C0C(gGlobalCtx, player, 4, 0, 0, 0, 0);
                 return 1;
             }
+            return 0;
+        } else if (strcmp(effectId, "iron_boots") == 0) {
+            func_80837C0C(gGlobalCtx, player, 4, 0, 0, 0, 0);
+            return 1;
             return 0;
         }
     }
