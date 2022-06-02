@@ -7,7 +7,7 @@
 #include "../../include/z64item.h"
 #include "randomizer/keys.hpp"
 #include <randomizer/spoiler_log.hpp>
-#include <randomizerTypes.h>
+#include <soh/Enhancements/randomizerTypes.h>
 
 class Randomizer {
   private:

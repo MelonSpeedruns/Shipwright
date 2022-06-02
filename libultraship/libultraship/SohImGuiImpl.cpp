@@ -40,13 +40,9 @@
 IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #endif
-// #include "../../soh/include/randomizer/main.cpp"
-// #include "../../soh/include/randomizer/main.hpp"
-// #include "../../soh/include/randomizer/rando_main.hpp"
-// #include "../../soh/include/randomizer/spoiler_log.hpp"
-#include "rando_main.hpp"
-#include "spoiler_log.hpp"
-// #include "../../soh/soh/OTRGlobals.h"
+
+#include <../../soh/include/randomizer/spoiler_log.hpp>
+#include "../../soh/include/randomizer/rando_main.hpp"
 
 using namespace Ship;
 bool oldCursorState = true;

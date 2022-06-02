@@ -3,7 +3,7 @@
 
 #include "ultra64.h"
 #include "z64math.h"
-#include <randomizerTypes.h>
+#include <soh/Enhancements/randomizerTypes.h>
 #include <include/randomizer/keys.hpp>
 
 typedef struct {

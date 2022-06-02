@@ -5,7 +5,7 @@
 #include "location_access.hpp"
 #include "rando_main.hpp"
 // #include <soh/Enhancements/randomizer.h>
-#include "randomizer.h"
+#include <randomizer/randomizer.hpp>
 #include <Cvar.h>
 #include <GameSettings.h>
 
