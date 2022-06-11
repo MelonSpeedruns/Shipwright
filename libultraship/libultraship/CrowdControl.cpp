@@ -36,6 +36,10 @@ namespace Ship {
                 std::string jsonResponse = dataSend.dump();
                 SDLNet_TCP_Send(tcpsock, const_cast<char*> (jsonResponse.data()), jsonResponse.size() + 1);
 
+                if (returnSuccess == 2) {
+                    return;
+                }
+
                 if (returnSuccess == 1) {
                     if (paused && packet->timeRemaining > 0) {
                         paused = 0;
