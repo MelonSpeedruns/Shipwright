@@ -1398,19 +1398,61 @@ void Gameplay_Main(GameState* thisx) {
 
 extern func_80AB70A0(EnNiw* this, GlobalContext* globalCtx);
 
-u8 ExecuteTimedCommands() {
-
-}
-
-u8 ExecuteCommand(const char* effectId, uint32_t value) {
+void RemoveEffect(const char* effectId) {
     if (gGlobalCtx == NULL) {
         return;
     }
 
     Player* player = GET_PLAYER(gGlobalCtx);
 
-    if (player != NULL && !Player_InBlockingCsMode(gGlobalCtx, player)) {
-        if (strcmp(effectId, "kill") == 0) {
+    if (player != NULL) {
+        if (strcmp(effectId, "giant_link") == 0) {
+            giantLink = 0;
+            resetLinkScale = 1;
+            return;
+        } else if (strcmp(effectId, "defense_modifier") == 0) {
+            defenseModifier = 0;
+            return;
+        } else if (strcmp(effectId, "iron_boots") == 0) {
+            player->currentBoots = PLAYER_BOOTS_KOKIRI;
+            Inventory_ChangeEquipment(EQUIP_BOOTS, PLAYER_BOOTS_KOKIRI + 1);
+            Player_SetBootData(gGlobalCtx, player);
+            return;
+        } else if (strcmp(effectId, "high_gravity") == 0) {
+            highGravity = 0;
+            return 1;
+        }
+    }
+}
+
+u8 ExecuteEffect(const char* effectId, uint32_t value) {
+    if (gGlobalCtx == NULL) {
+        return 0;
+    }
+
+    Player* player = GET_PLAYER(gGlobalCtx);
+
+    if (player != NULL) {
+        if (strcmp(effectId, "add_heart_container") == 0) {
+            if (gSaveContext.healthCapacity >= 0x140) {
+                return 2;
+            }
+            gSaveContext.healthCapacity += 0x10;
+            return 1;
+        }
+    }
+
+    if (player != NULL && !Player_InBlockingCsMode(gGlobalCtx, player) && gGlobalCtx->pauseCtx.state == 0) {
+        if (strcmp(effectId, "high_gravity") == 0) {
+            highGravity = 1;
+            return 1;
+        } else if (strcmp(effectId, "giant_link") == 0) {
+            giantLink = 1;
+            return 1;
+        } else if (strcmp(effectId, "defense_modifier") == 0) {
+            defenseModifier = value;
+            return 1;
+        } else if (strcmp(effectId, "kill") == 0) {
             if (PlayerGrounded(player)) {
                 gSaveContext.health = 0;
                 return 1;
@@ -1456,9 +1498,13 @@ u8 ExecuteCommand(const char* effectId, uint32_t value) {
             }
             return 0;
         } else if (strcmp(effectId, "iron_boots") == 0) {
-            func_80837C0C(gGlobalCtx, player, 4, 0, 0, 0, 0);
+            player->currentBoots = PLAYER_BOOTS_IRON;
+            Inventory_ChangeEquipment(EQUIP_BOOTS, PLAYER_BOOTS_IRON + 1);
+            Player_SetBootData(gGlobalCtx, player);
             return 1;
-            return 0;
+        } else if (strcmp(effectId, "wallmaster") == 0) {
+            Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_EN_WALLMAS, player->actor.world.pos.x, player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, 0);
+            return 1;
         }
     }
 
