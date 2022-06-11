@@ -58,9 +58,9 @@ namespace Ship {
                         return;
                     }
 
-                    packet->timeRemaining -= 500;
+                    packet->timeRemaining -= 1000;
 
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
                 else if (returnSuccess == 0 && paused == 0 && packet->timeRemaining > 0) {
                     paused = 1;
@@ -77,7 +77,7 @@ namespace Ship {
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
                 else {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
             }
         }
@@ -114,7 +114,9 @@ namespace Ship {
                 if (strcmp(packet->effectType.c_str(), "defense_modifier") == 0 ||
                     strcmp(packet->effectType.c_str(), "iron_boots") == 0 ||
                     strcmp(packet->effectType.c_str(), "giant_link") == 0 ||
-                    strcmp(packet->effectType.c_str(), "high_gravity") == 0) {
+                    strcmp(packet->effectType.c_str(), "high_gravity") == 0 ||
+                    strcmp(packet->effectType.c_str(), "minish_link") == 0 ||
+                    strcmp(packet->effectType.c_str(), "no_ui") == 0) {
                     packet->timeRemaining = 30000;
                 }
                 else {

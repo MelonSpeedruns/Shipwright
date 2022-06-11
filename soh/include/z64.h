@@ -66,6 +66,14 @@ extern "C"
 {
 #endif
 
+// Crowd Control
+u32 defenseModifier;
+u32 giantLink;
+u32 minishLink;
+u32 highGravity;
+u32 resetLinkScale;
+u32 noUi;
+
 typedef struct{
     /* 0x00 */ char unk[0x4];
     /* 0x04 */ MtxF mf;
@@ -1178,11 +1186,6 @@ typedef struct {
     /* 0x00 */ u8 numActors;
     /* 0x04 */ TransitionActorEntry* list;
 } TransitionActorContext;
-
-u32 defenseModifier;
-u32 giantLink;
-u32 highGravity;
-u32 resetLinkScale;
 
 // Global Context (dbg ram start: 80212020)
 typedef struct GlobalContext {

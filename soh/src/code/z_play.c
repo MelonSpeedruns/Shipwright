@@ -1410,17 +1410,26 @@ void RemoveEffect(const char* effectId) {
             giantLink = 0;
             resetLinkScale = 1;
             return;
+        } else if (strcmp(effectId, "minish_link") == 0) {
+            minishLink = 0;
+            resetLinkScale = 1;
         } else if (strcmp(effectId, "defense_modifier") == 0) {
             defenseModifier = 0;
             return;
-        } else if (strcmp(effectId, "iron_boots") == 0) {
+        } else if (strcmp(effectId, "iron_boots") == 0 || strcmp(effectId, "hover_boots") == 0) {
             player->currentBoots = PLAYER_BOOTS_KOKIRI;
             Inventory_ChangeEquipment(EQUIP_BOOTS, PLAYER_BOOTS_KOKIRI + 1);
             Player_SetBootData(gGlobalCtx, player);
             return;
         } else if (strcmp(effectId, "high_gravity") == 0) {
             highGravity = 0;
-            return 1;
+            return;
+        } else if (strcmp(effectId, "low_gravity") == 0) {
+            highGravity = 0;
+            return;
+        } else if (strcmp(effectId, "no_ui") == 0) {
+            noUi = 0;
+            return;
         }
     }
 }
@@ -1446,8 +1455,14 @@ u8 ExecuteEffect(const char* effectId, uint32_t value) {
         if (strcmp(effectId, "high_gravity") == 0) {
             highGravity = 1;
             return 1;
+        } else if (strcmp(effectId, "low_gravity") == 0) {
+            highGravity = 2;
+            return 1;
         } else if (strcmp(effectId, "giant_link") == 0) {
             giantLink = 1;
+            return 1;
+        } else if (strcmp(effectId, "minish_link") == 0) {
+            minishLink = 1;
             return 1;
         } else if (strcmp(effectId, "defense_modifier") == 0) {
             defenseModifier = value;
@@ -1502,8 +1517,16 @@ u8 ExecuteEffect(const char* effectId, uint32_t value) {
             Inventory_ChangeEquipment(EQUIP_BOOTS, PLAYER_BOOTS_IRON + 1);
             Player_SetBootData(gGlobalCtx, player);
             return 1;
+        } else if (strcmp(effectId, "hover_boots") == 0) {
+            player->currentBoots = PLAYER_BOOTS_HOVER;
+            Inventory_ChangeEquipment(EQUIP_BOOTS, PLAYER_BOOTS_HOVER + 1);
+            Player_SetBootData(gGlobalCtx, player);
+            return 1;
         } else if (strcmp(effectId, "wallmaster") == 0) {
             Actor_Spawn(&gGlobalCtx->actorCtx, gGlobalCtx, ACTOR_EN_WALLMAS, player->actor.world.pos.x, player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, 0);
+            return 1;
+        } else if (strcmp(effectId, "no_ui") == 0) {
+            noUi = 1;
             return 1;
         }
     }
