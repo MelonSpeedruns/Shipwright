@@ -1031,6 +1031,11 @@ s32 func_80090014(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* p
         }
     }
 
+    if (invisibleLink) {
+        this->actor.shape.shadowDraw = NULL;
+        *dList = NULL;
+    }
+
     return false;
 }
 

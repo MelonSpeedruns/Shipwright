@@ -10963,7 +10963,7 @@ void Player_Draw(Actor* thisx, GlobalContext* globalCtx2) {
     GlobalContext* globalCtx = globalCtx2;
     Player* this = (Player*)thisx;
 
-     Vec3f pos;
+    Vec3f pos;
     Vec3s rot;
     f32 scale;
 
@@ -11049,6 +11049,7 @@ void Player_Draw(Actor* thisx, GlobalContext* globalCtx2) {
             Matrix_RotateX(sp78, MTXMODE_APPLY);
             Matrix_RotateY(sp74, MTXMODE_APPLY);
             Matrix_Scale(1.1f, 0.95f, 1.05f, MTXMODE_APPLY);
+
             Matrix_RotateY(-sp74, MTXMODE_APPLY);
             Matrix_RotateX(-sp78, MTXMODE_APPLY);
             Player_DrawGameplay(globalCtx, this, lod, gCullFrontDList, overrideLimbDraw);

@@ -23,6 +23,8 @@ namespace Ship {
             u8 paused = 0;
 
             while (connected) {
+                u8 anotherEffect = 0;
+
                 nlohmann::json dataSend;
 
                 dataSend["id"] = packet->packetId;
@@ -30,51 +32,68 @@ namespace Ship {
 
                 dataSend["timeRemaining"] = packet->timeRemaining;
 
-                u8 returnSuccess = ExecuteEffect(packet->effectType.c_str(), packet->effectValue);
-                dataSend["status"] = returnSuccess == 1 ? EffectResult::Success : returnSuccess == 2 ? EffectResult::Failure : EffectResult::Retry;
+                for (CCPacket* pack : receivedCommands) {
+                    if (pack != packet && pack->effectCategory == packet->effectCategory && pack->packetId < packet->packetId) {
+                        anotherEffect = 1;
+                        dataSend["status"] = EffectResult::Retry;
+                        break;
+                    }
+                }
+
+                u8 returnSuccess = 0;
+                if (anotherEffect == 0) {
+                    returnSuccess = ExecuteEffect(packet->effectType.c_str(), packet->effectValue);
+                    dataSend["status"] = returnSuccess == 1 ? EffectResult::Success : returnSuccess == 2 ? EffectResult::Failure : EffectResult::Retry;
+                }
 
                 std::string jsonResponse = dataSend.dump();
                 SDLNet_TCP_Send(tcpsock, const_cast<char*> (jsonResponse.data()), jsonResponse.size() + 1);
 
-                if (returnSuccess == 2) {
-                    return;
-                }
+                if (anotherEffect == 0) {
+                    if (returnSuccess == 2) {
+                        return;
+                    }
 
-                if (returnSuccess == 1) {
-                    if (paused && packet->timeRemaining > 0) {
-                        paused = 0;
+                    if (returnSuccess == 1) {
+                        if (paused && packet->timeRemaining > 0) {
+                            paused = 0;
+                            nlohmann::json dataSend;
+                            dataSend["id"] = packet->packetId;
+                            dataSend["type"] = 0;
+                            dataSend["timeRemaining"] = packet->timeRemaining;
+                            dataSend["status"] = EffectResult::Resumed;
+
+                            std::string jsonResponse = dataSend.dump();
+                            SDLNet_TCP_Send(tcpsock, const_cast<char*> (jsonResponse.data()), jsonResponse.size() + 1);
+                        }
+
+                        if (packet->timeRemaining <= 0) {
+                            receivedCommands.erase(std::remove(receivedCommands.begin(), receivedCommands.end(), packet), receivedCommands.end());
+                            RemoveEffect(packet->effectType.c_str());
+                            return;
+                        }
+
+                        packet->timeRemaining -= 1000;
+
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+                    }
+                    else if (returnSuccess == 0 && paused == 0 && packet->timeRemaining > 0) {
+                        paused = 1;
+
                         nlohmann::json dataSend;
                         dataSend["id"] = packet->packetId;
                         dataSend["type"] = 0;
                         dataSend["timeRemaining"] = packet->timeRemaining;
-                        dataSend["status"] = EffectResult::Resumed;
+                        dataSend["status"] = EffectResult::Paused;
 
                         std::string jsonResponse = dataSend.dump();
                         SDLNet_TCP_Send(tcpsock, const_cast<char*> (jsonResponse.data()), jsonResponse.size() + 1);
+
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
                     }
-
-                    if (packet->timeRemaining <= 0) {
-                        RemoveEffect(packet->effectType.c_str());
-                        return;
+                    else {
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
                     }
-
-                    packet->timeRemaining -= 1000;
-
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
-                }
-                else if (returnSuccess == 0 && paused == 0 && packet->timeRemaining > 0) {
-                    paused = 1;
-
-                    nlohmann::json dataSend;
-                    dataSend["id"] = packet->packetId;
-                    dataSend["type"] = 0;
-                    dataSend["timeRemaining"] = packet->timeRemaining;
-                    dataSend["status"] = EffectResult::Paused;
-
-                    std::string jsonResponse = dataSend.dump();
-                    SDLNet_TCP_Send(tcpsock, const_cast<char*> (jsonResponse.data()), jsonResponse.size() + 1);
-
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
                 else {
                     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -111,18 +130,74 @@ namespace Ship {
                 packet->effectValue = dataReceived["type"];
                 packet->effectType = dataReceived["code"].get<std::string>();
 
-                if (strcmp(packet->effectType.c_str(), "defense_modifier") == 0 ||
-                    strcmp(packet->effectType.c_str(), "iron_boots") == 0 ||
-                    strcmp(packet->effectType.c_str(), "giant_link") == 0 ||
-                    strcmp(packet->effectType.c_str(), "high_gravity") == 0 ||
-                    strcmp(packet->effectType.c_str(), "minish_link") == 0 ||
-                    strcmp(packet->effectType.c_str(), "no_ui") == 0) {
+                if (strcmp(packet->effectType.c_str(), "high_gravity") == 0 ||
+                    strcmp(packet->effectType.c_str(), "low_gravity") == 0) {
+                    packet->effectCategory = "gravity";
                     packet->timeRemaining = 30000;
                 }
+                else if (strcmp(packet->effectType.c_str(), "defense_modifier") == 0) {
+                    packet->effectCategory = "defense";
+                    packet->timeRemaining = 30000;
+                }
+                else if (strcmp(packet->effectType.c_str(), "giant_link") == 0 ||
+                    strcmp(packet->effectType.c_str(), "minish_link") == 0 ||
+                    strcmp(packet->effectType.c_str(), "invisible") == 0 ||
+                    strcmp(packet->effectType.c_str(), "paper_link") == 0) {
+                    packet->effectCategory = "link_size";
+                    packet->timeRemaining = 30000;
+                }
+                else if (strcmp(packet->effectType.c_str(), "freeze") == 0 ||
+                    strcmp(packet->effectType.c_str(), "damage") == 0 ||
+                    strcmp(packet->effectType.c_str(), "heal") == 0 ||
+                    strcmp(packet->effectType.c_str(), "knockback") == 0 ||
+                    strcmp(packet->effectType.c_str(), "electrocute") == 0 ||
+                    strcmp(packet->effectType.c_str(), "burn") == 0) {
+                    packet->effectCategory = "link_damage";
+                }
+                else if (strcmp(packet->effectType.c_str(), "hover_boots") == 0 ||
+                    strcmp(packet->effectType.c_str(), "iron_boots") == 0) {
+                    packet->effectCategory = "boots";
+                    packet->timeRemaining = 30000;
+                }
+                else if (strcmp(packet->effectType.c_str(), "add_heart_container") == 0 ||
+                    strcmp(packet->effectType.c_str(), "remove_heart_container") == 0) {
+                    packet->effectCategory = "heart_container";
+                }
+                else if (strcmp(packet->effectType.c_str(), "no_ui") == 0) {
+                    packet->effectCategory = "ui";
+                }
+                else if (strcmp(packet->effectType.c_str(), "fill_magic") == 0 ||
+                    strcmp(packet->effectType.c_str(), "empty_magic") == 0) {
+                    packet->effectCategory = "magic";
+                }
+                else if (strcmp(packet->effectType.c_str(), "ohko") == 0) {
+                    packet->effectCategory = "ohko";
+                }
+                else if (strcmp(packet->effectType.c_str(), "pacifist") == 0) {
+                    packet->effectCategory = "pacifist";
+                }
+                else if (strcmp(packet->effectType.c_str(), "rainstorm") == 0) {
+                    packet->effectCategory = "weather";
+                }
+                else if (strcmp(packet->effectType.c_str(), "reverse") == 0) {
+                    packet->effectCategory = "controls";
+                }
+                else if (strcmp(packet->effectType.c_str(), "rupees") == 0) {
+                    packet->effectCategory = "rupees";
+                }
+                else if (strcmp(packet->effectType.c_str(), "speed") == 0) {
+                    packet->effectCategory = "speed";
+                }
+                else if (strcmp(packet->effectType.c_str(), "wallmaster") == 0 ||
+                    strcmp(packet->effectType.c_str(), "cucco") == 0) {
+                    packet->effectCategory = "spawn";
+                }
                 else {
+                    packet->effectCategory = "none";
                     packet->timeRemaining = 0;
                 }
 
+                receivedCommands.push_back(packet);
                 std::thread t = std::thread(&CrowdControl::RunCrowdControl, this, packet);
                 t.detach();
             }

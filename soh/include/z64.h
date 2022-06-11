@@ -73,6 +73,7 @@ u32 minishLink;
 u32 highGravity;
 u32 resetLinkScale;
 u32 noUi;
+u32 invisibleLink;
 
 typedef struct{
     /* 0x00 */ char unk[0x4];

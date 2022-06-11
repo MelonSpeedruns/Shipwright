@@ -16,6 +16,7 @@ namespace Ship {
             uint32_t packetId;
             std::string effectType;
             uint32_t effectValue;
+            std::string effectCategory;
             long timeRemaining;
         } CCPacket;
 
@@ -68,7 +69,8 @@ namespace Ship {
 
             char received[512];
 
-            std::vector<CCPacket> receivedCommands;
+            std::vector<CCPacket*> currentCommands;
+            std::vector<CCPacket*> receivedCommands;
 
             void RunCrowdControl(CCPacket* packet);
             void ReceiveFromCrowdControl();

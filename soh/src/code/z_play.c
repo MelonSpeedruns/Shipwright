@@ -1421,14 +1421,15 @@ void RemoveEffect(const char* effectId) {
             Inventory_ChangeEquipment(EQUIP_BOOTS, PLAYER_BOOTS_KOKIRI + 1);
             Player_SetBootData(gGlobalCtx, player);
             return;
-        } else if (strcmp(effectId, "high_gravity") == 0) {
-            highGravity = 0;
-            return;
-        } else if (strcmp(effectId, "low_gravity") == 0) {
+        } else if (strcmp(effectId, "high_gravity") == 0 || strcmp(effectId, "low_gravity") == 0) {
             highGravity = 0;
             return;
         } else if (strcmp(effectId, "no_ui") == 0) {
             noUi = 0;
+            return;
+        } else if (strcmp(effectId, "invisible") == 0) {
+            invisibleLink = 0;
+            player->actor.shape.shadowDraw = ActorShadow_DrawFeet;
             return;
         }
     }
@@ -1447,6 +1448,12 @@ u8 ExecuteEffect(const char* effectId, uint32_t value) {
                 return 2;
             }
             gSaveContext.healthCapacity += 0x10;
+            return 1;
+        } else if (strcmp(effectId, "remove_heart_container") == 0) {
+            if ((gSaveContext.healthCapacity - 0x10) <= 0) {
+                return 2;
+            }
+            gSaveContext.healthCapacity -= 0x10;
             return 1;
         }
     }
@@ -1480,7 +1487,7 @@ u8 ExecuteEffect(const char* effectId, uint32_t value) {
             cucco->actionFunc = func_80AB70A0;
             return 1;
         } else if (strcmp(effectId, "damage") == 0) {
-            Health_ChangeBy(gGlobalCtx, value * 16);
+            Health_ChangeBy(gGlobalCtx, -value * 16);
             func_80837C0C(gGlobalCtx, player, 0, 0, 0, 0, 0);
             player->invincibilityTimer = 28;
             return 1;
@@ -1527,6 +1534,9 @@ u8 ExecuteEffect(const char* effectId, uint32_t value) {
             return 1;
         } else if (strcmp(effectId, "no_ui") == 0) {
             noUi = 1;
+            return 1;
+        } else if (strcmp(effectId, "invisible") == 0) {
+            invisibleLink = 1;
             return 1;
         }
     }
