@@ -10,9 +10,9 @@
 #include "ConfigFile.h"
 #include "Cvar.h"
 #include "GlobalCtx2.h"
-#include "SohImGuiImpl.h"
+#include "ImGuiImpl.h"
 #include "../../soh/include/z64audio.h"
-#include "SohHooks.h"
+#include "Hooks.h"
 #include "../../soh/soh/Enhancements/debugconsole.h"
 
 #include "Window.h"
@@ -54,14 +54,12 @@ namespace Game {
     }
 
     void InitSettings() {
-        ModInternal::registerHookListener({ AUDIO_INIT, [](HookEvent ev) {
-            UpdateAudio();
-        }});
-        ModInternal::registerHookListener({ GFX_INIT, [](HookEvent ev) {
+        ModInternal::RegisterHook<ModInternal::AudioInit>(UpdateAudio);
+        ModInternal::RegisterHook<ModInternal::GfxInit>([] {
             gfx_get_current_rendering_api()->set_texture_filter((FilteringMode) CVar_GetS32("gTextureFilter", THREE_POINT));
             SohImGui::console->opened = CVar_GetS32("gConsoleEnabled", 0);
             UpdateAudio();
-        }});
+        });
     }
 
     void SetSeqPlayerVolume(SeqPlayers playerId, float volume) {
