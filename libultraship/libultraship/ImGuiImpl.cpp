@@ -1263,7 +1263,7 @@ break;
             }
             if (Interface_isOpen) {
                 if (!Interface_isOpen) {
-=
+
                     CVar_SetS32("gColorsEditor", 0);
                     return;
                 }
