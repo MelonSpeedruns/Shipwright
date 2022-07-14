@@ -29,7 +29,7 @@ void func_800BC450(GlobalContext* globalCtx) {
 }
 
 void func_800BC490(GlobalContext* globalCtx, s16 point) {
-    ASSERT(point == 1 || point == 2, "point == 1 || point == 2", "../z_play.c", 2160);
+    ASSERT(point == 1 || point == 2);
 
     globalCtx->unk_1242B = point;
 
@@ -136,7 +136,7 @@ void func_800BC5E0(GlobalContext* globalCtx, s32 transitionType) {
                 globalCtx->transitionMode = 16;
                 break;
             default:
-                Fault_AddHungupAndCrash("../z_play.c", 2290);
+                Fault_AddHungupAndCrash(__FILE__, __LINE__);
                 break;
         }
     }
@@ -194,6 +194,70 @@ void Gameplay_Destroy(GameState* thisx) {
     gGlobalCtx = NULL;
 }
 
+void GivePlayerRandoRewardSongOfTime(GlobalContext* globalCtx, RandomizerCheck check) {
+    Player* player = GET_PLAYER(globalCtx);
+
+    if (gSaveContext.entranceIndex == 0x050F && player != NULL && !Player_InBlockingCsMode(globalCtx, player) &&
+        !Flags_GetTreasure(globalCtx, 0x1F) && gSaveContext.nextTransition == 0xFF) {
+        GetItemID getItemId = GetRandomizedItemIdFromKnownCheck(check, GI_SONG_OF_TIME);
+        GiveItemWithoutActor(globalCtx, getItemId);
+        Flags_SetTreasure(globalCtx, 0x1F);
+    }
+}
+
+void GivePlayerRandoRewardNocturne(GlobalContext* globalCtx, RandomizerCheck check) {
+    Player* player = GET_PLAYER(globalCtx);
+
+    if ((gSaveContext.entranceIndex == 0x00DB ||
+         gSaveContext.entranceIndex == 0x0191 ||
+         gSaveContext.entranceIndex == 0x0195) && LINK_IS_ADULT && CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST) &&
+        CHECK_QUEST_ITEM(QUEST_MEDALLION_FIRE) && CHECK_QUEST_ITEM(QUEST_MEDALLION_WATER) && player != NULL &&
+        !Player_InBlockingCsMode(globalCtx, player) && !Flags_GetEventChkInf(0xAA)) {
+        GetItemID getItemId = GetRandomizedItemIdFromKnownCheck(check, GI_NOCTURNE_OF_SHADOW);
+        GiveItemWithoutActor(globalCtx, getItemId);
+        Flags_SetEventChkInf(0xAA);
+    }
+}
+
+void GivePlayerRandoRewardRequiem(GlobalContext* globalCtx, RandomizerCheck check) {
+    Player* player = GET_PLAYER(globalCtx);
+
+    if ((gSaveContext.gameMode == 0) && (gSaveContext.respawnFlag <= 0) && (gSaveContext.cutsceneIndex < 0xFFF0)) {
+        if ((gSaveContext.entranceIndex == 0x01E1) && !Flags_GetEventChkInf(0xAC) && player != NULL &&
+            !Player_InBlockingCsMode(globalCtx, player)) {
+            GetItemID getItemId = GetRandomizedItemIdFromKnownCheck(check, GI_SONG_OF_TIME);
+            GiveItemWithoutActor(globalCtx, getItemId);
+            Flags_SetEventChkInf(0xAC);
+        }
+    }
+}
+
+void GivePlayerRandoRewardZeldaLightArrowsGift(GlobalContext* globalCtx, RandomizerCheck check) {
+    Player* player = GET_PLAYER(globalCtx);
+
+    if (CHECK_QUEST_ITEM(QUEST_MEDALLION_SPIRIT) && CHECK_QUEST_ITEM(QUEST_MEDALLION_SHADOW) && LINK_IS_ADULT &&
+        (gEntranceTable[((void)0, gSaveContext.entranceIndex)].scene == SCENE_TOKINOMA) &&
+        !Flags_GetTreasure(globalCtx, 0x1E) && player != NULL && !Player_InBlockingCsMode(globalCtx, player) &&
+        globalCtx->sceneLoadFlag == 0 && player->getItemId == GI_NONE) {
+        GetItemID getItemId = GetRandomizedItemIdFromKnownCheck(check, GI_ARROW_LIGHT);
+        GiveItemWithoutActor(globalCtx, getItemId);
+        Flags_SetTreasure(globalCtx, 0x1E);
+    }
+}
+
+void GivePlayerRandoRewardSariaGift(GlobalContext* globalCtx, RandomizerCheck check) {
+    Player* player = GET_PLAYER(globalCtx);
+    if (gSaveContext.entranceIndex == 0x05E0) {
+        GetItemID getItemId = GetRandomizedItemIdFromKnownCheck(check, GI_ZELDAS_LULLABY);
+
+        if ((!Flags_GetEventChkInf(0xC1) || (player->getItemId == getItemId && getItemId != GI_ICE_TRAP)) &&
+            player != NULL && !Player_InBlockingCsMode(globalCtx, player)) {
+            GiveItemWithoutActor(globalCtx, getItemId);
+            Flags_SetEventChkInf(0xC1);
+        }
+    }
+}
+
 LinkPuppet* puppets[4];
 
 void SetLinkPuppetData(OnlinePacket* packet, u8 player_id) {
@@ -214,15 +278,23 @@ void Gameplay_Init(GameState* thisx) {
     GlobalContext* globalCtx = (GlobalContext*)thisx;
     GraphicsContext* gfxCtx = globalCtx->state.gfxCtx;
     gGlobalCtx = globalCtx;
-    // globalCtx->state.gfxCtx = NULL;
-    u32 zAlloc;
-    u32 zAllocAligned;
+    //globalCtx->state.gfxCtx = NULL;
+    uintptr_t zAlloc;
+    uintptr_t zAllocAligned;
     size_t zAllocSize;
     Player* player;
     s32 playerStartCamId;
     s32 i;
     u8 tempSetupIndex;
     s32 pad[2];
+
+    if (gSaveContext.n64ddFlag && GetRandoSettingValue(RSK_SKIP_CHILD_STEALTH)) {
+        if (gSaveContext.entranceIndex == 0x7A) {
+            gSaveContext.entranceIndex = 0x400;
+        } else if (gSaveContext.entranceIndex == 0x296) {
+            gSaveContext.entranceIndex = 0x23D;
+        }
+    }
 
     if (gSaveContext.entranceIndex == -1) {
         gSaveContext.entranceIndex = 0;
@@ -257,7 +329,6 @@ void Gameplay_Init(GameState* thisx) {
     globalCtx->cameraPtrs[MAIN_CAM]->uid = 0;
     globalCtx->activeCamera = MAIN_CAM;
     func_8005AC48(&globalCtx->mainCamera, 0xFF);
-    Sram_Init(globalCtx, &globalCtx->sramCtx);
     func_80112098(globalCtx);
     Message_Init(globalCtx);
     GameOver_Init(globalCtx);
@@ -383,7 +454,7 @@ void Gameplay_Init(GameState* thisx) {
 
     osSyncPrintf("ZELDA ALLOC SIZE=%x\n", THA_GetSize(&globalCtx->state.tha));
     zAllocSize = THA_GetSize(&globalCtx->state.tha);
-    zAlloc = GameState_Alloc(&globalCtx->state, zAllocSize, "../z_play.c", 2918);
+    zAlloc = GAMESTATE_ALLOC_MC(&globalCtx->state, zAllocSize);
     zAllocAligned = (zAlloc + 8) & ~0xF;
     ZeldaArena_Init(zAllocAligned, zAllocSize - zAllocAligned + zAlloc);
     // "Zelda Heap"
@@ -400,6 +471,19 @@ void Gameplay_Init(GameState* thisx) {
     player = GET_PLAYER(globalCtx);
     Camera_InitPlayerSettings(&globalCtx->mainCamera, player);
     Camera_ChangeMode(&globalCtx->mainCamera, CAM_MODE_NORMAL);
+
+    // OTRTODO: Bounds check cameraDataList to guard against scenes spawning the player with
+    // an out of bounds background camera index. This requires adding an extra field to the
+    // CollisionHeader struct to save the length of cameraDataList.
+    // Fixes Dodongo's Cavern blue warp crash.
+    {
+        CollisionHeader* colHeader = BgCheck_GetCollisionHeader(&globalCtx->colCtx, BGCHECK_SCENE);
+
+        // If the player's start cam is out of bounds, set it to 0xFF so it isn't used.
+        if (colHeader != NULL && ((player->actor.params & 0xFF) >= colHeader->cameraDataListLen)) {
+            player->actor.params |= 0xFF;
+        }
+    }
 
     playerStartCamId = player->actor.params & 0xFF;
     if (playerStartCamId != 0xFF) {
@@ -445,7 +529,7 @@ void Gameplay_Update(GlobalContext* globalCtx) {
 
     input = globalCtx->state.input;
 
-        if ((SREG(1) < 0) || (DREG(0) != 0)) {
+    if ((SREG(1) < 0) || (DREG(0) != 0)) {
         SREG(1) = 0;
         ZeldaArena_Display();
     }
@@ -466,6 +550,10 @@ void Gameplay_Update(GlobalContext* globalCtx) {
     if ((HREG(81) == 18) && (HREG(82) < 0)) {
         HREG(82) = 0;
         ActorOverlayTable_LogPrint();
+    }
+
+    if (CVar_GetS32("gFreeCamera", 0) && Player_InCsMode(globalCtx)) {
+        globalCtx->manualCamera = false;
     }
 
     gSegments[4] = VIRTUAL_TO_PHYSICAL(globalCtx->objectCtx.status[globalCtx->objectCtx.mainKeepIndex].segment);
@@ -751,7 +839,7 @@ void Gameplay_Update(GlobalContext* globalCtx) {
                         globalCtx->envCtx.sandstormPrimA = 255;
                         globalCtx->envCtx.sandstormEnvA = 255;
                         // "It's here!!!!!!!!!"
-                        LOG_STRING("来た!!!!!!!!!!!!!!!!!!!!!", "../z_play.c", 3471);
+                        LOG_STRING("来た!!!!!!!!!!!!!!!!!!!!!");
                         globalCtx->transitionMode = 15;
                     } else {
                         globalCtx->transitionMode = 12;
@@ -796,12 +884,12 @@ void Gameplay_Update(GlobalContext* globalCtx) {
         }
 
         if (1 && HREG(63)) {
-            LOG_NUM("1", 1, "../z_play.c", 3533);
+            LOG_NUM("1", 1);
         }
 
         if (1 && (gTrnsnUnkState != 3)) {
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3542);
+                LOG_NUM("1", 1);
             }
 
             if ((gSaveContext.gameMode == 0) && (globalCtx->msgCtx.msgMode == MSGMODE_NONE) &&
@@ -810,30 +898,30 @@ void Gameplay_Update(GlobalContext* globalCtx) {
             }
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3551);
+                LOG_NUM("1", 1);
             }
 
             sp80 = (globalCtx->pauseCtx.state != 0) || (globalCtx->pauseCtx.debugState != 0);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3555);
+                LOG_NUM("1", 1);
             }
 
             AnimationContext_Reset(&globalCtx->animationCtx);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3561);
+                LOG_NUM("1", 1);
             }
 
             Object_UpdateBank(&globalCtx->objectCtx);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3577);
+                LOG_NUM("1", 1);
             }
 
             if ((sp80 == 0) && (IREG(72) == 0)) {
                 if (1 && HREG(63)) {
-                    LOG_NUM("1", 1, "../z_play.c", 3580);
+                    LOG_NUM("1", 1);
                 }
 
                 globalCtx->gameplayFrames++;
@@ -853,37 +941,37 @@ void Gameplay_Update(GlobalContext* globalCtx) {
                     }
                 } else {
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3606);
+                        LOG_NUM("1", 1);
                     }
 
                     func_800973FC(globalCtx, &globalCtx->roomCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3612);
+                        LOG_NUM("1", 1);
                     }
 
                     CollisionCheck_AT(globalCtx, &globalCtx->colChkCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3618);
+                        LOG_NUM("1", 1);
                     }
 
                     CollisionCheck_OC(globalCtx, &globalCtx->colChkCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3624);
+                        LOG_NUM("1", 1);
                     }
 
                     CollisionCheck_Damage(globalCtx, &globalCtx->colChkCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3631);
+                        LOG_NUM("1", 1);
                     }
 
                     CollisionCheck_ClearContext(globalCtx, &globalCtx->colChkCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3637);
+                        LOG_NUM("1", 1);
                     }
 
                     if (globalCtx->unk_11DE9 == 0) {
@@ -891,31 +979,31 @@ void Gameplay_Update(GlobalContext* globalCtx) {
                     }
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3643);
+                        LOG_NUM("1", 1);
                     }
 
                     func_80064558(globalCtx, &globalCtx->csCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3648);
+                        LOG_NUM("1", 1);
                     }
 
                     func_800645A0(globalCtx, &globalCtx->csCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3651);
+                        LOG_NUM("1", 1);
                     }
 
                     Effect_UpdateAll(globalCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3657);
+                        LOG_NUM("1", 1);
                     }
 
                     EffectSs_UpdateAll(globalCtx);
 
                     if (1 && HREG(63)) {
-                        LOG_NUM("1", 1, "../z_play.c", 3662);
+                        LOG_NUM("1", 1);
                     }
                 }
             } else {
@@ -923,19 +1011,19 @@ void Gameplay_Update(GlobalContext* globalCtx) {
             }
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3672);
+                LOG_NUM("1", 1);
             }
 
             func_80095AA0(globalCtx, &globalCtx->roomCtx.curRoom, &input[1], 0);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3675);
+                LOG_NUM("1", 1);
             }
 
             func_80095AA0(globalCtx, &globalCtx->roomCtx.prevRoom, &input[1], 1);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3677);
+                LOG_NUM("1", 1);
             }
 
             if (globalCtx->unk_1242B != 0) {
@@ -956,65 +1044,65 @@ void Gameplay_Update(GlobalContext* globalCtx) {
             }
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3708);
+                LOG_NUM("1", 1);
             }
 
             SkyboxDraw_Update(&globalCtx->skyboxCtx);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3716);
+                LOG_NUM("1", 1);
             }
 
             if ((globalCtx->pauseCtx.state != 0) || (globalCtx->pauseCtx.debugState != 0)) {
                 if (1 && HREG(63)) {
-                    LOG_NUM("1", 1, "../z_play.c", 3721);
+                    LOG_NUM("1", 1);
                 }
 
                 KaleidoScopeCall_Update(globalCtx);
             } else if (globalCtx->gameOverCtx.state != GAMEOVER_INACTIVE) {
                 if (1 && HREG(63)) {
-                    LOG_NUM("1", 1, "../z_play.c", 3727);
+                    LOG_NUM("1", 1);
                 }
 
                 GameOver_Update(globalCtx);
             } else {
                 if (1 && HREG(63)) {
-                    LOG_NUM("1", 1, "../z_play.c", 3733);
+                    LOG_NUM("1", 1);
                 }
 
                 Message_Update(globalCtx);
             }
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3737);
+                LOG_NUM("1", 1);
             }
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3742);
+                LOG_NUM("1", 1);
             }
 
             Interface_Update(globalCtx);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3765);
+                LOG_NUM("1", 1);
             }
 
             AnimationContext_Update(globalCtx, &globalCtx->animationCtx);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3771);
+                LOG_NUM("1", 1);
             }
 
             SoundSource_UpdateAll(globalCtx);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3777);
+                LOG_NUM("1", 1);
             }
 
             ShrinkWindow_Update(R_UPDATE_RATE);
 
             if (1 && HREG(63)) {
-                LOG_NUM("1", 1, "../z_play.c", 3783);
+                LOG_NUM("1", 1);
             }
 
             TransitionFade_Update(&globalCtx->transitionFade, R_UPDATE_RATE);
@@ -1024,12 +1112,12 @@ void Gameplay_Update(GlobalContext* globalCtx) {
     }
 
     if (1 && HREG(63)) {
-        LOG_NUM("1", 1, "../z_play.c", 3799);
+        LOG_NUM("1", 1);
     }
 
 skip:
     if (1 && HREG(63)) {
-        LOG_NUM("1", 1, "../z_play.c", 3801);
+        LOG_NUM("1", 1);
     }
 
     if ((sp80 == 0) || (gDbgCamEnabled)) {
@@ -1039,13 +1127,13 @@ skip:
         globalCtx->nextCamera = globalCtx->activeCamera;
 
         if (1 && HREG(63)) {
-            LOG_NUM("1", 1, "../z_play.c", 3806);
+            LOG_NUM("1", 1);
         }
 
         for (i = 0; i < NUM_CAMS; i++) {
             if ((i != globalCtx->nextCamera) && (globalCtx->cameraPtrs[i] != NULL)) {
                 if (1 && HREG(63)) {
-                    LOG_NUM("1", 1, "../z_play.c", 3809);
+                    LOG_NUM("1", 1);
                 }
 
                 Camera_Update(globalCtx->cameraPtrs[i]);
@@ -1055,16 +1143,24 @@ skip:
         Camera_Update(globalCtx->cameraPtrs[globalCtx->nextCamera]);
 
         if (1 && HREG(63)) {
-            LOG_NUM("1", 1, "../z_play.c", 3814);
+            LOG_NUM("1", 1);
         }
     }
 
     if (1 && HREG(63)) {
-        LOG_NUM("1", 1, "../z_play.c", 3816);
+        LOG_NUM("1", 1);
     }
 
     Environment_Update(globalCtx, &globalCtx->envCtx, &globalCtx->lightCtx, &globalCtx->pauseCtx, &globalCtx->msgCtx,
                        &globalCtx->gameOverCtx, globalCtx->state.gfxCtx);
+
+    if (gSaveContext.n64ddFlag) {
+        GivePlayerRandoRewardSariaGift(globalCtx, RC_LW_GIFT_FROM_SARIA);
+        GivePlayerRandoRewardSongOfTime(globalCtx, RC_SONG_FROM_OCARINA_OF_TIME);
+        GivePlayerRandoRewardZeldaLightArrowsGift(globalCtx, RC_TOT_LIGHT_ARROWS_CUTSCENE);
+        GivePlayerRandoRewardNocturne(globalCtx, RC_SHEIK_IN_KAKARIKO);
+        GivePlayerRandoRewardRequiem(globalCtx, RC_SHEIK_AT_COLOSSUS);
+    }
 }
 
 void Gameplay_DrawOverlayElements(GlobalContext* globalCtx) {
@@ -1088,7 +1184,7 @@ void Gameplay_Draw(GlobalContext* globalCtx) {
     Lights* sp228;
     Vec3f sp21C;
 
-    OPEN_DISPS(gfxCtx, "../z_play.c", 3907);
+    OPEN_DISPS(gfxCtx);
 
     gSegments[4] = VIRTUAL_TO_PHYSICAL(globalCtx->objectCtx.status[globalCtx->objectCtx.mainKeepIndex].segment);
     gSegments[5] = VIRTUAL_TO_PHYSICAL(globalCtx->objectCtx.status[globalCtx->objectCtx.subKeepIndex].segment);
@@ -1132,7 +1228,7 @@ void Gameplay_Draw(GlobalContext* globalCtx) {
                 0.0f;
         // This transpose is where the viewing matrix is properly converted into a billboard matrix
         Matrix_Transpose(&globalCtx->billboardMtxF);
-        globalCtx->billboardMtx = Matrix_MtxFToMtx(Matrix_CheckFloats(&globalCtx->billboardMtxF, "../z_play.c", 4005),
+        globalCtx->billboardMtx = Matrix_MtxFToMtx(MATRIX_CHECKFLOATS(&globalCtx->billboardMtxF),
                                                    Graph_Alloc(gfxCtx, sizeof(Mtx)));
 
         gSPSegment(POLY_OPA_DISP++, 0x01, globalCtx->billboardMtx);
@@ -1364,7 +1460,7 @@ void Gameplay_Draw(GlobalContext* globalCtx) {
         POLY_OPA_DISP = gfxP;
     }
 
-    CLOSE_DISPS(gfxCtx, "../z_play.c", 4508);
+    CLOSE_DISPS(gfxCtx);
 }
 
 void Gameplay_Main(GameState* thisx) {
@@ -1375,7 +1471,7 @@ void Gameplay_Main(GameState* thisx) {
     DebugDisplay_Init();
 
     if (1 && HREG(63)) {
-        LOG_NUM("1", 1, "../z_play.c", 4556);
+        LOG_NUM("1", 1);
     }
 
     if ((HREG(80) == 10) && (HREG(94) != 10)) {
@@ -1412,7 +1508,7 @@ void Gameplay_Main(GameState* thisx) {
     OTRSendPacket();
 
     if (1 && HREG(63)) {
-        LOG_NUM("1", 1, "../z_play.c", 4583);
+        LOG_NUM("1", 1);
     }
 
     FrameInterpolation_StartRecord();
@@ -1420,7 +1516,7 @@ void Gameplay_Main(GameState* thisx) {
     FrameInterpolation_StopRecord();
 
     if (1 && HREG(63)) {
-        LOG_NUM("1", 1, "../z_play.c", 4587);
+        LOG_NUM("1", 1);
     }
 }
 
@@ -1500,8 +1596,8 @@ void* Gameplay_LoadFile(GlobalContext* globalCtx, RomFile* file) {
     void* allocp;
 
     size = file->vromEnd - file->vromStart;
-    allocp = GameState_Alloc(&globalCtx->state, size, "../z_play.c", 4692);
-    DmaMgr_SendRequest1(allocp, file->vromStart, size, "../z_play.c", 4694);
+    allocp = GAMESTATE_ALLOC_MC(&globalCtx->state, size);
+    DmaMgr_SendRequest1(allocp, file->vromStart, size, __FILE__, __LINE__);
 
     return allocp;
 }
@@ -1682,7 +1778,6 @@ s32 Gameplay_CameraSetAtEyeUp(GlobalContext* globalCtx, s16 camId, Vec3f* at, Ve
 s32 Gameplay_CameraSetFov(GlobalContext* globalCtx, s16 camId, f32 fov) {
     s32 ret = Camera_SetParam(globalCtx->cameraPtrs[camId], 0x20, &fov) & 1;
 
-    if (1) {}
     return ret;
 }
 

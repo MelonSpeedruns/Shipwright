@@ -136,7 +136,9 @@ void EnOwl_Init(Actor* thisx, GlobalContext* globalCtx) {
     // "conversation owl %4x no = %d, sv = %d"
     osSyncPrintf(VT_FGCOL(CYAN) " 会話フクロウ %4x no = %d, sv = %d\n" VT_RST, this->actor.params, owlType, switchFlag);
 
-    if ((owlType != OWL_DEFAULT) && (switchFlag < 0x20) && Flags_GetSwitch(globalCtx, switchFlag)) {
+    if (((owlType != OWL_DEFAULT) && (switchFlag < 0x20) && Flags_GetSwitch(globalCtx, switchFlag)) ||
+        // Owl shortcuts at SPOT06: Lake Hylia and SPOT16: Death Mountain Trail
+        (gSaveContext.n64ddFlag && !(globalCtx->sceneNum == SCENE_SPOT06 || globalCtx->sceneNum == SCENE_SPOT16))) {
         osSyncPrintf("savebitでフクロウ退避\n"); // "Save owl with savebit"
         Actor_Kill(&this->actor);
         return;
@@ -366,7 +368,9 @@ void func_80ACA7E0(EnOwl* this, GlobalContext* globalCtx) {
 
 void EnOwl_ConfirmKokiriMessage(EnOwl* this, GlobalContext* globalCtx) {
     if (Message_GetState(&globalCtx->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(globalCtx)) {
-        switch (globalCtx->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVar_GetS32("gBetterOwl", 0) == 0 ? globalCtx->msgCtx.choiceIndex : (1 - globalCtx->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(globalCtx, 0x2065);
                 break;
@@ -393,7 +397,9 @@ void EnOwl_WaitOutsideKokiri(EnOwl* this, GlobalContext* globalCtx) {
 
 void func_80ACA998(EnOwl* this, GlobalContext* globalCtx) {
     if (Message_GetState(&globalCtx->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(globalCtx)) {
-        switch (globalCtx->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVar_GetS32("gBetterOwl", 0) == 0 ? globalCtx->msgCtx.choiceIndex : (1 - globalCtx->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(globalCtx, 0x2069);
                 this->actionFunc = func_80ACAA54;
@@ -437,7 +443,9 @@ void EnOwl_WaitHyruleCastle(EnOwl* this, GlobalContext* globalCtx) {
 
 void func_80ACAB88(EnOwl* this, GlobalContext* globalCtx) {
     if (Message_GetState(&globalCtx->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(globalCtx)) {
-        switch (globalCtx->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVar_GetS32("gBetterOwl", 0) == 0 ? globalCtx->msgCtx.choiceIndex : (1 - globalCtx->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 // obtained zelda's letter
                 if (gSaveContext.eventChkInf[4] & 1) {
@@ -478,7 +486,9 @@ void EnOwl_WaitKakariko(EnOwl* this, GlobalContext* globalCtx) {
 
 void func_80ACAD34(EnOwl* this, GlobalContext* globalCtx) {
     if (Message_GetState(&globalCtx->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(globalCtx)) {
-        switch (globalCtx->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVar_GetS32("gBetterOwl", 0) == 0 ? globalCtx->msgCtx.choiceIndex : (1 - globalCtx->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(globalCtx, 0x206F);
                 this->actionFunc = func_80ACADF0;
@@ -514,7 +524,9 @@ void EnOwl_WaitGerudo(EnOwl* this, GlobalContext* globalCtx) {
 
 void func_80ACAEB8(EnOwl* this, GlobalContext* globalCtx) {
     if (Message_GetState(&globalCtx->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(globalCtx)) {
-        switch (globalCtx->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVar_GetS32("gBetterOwl", 0) == 0 ? globalCtx->msgCtx.choiceIndex : (1 - globalCtx->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(globalCtx, 0x2071);
                 this->actionFunc = func_80ACAF74;
@@ -618,7 +630,7 @@ void func_80ACB274(EnOwl* this, GlobalContext* globalCtx) {
 void EnOwl_WaitDeathMountainShortcut(EnOwl* this, GlobalContext* globalCtx) {
     EnOwl_LookAtLink(this, globalCtx);
 
-    if (!gSaveContext.magicAcquired) {
+    if (!gSaveContext.magicAcquired && !gSaveContext.n64ddFlag) {
         if (func_80ACA558(this, globalCtx, 0x3062)) {
             Audio_PlayFanfare(NA_BGM_OWL);
             this->actionFunc = func_80ACB274;
@@ -634,7 +646,9 @@ void EnOwl_WaitDeathMountainShortcut(EnOwl* this, GlobalContext* globalCtx) {
 
 void func_80ACB344(EnOwl* this, GlobalContext* globalCtx) {
     if (Message_GetState(&globalCtx->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(globalCtx)) {
-        switch (globalCtx->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVar_GetS32("gBetterOwl", 0) == 0 ? globalCtx->msgCtx.choiceIndex : (1 - globalCtx->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(globalCtx, 0x607A);
                 break;
@@ -657,7 +671,9 @@ void func_80ACB3E0(EnOwl* this, GlobalContext* globalCtx) {
 
 void func_80ACB440(EnOwl* this, GlobalContext* globalCtx) {
     if (Message_GetState(&globalCtx->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(globalCtx)) {
-        switch (globalCtx->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVar_GetS32("gBetterOwl", 0) == 0 ? globalCtx->msgCtx.choiceIndex : (1 - globalCtx->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(globalCtx, 0x10C1);
                 this->actionFunc = func_80ACB4FC;
@@ -692,7 +708,9 @@ void EnOwl_WaitLWPreSaria(EnOwl* this, GlobalContext* globalCtx) {
 
 void func_80ACB5C4(EnOwl* this, GlobalContext* globalCtx) {
     if (Message_GetState(&globalCtx->msgCtx) == TEXT_STATE_CHOICE && Message_ShouldAdvance(globalCtx)) {
-        switch (globalCtx->msgCtx.choiceIndex) {
+        // swap the order of the responses if better owl is enabled
+        uint8_t index = CVar_GetS32("gBetterOwl", 0) == 0 ? globalCtx->msgCtx.choiceIndex : (1 - globalCtx->msgCtx.choiceIndex);
+        switch (index) {
             case OWL_REPEAT:
                 Message_ContinueTextbox(globalCtx, 0x10C5);
                 this->actionFunc = func_80ACB680;
@@ -939,16 +957,28 @@ void func_80ACC00C(EnOwl* this, GlobalContext* globalCtx) {
                     osSyncPrintf(VT_FGCOL(CYAN));
                     osSyncPrintf("SPOT 06 の デモがはしった\n"); // "Demo of SPOT 06 has been completed"
                     osSyncPrintf(VT_RST);
+                    if (gSaveContext.n64ddFlag) {
+                        globalCtx->nextEntranceIndex = 0x027E;
+                        globalCtx->sceneLoadFlag = 0x14;
+                        globalCtx->fadeTransition = 2;
+                        break;
+                    }
                     globalCtx->csCtx.segment = SEGMENTED_TO_VIRTUAL(gLakeHyliaOwlCs);
                     this->actor.draw = NULL;
                     break;
                 case 8:
                 case 9:
+                    if (gSaveContext.n64ddFlag) {
+                        globalCtx->nextEntranceIndex = 0x0554;
+                        globalCtx->sceneLoadFlag = 0x14;
+                        globalCtx->fadeTransition = 2;
+                        break;
+                    }
                     globalCtx->csCtx.segment = SEGMENTED_TO_VIRTUAL(gDMTOwlCs);
                     this->actor.draw = NULL;
                     break;
                 default:
-                    ASSERT(0, "0", "../z_en_owl.c", 1693);
+                    ASSERT(0);
                     break;
             }
 
@@ -1317,14 +1347,14 @@ void EnOwl_Draw(Actor* thisx, GlobalContext* globalCtx) {
     EnOwl* this = (EnOwl*)thisx;
     s32 pad;
 
-    OPEN_DISPS(globalCtx->state.gfxCtx, "../z_en_owl.c", 2247);
+    OPEN_DISPS(globalCtx->state.gfxCtx);
 
     func_800943C8(globalCtx->state.gfxCtx);
     gSPSegment(POLY_OPA_DISP++, 8, SEGMENTED_TO_VIRTUAL(eyeTextures[this->eyeTexIndex]));
     SkelAnime_DrawFlexOpa(globalCtx, this->curSkelAnime->skeleton, this->curSkelAnime->jointTable,
                           this->curSkelAnime->dListCount, EnOwl_OverrideLimbDraw, EnOwl_PostLimbUpdate, this);
 
-    CLOSE_DISPS(globalCtx->state.gfxCtx, "../z_en_owl.c", 2264);
+    CLOSE_DISPS(globalCtx->state.gfxCtx);
 }
 
 void EnOwl_ChangeMode(EnOwl* this, EnOwlActionFunc actionFunc, OwlFunc arg2, SkelAnime* skelAnime,

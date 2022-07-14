@@ -99,7 +99,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\libjpeg\include;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(ProjectDir)Lib\Enet\include;$(ProjectDir)Lib\SDL\SDL2;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\ImGui;$(ProjectDir)Lib\libjpeg\include;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(ProjectDir)..\..\StormLib\src\;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x86;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
@@ -107,7 +107,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Testing|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\libjpeg\include;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\ImGui;$(ProjectDir)Lib\libjpeg\include;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x86;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
@@ -115,7 +115,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(ProjectDir)Lib\Enet\include;$(ProjectDir)Lib\SDL\SDL2;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\ImGui;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(ProjectDir)..\..\StormLib\src\;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x86;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
@@ -123,7 +123,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\ImGui;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(ProjectDir)..\..\StormLib\src\;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x64;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
@@ -131,7 +131,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Testing|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\ImGui;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x64;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
@@ -139,7 +139,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(ProjectDir)Lib\Enet\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\ZAPDTR\ZAPDUtils;$(ProjectDir)Lib\Fast3D\U64;$(ProjectDir)Lib\ImGui;$(ProjectDir)Lib\spdlog\include;$(ProjectDir)Lib\SDL;$(ProjectDir)Lib\GLEW;$(ProjectDir)..\..\StormLib\src\;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)Lib\SDL\lib\x64;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
@@ -148,7 +148,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level2</WarningLevel>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>SPDLOG_ACTIVE_LEVEL=0;WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;ENABLE_DX11;%(PreprocessorDefinitions)GLEW_STATIC </PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -204,12 +204,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SPDLOG_ACTIVE_LEVEL=0;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_DX11;ENABLE_OPENGL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SPDLOG_ACTIVE_LEVEL=0;WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;ENABLE_DX11;%(PreprocessorDefinitions)GLEW_STATIC </PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -238,7 +239,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>SPDLOG_ACTIVE_LEVEL=0;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;ENABLE_DX11;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SPDLOG_ACTIVE_LEVEL=0;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;ENABLE_OPENGL;ENABLE_DX11;%(PreprocessorDefinitions)GLEW_STATIC</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
@@ -253,19 +254,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Blob.cpp" />
+	<ClCompile Include="Online.cpp" />
+    <ClCompile Include="ControlDeck.cpp" />
     <ClCompile Include="Cvar.cpp" />
     <ClCompile Include="Environment.cpp" />
+    <ClCompile Include="Factories\AudioFactory.cpp" />
+    <ClCompile Include="InputEditor.cpp" />
     <ClCompile Include="GameOverlay.cpp" />
     <ClCompile Include="GameSettings.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="Lib\ImGui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="Lib\Mercury\Mercury.cpp" />
     <ClCompile Include="luslog.cpp" />
     <ClCompile Include="mixer.c" />
     <ClCompile Include="ModManager.cpp" />
-    <ClCompile Include="Online.cpp" />
     <ClCompile Include="SDLAudioPlayer.cpp" />
-    <ClCompile Include="SohConsole.cpp" />
+    <ClCompile Include="Console.cpp" />
     <ClCompile Include="Factories\AnimationFactory.cpp" />
     <ClCompile Include="Factories\ArrayFactory.cpp" />
     <ClCompile Include="Factories\BlobFactory.cpp" />
@@ -277,10 +283,9 @@
     <ClCompile Include="Factories\TextureFactory.cpp" />
     <ClCompile Include="Factories\VtxFactory.cpp" />
     <ClCompile Include="Array.cpp" />
-    <ClCompile Include="ConfigFile.cpp" />
     <ClCompile Include="Controller.cpp" />
-    <ClCompile Include="SohHooks.cpp" />
-    <ClCompile Include="SohImGuiImpl.cpp" />
+    <ClCompile Include="Hooks.cpp" />
+    <ClCompile Include="ImGuiImpl.cpp" />
     <ClCompile Include="KeyboardController.cpp" />
     <ClCompile Include="Factories\CollisionHeaderFactory.cpp" />
     <ClCompile Include="Factories\DisplayListFactory.cpp" />
@@ -340,115 +345,32 @@
     <ClCompile Include="SDLController.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Lib\Mercury\Mercury.h" />
+    <ClInclude Include="Lib\nlohmann\json.hpp" />
     <ClInclude Include="abi.h" />
+    <ClInclude Include="Audio.h" />
     <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="Blob.h" />
+    <ClInclude Include="ControlDeck.h" />
     <ClInclude Include="Cvar.h" />
+    <ClInclude Include="DisconnectedController.h" />
     <ClInclude Include="Environment.h" />
+    <ClInclude Include="Factories\AudioFactory.h" />
+    <ClInclude Include="InputEditor.h" />
     <ClInclude Include="GameOverlay.h" />
     <ClInclude Include="GameSettings.h" />
     <ClInclude Include="GameVersions.h" />
-    <ClInclude Include="Lib\Enet\include\enet.h" />
+    <ClInclude Include="Lib\dr_libs\mp3.h" />
+    <ClInclude Include="Lib\dr_libs\wav.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_dx11.h" />
     <ClInclude Include="Lib\ImGui\backends\imgui_impl_win32.h" />
-    <ClInclude Include="Lib\SDL2_net\include\SDL_net.h" />
-    <ClInclude Include="Lib\SDL\SDL2\begin_code.h" />
-    <ClInclude Include="Lib\SDL\SDL2\close_code.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_assert.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_atomic.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_audio.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_bits.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_blendmode.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_clipboard.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_android.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_emscripten.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_iphoneos.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_macosx.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_minimal.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_os2.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_pandora.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_psp.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_windows.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_winrt.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_config_wiz.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_copying.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_cpuinfo.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_egl.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_endian.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_error.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_events.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_filesystem.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_gamecontroller.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_gesture.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_haptic.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_hidapi.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_hints.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_joystick.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_keyboard.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_keycode.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_loadso.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_locale.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_log.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_main.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_messagebox.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_metal.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_misc.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_mouse.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_mutex.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_name.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_opengl.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_opengles.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_opengles2.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_opengles2_gl2.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_opengles2_gl2ext.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_opengles2_gl2platform.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_opengles2_khrplatform.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_opengl_glext.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_pixels.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_platform.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_power.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_quit.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_rect.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_render.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_revision.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_rwops.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_scancode.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_sensor.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_shape.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_stdinc.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_surface.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_system.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_syswm.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_assert.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_common.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_compare.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_crc32.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_font.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_fuzzer.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_harness.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_images.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_log.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_md5.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_memory.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_test_random.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_thread.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_timer.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_touch.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_types.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_version.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_video.h" />
-    <ClInclude Include="Lib\SDL\SDL2\SDL_vulkan.h" />
     <ClInclude Include="Lib\stb\stb_image_write.h" />
     <ClInclude Include="luslog.h" />
     <ClInclude Include="mixer.h" />
     <ClInclude Include="ModManager.h" />
     <ClInclude Include="ModModule.h" />
-    <ClInclude Include="Online.h" />
     <ClInclude Include="SDLAudioPlayer.h" />
-    <ClInclude Include="SohConsole.h" />
+    <ClInclude Include="Console.h" />
     <ClInclude Include="Factories\ArrayFactory.h" />
     <ClInclude Include="Factories\BlobFactory.h" />
     <ClInclude Include="Factories\CutsceneFactory.h" />
@@ -461,8 +383,8 @@
     <ClInclude Include="Animation.h" />
     <ClInclude Include="Array.h" />
     <ClInclude Include="Cutscene.h" />
-    <ClInclude Include="SohHooks.h" />
-    <ClInclude Include="SohImGuiImpl.h" />
+    <ClInclude Include="Hooks.h" />
+    <ClInclude Include="ImGuiImpl.h" />
     <ClInclude Include="Lib\Fast3D\gfx_cc.h" />
     <ClInclude Include="Lib\Fast3D\gfx_direct3d11.h" />
     <ClInclude Include="Lib\Fast3D\gfx_direct3d12.h" />
@@ -490,7 +412,6 @@
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="stox.h" />
     <ClInclude Include="Lib\mINI\src\mini\ini.h" />
-    <ClInclude Include="ConfigFile.h" />
     <ClInclude Include="Controller.h" />
     <ClInclude Include="KeyboardController.h" />
     <ClInclude Include="Factories\CollisionHeaderFactory.h" />
@@ -521,6 +442,7 @@
     <ClInclude Include="ResourceMgr.h" />
     <ClInclude Include="RumblePack.h" />
     <ClInclude Include="Scene.h" />
+	<ClInclude Include="Online.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SkeletonLimb.h" />
     <ClInclude Include="Texture.h" />
@@ -535,11 +457,6 @@
       <Project>{02d10590-9542-3f55-aaf8-6055677e2a2a}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Lib\SDL\SDL2\SDL_config.h.cmake" />
-    <None Include="Lib\SDL\SDL2\SDL_config.h.in" />
-    <None Include="Lib\SDL\SDL2\SDL_revision.h.cmake" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

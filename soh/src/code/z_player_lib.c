@@ -360,15 +360,16 @@ s32 Player_ActionToModelGroup(Player* this, s32 actionParam) {
 void Player_SetModelsForHoldingShield(Player* this) {
     if ((this->stateFlags1 & 0x400000) &&
         ((this->itemActionParam < 0) || (this->itemActionParam == this->heldItemActionParam))) {
-        if (!Player_HoldsTwoHandedWeapon(this) && !Player_IsChildWithHylianShield(this)) {
+        if ((CVar_GetS32("gShieldTwoHanded", 0) && (this->heldItemActionParam != PLAYER_AP_STICK) ||
+            !Player_HoldsTwoHandedWeapon(this)) && !Player_IsChildWithHylianShield(this)) {
             this->rightHandType = 10;
-            this->rightHandDLists = &sPlayerDListGroups[10][(void)0, gSaveContext.linkAge];
+            this->rightHandDLists = &sPlayerDListGroups[10][gSaveContext.linkAge];
             if (this->sheathType == 18) {
                 this->sheathType = 16;
             } else if (this->sheathType == 19) {
                 this->sheathType = 17;
             }
-            this->sheathDLists = &sPlayerDListGroups[this->sheathType][(void)0, gSaveContext.linkAge];
+            this->sheathDLists = &sPlayerDListGroups[this->sheathType][gSaveContext.linkAge];
             this->modelAnimType = 2;
             this->itemActionParam = -1;
         }
@@ -380,10 +381,10 @@ void Player_SetModels(Player* this, s32 modelGroup) {
     this->rightHandType = gPlayerModelTypes[modelGroup][2];
     this->sheathType = gPlayerModelTypes[modelGroup][3];
 
-    this->leftHandDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][1]][(void)0, gSaveContext.linkAge];
-    this->rightHandDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][2]][(void)0, gSaveContext.linkAge];
-    this->sheathDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][3]][(void)0, gSaveContext.linkAge];
-    this->waistDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][4]][(void)0, gSaveContext.linkAge];
+    this->leftHandDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][1]][gSaveContext.linkAge];
+    this->rightHandDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][2]][gSaveContext.linkAge];
+    this->sheathDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][3]][gSaveContext.linkAge];
+    this->waistDLists = &sPlayerDListGroups[gPlayerModelTypes[modelGroup][4]][gSaveContext.linkAge];
 
     Player_SetModelsForHoldingShield(this);
 }
@@ -629,8 +630,6 @@ s32 func_8008F2F8(GlobalContext* globalCtx) {
     if (!Player_InCsMode(globalCtx)) {
         triggerEntry = &sTextTriggers[var];
 
-        if (0) {}
-
         if ((triggerEntry->flag != 0) && !(gSaveContext.textTriggerFlags & triggerEntry->flag) &&
             (((var == 0) && (this->currentTunic != PLAYER_TUNIC_GORON && CVar_GetS32("gSuperTunic", 0) == 0)) ||
              (((var == 1) || (var == 3)) && (this->currentBoots == PLAYER_BOOTS_IRON) &&
@@ -718,7 +717,7 @@ void func_8008F470(GlobalContext* globalCtx, void** skeleton, Vec3s* jointTable,
     s32 eyeIndex = (jointTable[22].x & 0xF) - 1;
     s32 mouthIndex = (jointTable[22].x >> 4) - 1;
 
-    OPEN_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 1721);
+    OPEN_DISPS(globalCtx->state.gfxCtx);
 
     if (eyeIndex < 0) {
         eyeIndex = sEyeMouthIndexes[face][0];
@@ -744,26 +743,38 @@ void func_8008F470(GlobalContext* globalCtx, void** skeleton, Vec3s* jointTable,
 #else
     gSPSegment(POLY_OPA_DISP++, 0x09, SEGMENTED_TO_VIRTUAL(sMouthTextures[eyeIndex]));
 #endif
-    Color_RGB8 NewColor[3];
-    color = &sTunicColors[tunic];
-    if (CVar_GetS32("gUseTunicsCol",0) == 1) {
-        if (tunic == PLAYER_TUNIC_KOKIRI || tunic == PLAYER_TUNIC_GORON || tunic == PLAYER_TUNIC_ZORA) {
-            NewColor[PLAYER_TUNIC_KOKIRI].r = CVar_GetS32("gTunic_Kokiri_R", sTunicColors[PLAYER_TUNIC_KOKIRI].r);
-            NewColor[PLAYER_TUNIC_KOKIRI].g = CVar_GetS32("gTunic_Kokiri_G", sTunicColors[PLAYER_TUNIC_KOKIRI].g);
-            NewColor[PLAYER_TUNIC_KOKIRI].b = CVar_GetS32("gTunic_Kokiri_B", sTunicColors[PLAYER_TUNIC_KOKIRI].b);
-            NewColor[PLAYER_TUNIC_GORON].r = CVar_GetS32("gTunic_Goron_R", sTunicColors[PLAYER_TUNIC_GORON].r);
-            NewColor[PLAYER_TUNIC_GORON].g = CVar_GetS32("gTunic_Goron_G", sTunicColors[PLAYER_TUNIC_GORON].g);
-            NewColor[PLAYER_TUNIC_GORON].b = CVar_GetS32("gTunic_Goron_B", sTunicColors[PLAYER_TUNIC_GORON].b);
-            NewColor[PLAYER_TUNIC_ZORA].r = CVar_GetS32("gTunic_Zora_R", sTunicColors[PLAYER_TUNIC_ZORA].r);
-            NewColor[PLAYER_TUNIC_ZORA].g = CVar_GetS32("gTunic_Zora_G", sTunicColors[PLAYER_TUNIC_ZORA].g);
-            NewColor[PLAYER_TUNIC_ZORA].b = CVar_GetS32("gTunic_Zora_B", sTunicColors[PLAYER_TUNIC_ZORA].b);
+
+    Color_RGB8 sTemp;
+    Color_RGB8 sOriginalTunicColors[] = {
+        { 30, 105, 27 },
+        { 100, 20, 0 },
+        { 0, 60, 100 },
+    };
+    color = &sTemp;
+    if (tunic == PLAYER_TUNIC_KOKIRI && CVar_GetS32("gUseTunicsCol",0)) {
+        color->r = CVar_GetS32("gTunic_Kokiri_R", sTunicColors[PLAYER_TUNIC_KOKIRI].r);
+        color->g = CVar_GetS32("gTunic_Kokiri_G", sTunicColors[PLAYER_TUNIC_KOKIRI].g);
+        color->b = CVar_GetS32("gTunic_Kokiri_B", sTunicColors[PLAYER_TUNIC_KOKIRI].b);
+    } else if (tunic == PLAYER_TUNIC_GORON && CVar_GetS32("gUseTunicsCol",0)) {
+        color->r = CVar_GetS32("gTunic_Goron_R", sTunicColors[PLAYER_TUNIC_GORON].r);
+        color->g = CVar_GetS32("gTunic_Goron_G", sTunicColors[PLAYER_TUNIC_GORON].g);
+        color->b = CVar_GetS32("gTunic_Goron_B", sTunicColors[PLAYER_TUNIC_GORON].b);
+    } else if (tunic == PLAYER_TUNIC_ZORA && CVar_GetS32("gUseTunicsCol",0)) {
+        color->r = CVar_GetS32("gTunic_Zora_R", sTunicColors[PLAYER_TUNIC_ZORA].r);
+        color->g = CVar_GetS32("gTunic_Zora_G", sTunicColors[PLAYER_TUNIC_ZORA].g);
+        color->b = CVar_GetS32("gTunic_Zora_B", sTunicColors[PLAYER_TUNIC_ZORA].b);
+    } else if (!CVar_GetS32("gUseTunicsCol",0)){
+        if (tunic >= 3) {
+            color->r = sOriginalTunicColors[0].r;
+            color->g = sOriginalTunicColors[0].g;
+            color->b = sOriginalTunicColors[0].b;
         } else {
-            NewColor[PLAYER_TUNIC_KOKIRI].r = CVar_GetS32("gTunic_Kokiri_R", sTunicColors[PLAYER_TUNIC_KOKIRI].r);
-            NewColor[PLAYER_TUNIC_KOKIRI].g = CVar_GetS32("gTunic_Kokiri_G", sTunicColors[PLAYER_TUNIC_KOKIRI].g);
-            NewColor[PLAYER_TUNIC_KOKIRI].b = CVar_GetS32("gTunic_Kokiri_B", sTunicColors[PLAYER_TUNIC_KOKIRI].b);
+            color->r = sOriginalTunicColors[tunic].r;
+            color->g = sOriginalTunicColors[tunic].g;
+            color->b = sOriginalTunicColors[tunic].b;   
         }
-        color = NewColor;
     }
+
     gDPSetEnvColor(POLY_OPA_DISP++, color->r, color->g, color->b, 0);
 
     sDListsLodOffset = lod * 2;
@@ -801,7 +812,7 @@ void func_8008F470(GlobalContext* globalCtx, void** skeleton, Vec3s* jointTable,
         }
     }
 
-    CLOSE_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 1803);
+    CLOSE_DISPS(globalCtx->state.gfxCtx);
 }
 
 Vec3f D_8012602C = { 0.0f, 0.0f, 0.0f };
@@ -846,15 +857,15 @@ void func_8008F87C(GlobalContext* globalCtx, Player* this, SkelAnime* skelAnime,
         (Player_ActionToMagicSpell(this, this->itemActionParam) < 0)) {
         s32 pad;
 
-        sp7C = D_80126058[(void)0, gSaveContext.linkAge];
-        sp78 = D_80126060[(void)0, gSaveContext.linkAge];
-        sp74 = D_80126068[(void)0, gSaveContext.linkAge] - this->unk_6C4;
+        sp7C = D_80126058[gSaveContext.linkAge];
+        sp78 = D_80126060[gSaveContext.linkAge];
+        sp74 = D_80126068[gSaveContext.linkAge] - this->unk_6C4;
 
         Matrix_Push();
         Matrix_TranslateRotateZYX(pos, rot);
         Matrix_MultVec3f(&D_8012602C, &spA4);
-        Matrix_TranslateRotateZYX(&D_80126038[(void)0, gSaveContext.linkAge], &skelAnime->jointTable[shinLimbIndex]);
-        Matrix_Translate(D_80126050[(void)0, gSaveContext.linkAge], 0.0f, 0.0f, MTXMODE_APPLY);
+        Matrix_TranslateRotateZYX(&D_80126038[gSaveContext.linkAge], &skelAnime->jointTable[shinLimbIndex]);
+        Matrix_Translate(D_80126050[gSaveContext.linkAge], 0.0f, 0.0f, MTXMODE_APPLY);
         Matrix_MultVec3f(&D_8012602C, &sp98);
         Matrix_MultVec3f(&D_80126070, &footprintPos);
         Matrix_Pop();
@@ -1042,16 +1053,16 @@ s32 func_800902F0(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* p
         if (this->unk_6AD != 2) {
             *dList = NULL;
         } else if (limbIndex == PLAYER_LIMB_L_FOREARM) {
-            *dList = sArmOutDLs[(void)0, gSaveContext.linkAge];
+            *dList = sArmOutDLs[gSaveContext.linkAge];
         } else if (limbIndex == PLAYER_LIMB_L_HAND) {
-            *dList = sHandOutDLs[(void)0, gSaveContext.linkAge];
+            *dList = sHandOutDLs[gSaveContext.linkAge];
         } else if (limbIndex == PLAYER_LIMB_R_SHOULDER) {
-            *dList = sRightShoulderNearDLs[(void)0, gSaveContext.linkAge];
+            *dList = sRightShoulderNearDLs[gSaveContext.linkAge];
         } else if (limbIndex == PLAYER_LIMB_R_FOREARM) {
-            *dList = D_80125F30[(void)0, gSaveContext.linkAge];
+            *dList = D_80125F30[gSaveContext.linkAge];
         } else if (limbIndex == PLAYER_LIMB_R_HAND) {
             *dList = Player_HoldsHookshot(this) ? gLinkAdultRightHandHoldingHookshotFarDL
-                                                : sHoldingFirstPersonWeaponDLs[(void)0, gSaveContext.linkAge];
+                                                : sHoldingFirstPersonWeaponDLs[gSaveContext.linkAge];
         } else {
             *dList = NULL;
         }
@@ -1153,7 +1164,7 @@ void func_800906D4(GlobalContext* globalCtx, Player* this, Vec3f* newTipPos) {
 void Player_DrawGetItemImpl(GlobalContext* globalCtx, Player* this, Vec3f* refPos, s32 drawIdPlusOne) {
     f32 height = (this->exchangeItemId != EXCH_ITEM_NONE) ? 6.0f : 14.0f;
 
-    OPEN_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2401);
+    OPEN_DISPS(globalCtx->state.gfxCtx);
 
     gSegments[6] = VIRTUAL_TO_PHYSICAL(this->giObjectSegment);
 
@@ -1167,7 +1178,7 @@ void Player_DrawGetItemImpl(GlobalContext* globalCtx, Player* this, Vec3f* refPo
 
     GetItem_Draw(globalCtx, drawIdPlusOne - 1);
 
-    CLOSE_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2421);
+    CLOSE_DISPS(globalCtx->state.gfxCtx);
 }
 
 void Player_DrawGetItem(GlobalContext* globalCtx, Player* this) {
@@ -1210,10 +1221,8 @@ void Player_DrawHookshotReticle(GlobalContext* globalCtx, Player* this, f32 arg2
     D_801260C8.z = arg2;
     Matrix_MultVec3f(&D_801260C8, &sp80);
 
-    if (1) {}
-
     if (BgCheck_AnyLineTest3(&globalCtx->colCtx, &sp8C, &sp80, &sp74, &sp9C, 1, 1, 1, 1, &bgId)) {
-        OPEN_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2572);
+        OPEN_DISPS(globalCtx->state.gfxCtx);
 
         WORLD_OVERLAY_DISP = Gfx_CallSetupDL(WORLD_OVERLAY_DISP, 0x07);
 
@@ -1224,12 +1233,12 @@ void Player_DrawHookshotReticle(GlobalContext* globalCtx, Player* this, f32 arg2
         Matrix_Translate(sp74.x, sp74.y, sp74.z, MTXMODE_NEW);
         Matrix_Scale(sp60, sp60, sp60, MTXMODE_APPLY);
 
-        gSPMatrix(WORLD_OVERLAY_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx, "../z_player_lib.c", 2587),
+        gSPMatrix(WORLD_OVERLAY_DISP++, MATRIX_NEWMTX(globalCtx->state.gfxCtx),
                   G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gSPSegment(WORLD_OVERLAY_DISP++, 0x06, globalCtx->objectCtx.status[this->actor.objBankIndex].segment);
         gSPDisplayList(WORLD_OVERLAY_DISP++, gLinkAdultHookshotReticleDL);
 
-        CLOSE_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2592);
+        CLOSE_DISPS(globalCtx->state.gfxCtx);
     }
 }
 
@@ -1295,7 +1304,7 @@ void func_80090D20(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* 
         if (this->itemActionParam == PLAYER_AP_STICK) {
             Vec3f sp124[3];
 
-            OPEN_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2633);
+            OPEN_DISPS(globalCtx->state.gfxCtx);
 
             if (this->actor.scale.y >= 0.0f) {
                 D_80126080.x = this->unk_85C * 5000.0f;
@@ -1311,11 +1320,11 @@ void func_80090D20(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* 
             Matrix_RotateZYX(-0x8000, 0, 0x4000, MTXMODE_APPLY);
             Matrix_Scale(1.0f, this->unk_85C, 1.0f, MTXMODE_APPLY);
 
-            gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx, "../z_player_lib.c", 2653),
+            gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(globalCtx->state.gfxCtx),
                       G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPDisplayList(POLY_OPA_DISP++, gLinkChildLinkDekuStickDL);
 
-            CLOSE_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2656);
+            CLOSE_DISPS(globalCtx->state.gfxCtx);
         } else if ((this->actor.scale.y >= 0.0f) && (this->swordState != 0)) {
             Vec3f spE4[3];
 
@@ -1330,14 +1339,14 @@ void func_80090D20(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* 
         } else if ((*dList != NULL) && (this->leftHandType == 7)) {
             Color_RGB8* bottleColor = &sBottleColors[Player_ActionToBottle(this, this->itemActionParam)];
 
-            OPEN_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2710);
+            OPEN_DISPS(globalCtx->state.gfxCtx);
 
-            gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx, "../z_player_lib.c", 2712),
+            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(globalCtx->state.gfxCtx),
                       G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gDPSetEnvColor(POLY_XLU_DISP++, bottleColor->r, bottleColor->g, bottleColor->b, 0);
-            gSPDisplayList(POLY_XLU_DISP++, sBottleDLists[((void)0, gSaveContext.linkAge)]);
+            gSPDisplayList(POLY_XLU_DISP++, sBottleDLists[(gSaveContext.linkAge)]);
 
-            CLOSE_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2717);
+            CLOSE_DISPS(globalCtx->state.gfxCtx);
         }
 
         if (this->actor.scale.y >= 0.0f) {
@@ -1373,7 +1382,7 @@ void func_80090D20(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* 
         } else if ((this->rightHandType == 11) || (this->rightHandType == 12)) {
             BowStringData* stringData = &sBowStringData[gSaveContext.linkAge];
 
-            OPEN_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2783);
+            OPEN_DISPS(globalCtx->state.gfxCtx);
 
             Matrix_Push();
             Matrix_Translate(stringData->pos.x, stringData->pos.y, stringData->pos.z, MTXMODE_APPLY);
@@ -1404,13 +1413,13 @@ void func_80090D20(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* 
                 Matrix_RotateZ(this->unk_858 * -0.2f, MTXMODE_APPLY);
             }
 
-            gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx, "../z_player_lib.c", 2804),
+            gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(globalCtx->state.gfxCtx),
                       G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPDisplayList(POLY_XLU_DISP++, stringData->dList);
 
             Matrix_Pop();
 
-            CLOSE_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 2809);
+            CLOSE_DISPS(globalCtx->state.gfxCtx);
         } else if ((this->actor.scale.y >= 0.0f) && (this->rightHandType == 10)) {
             Matrix_Get(&this->shieldMf);
             func_80090604(globalCtx, this, &this->shieldQuad, D_80126154);
@@ -1466,7 +1475,7 @@ void func_80090D20(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* 
         } else if (limbIndex == PLAYER_LIMB_HEAD) {
             Matrix_MultVec3f(&D_801260D4, &this->actor.focus.pos);
         } else {
-            Vec3f* vec = &D_801261E0[((void)0, gSaveContext.linkAge)];
+            Vec3f* vec = &D_801261E0[(gSaveContext.linkAge)];
 
             Actor_SetFeetPos(&this->actor, limbIndex, PLAYER_LIMB_L_FOOT, vec, PLAYER_LIMB_R_FOOT, vec);
         }
@@ -1474,24 +1483,24 @@ void func_80090D20(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* 
 }
 
 u32 func_80091738(GlobalContext* globalCtx, u8* segment, SkelAnime* skelAnime) {
-    s16 linkObjectId = gLinkObjectIds[(void)0, gSaveContext.linkAge];
+    s16 linkObjectId = gLinkObjectIds[gSaveContext.linkAge];
     size_t size;
     void* ptr;
 
     size = gObjectTable[OBJECT_GAMEPLAY_KEEP].vromEnd - gObjectTable[OBJECT_GAMEPLAY_KEEP].vromStart;
     ptr = segment + 0x3800;
-    DmaMgr_SendRequest1(ptr, gObjectTable[OBJECT_GAMEPLAY_KEEP].vromStart, size, "../z_player_lib.c", 2982);
+    DmaMgr_SendRequest1(ptr, gObjectTable[OBJECT_GAMEPLAY_KEEP].vromStart, size, __FILE__, __LINE__);
 
     size = gObjectTable[linkObjectId].vromEnd - gObjectTable[linkObjectId].vromStart;
     ptr = segment + 0x8800;
-    DmaMgr_SendRequest1(ptr, gObjectTable[linkObjectId].vromStart, size, "../z_player_lib.c", 2988);
+    DmaMgr_SendRequest1(ptr, gObjectTable[linkObjectId].vromStart, size, __FILE__, __LINE__);
 
     ptr = (void*)ALIGN16((intptr_t)ptr + size);
 
     gSegments[4] = VIRTUAL_TO_PHYSICAL(segment + 0x3800);
     gSegments[6] = VIRTUAL_TO_PHYSICAL(segment + 0x8800);
 
-    SkelAnime_InitLink(globalCtx, skelAnime, gPlayerSkelHeaders[(void)0, gSaveContext.linkAge], &gPlayerAnim_003238, 9,
+    SkelAnime_InitLink(globalCtx, skelAnime, gPlayerSkelHeaders[gSaveContext.linkAge], &gPlayerAnim_003238, 9,
                        ptr, ptr, PLAYER_LIMB_MAX);
 
     return size + 0x8800 + 0x90;
@@ -1505,6 +1514,7 @@ s32 func_80091880(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* p
     s32 type;
     s32 dListOffset = 0;
     Gfx** dLists;
+    size_t ptrSize = sizeof(uint32_t);
 
     if ((modelGroup == 2) && !LINK_IS_ADULT && (ptr[1] == 2)) {
         modelGroup = 1;
@@ -1524,12 +1534,12 @@ s32 func_80091880(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* p
         type = gPlayerModelTypes[modelGroup][2];
         D_80160018 = type;
         if (type == 10) {
-            dListOffset = ptr[1] * sizeof(uintptr_t);
+            dListOffset = ptr[1] * ptrSize;
         }
     } else if (limbIndex == PLAYER_LIMB_SHEATH) {
         type = gPlayerModelTypes[modelGroup][3];
         if ((type == 18) || (type == 19)) {
-            dListOffset = ptr[1] * sizeof(uintptr_t);
+            dListOffset = ptr[1] * ptrSize;
         } else if (type == 16 && CVar_GetS32("gPauseLiveLink", 0)) {
             //if (ptr[0] == 1)
                 //dListOffset = 4;
@@ -1540,7 +1550,7 @@ s32 func_80091880(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* p
         return 0;
     }
 
-    dLists = &sPlayerDListGroups[type][(void)0, gSaveContext.linkAge];
+    dLists = &sPlayerDListGroups[type][gSaveContext.linkAge];
     *dList = dLists[dListOffset];
 
     return 0;
@@ -1576,7 +1586,7 @@ void func_80091A24(GlobalContext* globalCtx, void* seg04, void* seg06, SkelAnime
     Mtx* perspMtx = Graph_Alloc(globalCtx->state.gfxCtx, sizeof(Mtx));
     Mtx* lookAtMtx = Graph_Alloc(globalCtx->state.gfxCtx, sizeof(Mtx));
 
-    OPEN_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 3129);
+    OPEN_DISPS(globalCtx->state.gfxCtx);
 
     gSPSegment(POLY_OPA_DISP++, 0x00, NULL);
 
@@ -1596,7 +1606,7 @@ void func_80091A24(GlobalContext* globalCtx, void* seg04, void* seg06, SkelAnime
     viewport.vp.vscale[0] = viewport.vp.vtrans[0] = width * 2;
     viewport.vp.vscale[1] = viewport.vp.vtrans[1] = height * 2;
     gSPViewport(POLY_OPA_DISP++, &viewport);
-    
+
     guPerspective(perspMtx, &perspNorm, fovy, (f32)width / (f32)height, 10.0f, 4000.0f, 1.0f);
 
     gSPPerspNormalize(POLY_OPA_DISP++, perspNorm);
@@ -1646,29 +1656,121 @@ void func_80091A24(GlobalContext* globalCtx, void* seg04, void* seg06, SkelAnime
 
     POLY_OPA_DISP = Gameplay_SetFog(globalCtx, POLY_OPA_DISP++);
 
-    CLOSE_DISPS(globalCtx->state.gfxCtx, "../z_player_lib.c", 3288);
+    CLOSE_DISPS(globalCtx->state.gfxCtx);
 }
+
+uintptr_t SelectedAnim = 0; // Current Animaiton on the menu
+s16 EquipedStance; // Link's current mode (Two handed, One handed...)
+s16 FrameCountSinceLastAnim = 0; // Time since last animation
+s16 MinFrameCount; // Frame to wait before checking if we need to change the animation
 
 void func_8009214C(GlobalContext* globalCtx, u8* segment, SkelAnime* skelAnime, Vec3f* pos, Vec3s* rot, f32 scale,
                    s32 sword, s32 tunic, s32 shield, s32 boots) {
+    Input* p1Input = &globalCtx->state.input[0];
     Vec3f eye = { 0.0f, 0.0f, -400.0f };
     Vec3f at = { 0.0f, 0.0f, 0.0f };
     Vec3s* destTable;
     Vec3s* srcTable;
     s32 i;
+    bool canswitchrnd = false;
+    s16 SelectedMode = CVar_GetS32("gPauseLiveLink", 1);
+    MinFrameCount = CVar_GetS32("gMinFrameCount", 200);
 
     gSegments[4] = VIRTUAL_TO_PHYSICAL(segment + 0x3800);
     gSegments[6] = VIRTUAL_TO_PHYSICAL(segment + 0x8800);
 
-    if (CVar_GetS32("gPauseLiveLink", 0) || CVar_GetS32("gPauseTriforce", 0)) {
-        uintptr_t anim = gPlayerAnim_003238; // idle
+    uintptr_t* PauseMenuAnimSet[15][4] = {
+        { 0, 0, 0, 0 }, // 0 = none
+        // IDLE               // Two Handed       // No shield        // Kid Hylian Shield
+        { gPlayerAnim_003238, gPlayerAnim_002BE0, gPlayerAnim_003240, gPlayerAnim_003240 }, // Idle
+        { gPlayerAnim_003200, gPlayerAnim_003200, gPlayerAnim_003200, gPlayerAnim_003200 }, // Idle look around
+        { gPlayerAnim_0033E0, gPlayerAnim_0033E0, gPlayerAnim_0033E0, gPlayerAnim_0033E0 }, // Idle Belt
+        { gPlayerAnim_003418, gPlayerAnim_003418, gPlayerAnim_003418, gPlayerAnim_003418 }, // Idle shield adjust
+        { gPlayerAnim_003420, gPlayerAnim_003428, gPlayerAnim_003420, gPlayerAnim_003420 }, // Idle test sword
+        { gPlayerAnim_0033F0, gPlayerAnim_0033F0, gPlayerAnim_0033F0, gPlayerAnim_0033F0 }, // Idle yawn
+        { gPlayerAnim_0025D0, gPlayerAnim_002BD0, gPlayerAnim_0025D0, gPlayerAnim_0025D0 }, // Battle Stance
+        { gPlayerAnim_003290, gPlayerAnim_002BF8, gPlayerAnim_003290, gPlayerAnim_003290 }, // Walking (No shield)
+        { gPlayerAnim_003268, gPlayerAnim_002BF8, gPlayerAnim_003268, gPlayerAnim_003268 }, // Walking (Holding shield)
+        { gPlayerAnim_003138, gPlayerAnim_002B40, gPlayerAnim_003138, gPlayerAnim_003138 }, // Running (No shield)
+        { gPlayerAnim_003140, gPlayerAnim_002B40, gPlayerAnim_003140, gPlayerAnim_003140 }, // Running (Holding shield)
+        { gPlayerAnim_0031A8, gPlayerAnim_0031A8, gPlayerAnim_0031A8, gPlayerAnim_0031A8 }, // Hand on hip
+        { gPlayerAnim_002AF0, gPlayerAnim_002928, gPlayerAnim_002AF0, gPlayerAnim_002AF0 }, // Spin Charge
+        { gPlayerAnim_002820, gPlayerAnim_002820, gPlayerAnim_002820, gPlayerAnim_002820 }, // Look at hand
+    };
+    s16 AnimArraySize = ARRAY_COUNT(PauseMenuAnimSet);
 
-        if (CUR_EQUIP_VALUE(EQUIP_SWORD) >= 3)
-            anim = gPlayerAnim_002BE0; // Two Handed Anim
-        else if (CUR_EQUIP_VALUE(EQUIP_SHIELD) == 0)
-            anim = gPlayerAnim_003240;
-        else if (CUR_EQUIP_VALUE(EQUIP_SHIELD) == 2 && LINK_AGE_IN_YEARS == YEARS_CHILD)
-            anim = gPlayerAnim_003240;
+    if (CVar_GetS32("gPauseLiveLink", !0) || CVar_GetS32("gPauseTriforce", 0)) {
+        uintptr_t anim = 0; // Initialise anim
+
+        if (CUR_EQUIP_VALUE(EQUIP_SWORD) >= 3) {
+            EquipedStance = 1;
+        } else if (CUR_EQUIP_VALUE(EQUIP_SHIELD) == 0) {
+            EquipedStance = 2;
+        } else if (CUR_EQUIP_VALUE(EQUIP_SHIELD) == 2 && LINK_AGE_IN_YEARS == YEARS_CHILD) {
+            EquipedStance = 3;
+        } else {
+            // Link is idle so revert to 0
+            EquipedStance = 0;
+        }
+
+        if (SelectedMode == 16) {
+            // Apply Random function
+            s16 SwitchAtFrame = 0;
+            s16 CurAnimDuration = 0;
+            if (FrameCountSinceLastAnim == 0) {
+                // When opening Kaleido this will be passed one time
+                SelectedAnim = rand() % (AnimArraySize - 0);
+                if (SelectedAnim == 0) {
+                    // prevent loading 0 that would result to a crash.
+                    SelectedAnim = 1;
+                }
+            } else if (FrameCountSinceLastAnim >= 1) {
+                SwitchAtFrame = Animation_GetLastFrame(PauseMenuAnimSet[SelectedAnim][EquipedStance]);
+                CurAnimDuration = Animation_GetLastFrame(PauseMenuAnimSet[SelectedAnim][EquipedStance]);
+                if (SwitchAtFrame < MinFrameCount) {
+                    // Animation frame count is lower than minimal wait time then we wait for another round.
+                    // This will be looped to always add current animation time if that still lower than minimum time
+                    while (SwitchAtFrame < MinFrameCount) {
+                        SwitchAtFrame = SwitchAtFrame + CurAnimDuration;
+                    }
+                } else if (CurAnimDuration >= MinFrameCount) {
+                    // Since we have more (or same) animation time than min duration we set the wait time to animation
+                    // time.
+                    SwitchAtFrame = CurAnimDuration;
+                }
+                if (FrameCountSinceLastAnim >= SwitchAtFrame) {
+                    SelectedAnim = rand() % (AnimArraySize - 0);
+                    if (SelectedAnim == 0) {
+                        // prevent loading 0 that would result to a crash.
+                        SelectedAnim = 1;
+                    }
+                    FrameCountSinceLastAnim = 1;
+                }
+                anim = PauseMenuAnimSet[SelectedAnim][EquipedStance];
+            }
+            FrameCountSinceLastAnim++;
+        } else if (SelectedMode == 15) {
+            // When opening Kaleido this will be passed one time
+            if (FrameCountSinceLastAnim < 1) {
+                SelectedAnim = rand() % (AnimArraySize - 0);
+                FrameCountSinceLastAnim++;
+                if (SelectedAnim == 0) {
+                    // prevent loading 0 that would result to a crash.
+                    SelectedAnim = 1;
+                }
+                FrameCountSinceLastAnim = 1;
+            }
+            if (CHECK_BTN_ALL(p1Input->press.button, BTN_B) || CHECK_BTN_ALL(p1Input->press.button, BTN_START)) {
+                FrameCountSinceLastAnim = 0;
+            }
+            anim = PauseMenuAnimSet[SelectedAnim][EquipedStance];
+        } else if (SelectedMode < 16) {
+            // Not random so we place our CVar as SelectedAnim
+            SelectedAnim = SelectedMode;
+            anim = PauseMenuAnimSet[SelectedAnim][EquipedStance];
+        }
+
+        anim = PauseMenuAnimSet[SelectedAnim][EquipedStance];
 
         //anim = gPlayerAnim_003428; // Use for biggoron sword?
 

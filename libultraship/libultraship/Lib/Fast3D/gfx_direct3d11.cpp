@@ -4,6 +4,9 @@
 #include <vector>
 #include <cmath>
 
+#include <map>
+#include <unordered_map>
+
 #include <windows.h>
 #include <versionhelpers.h>
 #include <wrl/client.h>
@@ -24,7 +27,7 @@
 #include "gfx_dxgi.h"
 
 #include "gfx_screen_config.h"
-#include "../../SohImGuiImpl.h"
+#include "../../ImGuiImpl.h"
 
 #include "gfx_cc.h"
 #include "gfx_rendering_api.h"
@@ -96,7 +99,6 @@ static struct {
     uint32_t msaa_num_quality_levels[D3D11_MAX_MULTISAMPLE_SAMPLE_COUNT];
 
     ComPtr<ID3D11Device> device;
-    ComPtr<IDXGISwapChain1> swap_chain;
     ComPtr<ID3D11DeviceContext> context;
     ComPtr<ID3D11RasterizerState> rasterizer_state;
     ComPtr<ID3D11DepthStencilState> depth_stencil_state;
@@ -135,7 +137,7 @@ static struct {
     //uint32_t current_width, current_height;
     uint32_t render_target_height;
     int current_framebuffer;
-    FilteringMode current_filter_mode = NONE;
+    FilteringMode current_filter_mode = FILTER_NONE;
 
     int8_t depth_test;
     int8_t depth_mask;
@@ -252,7 +254,24 @@ static void gfx_d3d11_init(void) {
     });
 
     // Create the swap chain
-    d3d.swap_chain = gfx_dxgi_create_swap_chain(d3d.device.Get());
+    gfx_dxgi_create_swap_chain(d3d.device.Get(), []() {
+        d3d.framebuffers[0].render_target_view.Reset();
+        d3d.textures[d3d.framebuffers[0].texture_id].texture.Reset();
+        d3d.context->ClearState();
+        d3d.context->Flush();
+
+        d3d.last_shader_program = nullptr;
+        d3d.last_vertex_buffer_stride = 0;
+        d3d.last_blend_state.Reset();
+        d3d.last_resource_views[0].Reset();
+        d3d.last_resource_views[1].Reset();
+        d3d.last_sampler_states[0].Reset();
+        d3d.last_sampler_states[1].Reset();
+        d3d.last_depth_test = -1;
+        d3d.last_depth_mask = -1;
+        d3d.last_zmode_decal = -1;
+        d3d.last_primitive_topology = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+    });
 
     // Create D3D Debug device if in debug mode
 
@@ -266,7 +285,7 @@ static void gfx_d3d11_init(void) {
 
     // Check the size of the window
     DXGI_SWAP_CHAIN_DESC1 swap_chain_desc;
-    ThrowIfFailed(d3d.swap_chain->GetDesc1(&swap_chain_desc));
+    ThrowIfFailed(gfx_dxgi_get_swap_chain()->GetDesc1(&swap_chain_desc));
     d3d.textures[fb.texture_id].width = swap_chain_desc.Width;
     d3d.textures[fb.texture_id].height = swap_chain_desc.Height;
     fb.msaa_level = 1;
@@ -303,8 +322,6 @@ static void gfx_d3d11_init(void) {
     ThrowIfFailed(d3d.device->CreateBuffer(&constant_buffer_desc, nullptr, d3d.per_frame_cb.GetAddressOf()),
                   gfx_dxgi_get_h_wnd(), "Failed to create per-frame constant buffer.");
 
-    d3d.context->PSSetConstantBuffers(0, 1, d3d.per_frame_cb.GetAddressOf());
-
     // Create per-draw constant buffer
 
     constant_buffer_desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -315,8 +332,6 @@ static void gfx_d3d11_init(void) {
 
     ThrowIfFailed(d3d.device->CreateBuffer(&constant_buffer_desc, nullptr, d3d.per_draw_cb.GetAddressOf()),
                   gfx_dxgi_get_h_wnd(), "Failed to create per-draw constant buffer.");
-
-    d3d.context->PSSetConstantBuffers(1, 1, d3d.per_draw_cb.GetAddressOf());
 
     // Create compute shader that can be used to retrieve depth buffer values
 
@@ -398,7 +413,7 @@ static struct ShaderProgram *gfx_d3d11_create_and_load_new_shader(uint64_t shade
     char buf[4096];
     size_t len, num_floats;
 
-    gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false, d3d.current_filter_mode == THREE_POINT);
+    gfx_direct3d_common_build_shader(buf, len, num_floats, cc_features, false, d3d.current_filter_mode == FILTER_THREE_POINT);
 
     ComPtr<ID3DBlob> vs, ps;
     ComPtr<ID3DBlob> error_blob;
@@ -565,7 +580,7 @@ static void gfx_d3d11_set_sampler_parameters(int tile, bool linear_filter, uint3
     D3D11_SAMPLER_DESC sampler_desc;
     ZeroMemory(&sampler_desc, sizeof(D3D11_SAMPLER_DESC));
 
-    sampler_desc.Filter = linear_filter && d3d.current_filter_mode == LINEAR ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
+    sampler_desc.Filter = linear_filter && d3d.current_filter_mode == FILTER_LINEAR ? D3D11_FILTER_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_POINT;
 
     sampler_desc.AddressU = gfx_cm_to_d3d11(cms);
     sampler_desc.AddressV = gfx_cm_to_d3d11(cmt);
@@ -670,7 +685,7 @@ static void gfx_d3d11_draw_triangles(float buf_vbo[], size_t buf_vbo_len, size_t
                 d3d.last_resource_views[i] = d3d.textures[d3d.current_texture_ids[i]].resource_view.Get();
                 d3d.context->PSSetShaderResources(i, 1, d3d.textures[d3d.current_texture_ids[i]].resource_view.GetAddressOf());
 
-                if (d3d.current_filter_mode == THREE_POINT) {
+                if (d3d.current_filter_mode == FILTER_THREE_POINT) {
                     d3d.per_draw_cb_data.textures[i].width = d3d.textures[d3d.current_texture_ids[i]].width;
                     d3d.per_draw_cb_data.textures[i].height = d3d.textures[d3d.current_texture_ids[i]].height;
                     d3d.per_draw_cb_data.textures[i].linear_filtering = d3d.textures[d3d.current_texture_ids[i]].linear_filtering;
@@ -737,6 +752,8 @@ static void gfx_d3d11_on_resize(void) {
 
 static void gfx_d3d11_start_frame(void) {
     // Set per-frame constant buffer
+    ID3D11Buffer* buffers[2] = { d3d.per_frame_cb.Get(), d3d.per_draw_cb.Get() };
+    d3d.context->PSSetConstantBuffers(0, 2, buffers);
 
     d3d.per_frame_cb_data.noise_frame++;
     if (d3d.per_frame_cb_data.noise_frame > 150) {
@@ -803,15 +820,16 @@ static void gfx_d3d11_update_framebuffer_parameters(int fb_id, uint32_t width, u
             if (msaa_level <= 1) {
                 ThrowIfFailed(d3d.device->CreateShaderResourceView(tex.texture.Get(), nullptr, tex.resource_view.ReleaseAndGetAddressOf()));
             }
-        } else if (diff) {
+        } else if (diff || (render_target && tex.texture.Get() == nullptr)) {
             DXGI_SWAP_CHAIN_DESC1 desc1;
-            ThrowIfFailed(d3d.swap_chain->GetDesc1(&desc1));
+            IDXGISwapChain1* swap_chain = gfx_dxgi_get_swap_chain();
+            ThrowIfFailed(swap_chain->GetDesc1(&desc1));
             if (desc1.Width != width || desc1.Height != height) {
                 fb.render_target_view.Reset();
                 tex.texture.Reset();
-                ThrowIfFailed(d3d.swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, desc1.Flags));
+                ThrowIfFailed(swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, desc1.Flags));
             }
-            ThrowIfFailed(d3d.swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *)tex.texture.ReleaseAndGetAddressOf()));
+            ThrowIfFailed(swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *)tex.texture.ReleaseAndGetAddressOf()));
         }
         if (render_target) {
             ThrowIfFailed(d3d.device->CreateRenderTargetView(tex.texture.Get(), nullptr, fb.render_target_view.ReleaseAndGetAddressOf()));
@@ -887,7 +905,7 @@ FilteringMode gfx_d3d11_get_texture_filter(void) {
     return d3d.current_filter_mode;
 }
 
-std::map<std::pair<float, float>, uint16_t> gfx_d3d11_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
+std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> gfx_d3d11_get_pixel_depth(int fb_id, const std::set<std::pair<float, float>>& coordinates) {
     Framebuffer& fb = d3d.framebuffers[fb_id];
     TextureData& td = d3d.textures[fb.texture_id];
 
@@ -975,7 +993,7 @@ std::map<std::pair<float, float>, uint16_t> gfx_d3d11_get_pixel_depth(int fb_id,
 
     d3d.context->CopyResource(d3d.depth_value_output_buffer_copy.Get(), d3d.depth_value_output_buffer.Get());
     ThrowIfFailed(d3d.context->Map(d3d.depth_value_output_buffer_copy.Get(), 0, D3D11_MAP_READ, 0, &ms));
-    std::map<std::pair<float, float>, uint16_t> res;
+    std::unordered_map<std::pair<float, float>, uint16_t, hash_pair_ff> res;
     {
         size_t i = 0;
         for (const auto& coord : coordinates) {
