@@ -4,6 +4,7 @@
 #include "objects/object_link_child/object_link_child.h"
 #include "objects/object_triforce_spot/object_triforce_spot.h"
 #include "overlays/actors/ovl_Demo_Effect/z_demo_effect.h"
+#include <soh/CrowdControl.h>
 
 typedef struct {
     /* 0x00 */ u8 flag;

@@ -10,6 +10,8 @@
 #include <assert.h>
 #endif
 
+#include <soh/CrowdControl.h>
+
 // TODO extract this information from the texture definitions themselves
 #define DO_ACTION_TEX_WIDTH 48
 #define DO_ACTION_TEX_HEIGHT 16

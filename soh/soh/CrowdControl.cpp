@@ -7,6 +7,14 @@
 extern "C" u8 ExecuteEffect(const char* effectId, uint32_t value);
 extern "C" void RemoveEffect(const char* effectId);
 
+uint32_t defenseModifier;
+uint32_t giantLink;
+uint32_t minishLink;
+uint32_t highGravity;
+uint32_t resetLinkScale;
+uint32_t noUi;
+uint32_t invisibleLink;
+
 namespace Ship {
     namespace CrowdControl {
         void CrowdControl::InitCrowdControl() {

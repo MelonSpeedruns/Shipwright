@@ -6,8 +6,8 @@
 #include "soh/Enhancements/gameconsole.h"
 
 #include "soh/frame_interpolation.h"
-#include <overlays/actors/ovl_Crowd_Control/z_crowd_control.h>
 #include <overlays/actors/ovl_En_Niw/z_en_niw.h>
+#include <soh/CrowdControl.h>
 
 void* D_8012D1F0 = NULL;
 //UNK_TYPE D_8012D1F4 = 0; // unused

@@ -37,15 +37,9 @@ typedef struct SDLNet_version {
 
 #else /* WITHOUT_SDL */
 
-#if __APPLE__
-#include <SDL.h>
+#include "SDL/SDL.h"
 #include "SDL_endian.h"
 #include "SDL_version.h"
-#else
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_endian.h>
-#include <SDL2/SDL_version.h>
-#endif
 
 typedef SDL_version SDLNet_version;
 

@@ -1,5 +1,22 @@
 #pragma once
 
+#ifndef _CROWDCONTROL_C
+#define _CROWDCONTROL_C
+#endif
+
+#include "stdint.h"
+
+extern "C" {
+extern uint32_t defenseModifier;
+extern uint32_t giantLink;
+extern uint32_t minishLink;
+extern uint32_t highGravity;
+extern uint32_t resetLinkScale;
+extern uint32_t noUi;
+extern uint32_t invisibleLink;
+}
+
+#ifdef __cplusplus
 #include <SDL2/SDL_net.h>
 #include <cstdint>
 #include <thread>
@@ -79,4 +96,5 @@ namespace Ship {
             void InitCrowdControl();
         };
     }
-}
+} // namespace Ship
+#endif
