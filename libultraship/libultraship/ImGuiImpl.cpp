@@ -1207,6 +1207,13 @@ namespace SohImGui {
 
             ImGui::SetCursorPosY(0.0f);
 
+            if (ImGui::BeginMenu("Accessibility"))
+            {
+                EnhancementCheckbox("Enable Blind Mode", "gBlindMode");
+                Tooltip("Enables Blind Mode for people with very little or without vision.");
+                ImGui::EndMenu();
+            }
+
             if (ImGui::BeginMenu("Developer Tools"))
             {
                 EnhancementCheckbox("OoT Debug Mode", "gDebugEnabled");

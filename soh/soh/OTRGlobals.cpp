@@ -44,6 +44,8 @@
 #include "variables.h"
 #include "macros.h"
 #include <Utils/StringHelper.h>
+#include <sapi.h>
+#include <regex>
 
 #ifdef __APPLE__
 #include <SDL_scancode.h>
@@ -1500,4 +1502,36 @@ extern "C" s32 GetRandomizedItemId(GetItemID ogId, s16 actorId, s16 actorParams,
 
 extern "C" s32 GetRandomizedItemIdFromKnownCheck(RandomizerCheck randomizerCheck, GetItemID ogId) {
     return OTRGlobals::Instance->gRandomizer->GetRandomizedItemIdFromKnownCheck(randomizerCheck, ogId);
+}
+
+std::string do_replace(std::string const& in, std::string const& from, std::string const& to) {
+    return std::regex_replace(in, std::regex(from), to);
+}
+
+extern "C" void SpeakText(const char* text, int length) {
+    ISpVoice* pVoice = NULL;
+    HRESULT hr;
+
+    std::string input = text;
+    input = input.substr(0, length);
+
+    for (int i = 0; i < 200; i++) {
+        if (text[i] == 1 || text[i] == 26 || text[i] == 4) {
+            text[i] = 0;
+        }
+    }
+
+    auto a = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    if (!FAILED(a)) {
+        HRESULT CoInitializeEx(LPVOID pvReserved, DWORD dwCoInit);
+        hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+
+        if (SUCCEEDED(hr)) {
+            std::wstring stemp = std::wstring(input.begin(), input.end());
+            LPCWSTR sw = stemp.c_str();
+
+            hr = pVoice->Speak(sw, SpeechVoiceSpeakFlags::SVSFlagsAsync | SpeechVoiceSpeakFlags::SVSFPurgeBeforeSpeak,
+                               NULL);
+        }
+    }
 }

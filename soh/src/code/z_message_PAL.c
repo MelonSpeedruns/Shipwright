@@ -3475,6 +3475,11 @@ void Message_Update(GlobalContext* globalCtx) {
                 msgCtx->textDrawPos = msgCtx->decodedTextLen;
                 D_80153D74 = 0;
             }
+
+            if (CVar_GetS32("gBlindMode", 0) == 1) {
+                SpeakText(msgCtx->msgBufDecoded, msgCtx->decodedTextLen);
+            }
+
             break;
         case MSGMODE_TEXT_CONTINUING:
             msgCtx->stateTimer--;
