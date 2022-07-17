@@ -98,6 +98,7 @@ s32 GetItemIDFromGetItemID(s32 getItemId);
 s32 GetRandomizedItemId(GetItemID ogId, s16 actorId, s16 actorParams, s16 sceneNum);
 s32 GetRandomizedItemIdFromKnownCheck(RandomizerCheck randomizerCheck, GetItemID ogId);
 void SpeakText(const char* text, int length);
+void PlayActorSound(Vec3f actorPos, Vec3f cameraPos, Vec3f cameraForward, Vec3f cameraUp);
 #endif
 
 #endif

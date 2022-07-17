@@ -100,6 +100,9 @@
     <Filter Include="Source Files\Controller\InputEditor">
       <UniqueIdentifier>{010dc29b-d1f6-4793-a4e7-4156aa4fcdd6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Lib\miniaudio">
+      <UniqueIdentifier>{053d7a25-5040-4c56-a58b-2f8839953969}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Factories\MaterialFactory.cpp">
@@ -682,6 +685,9 @@
     </ClInclude>
     <ClInclude Include="Lib\Mercury\Mercury.h">
       <Filter>Source Files\Lib\Mercury</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\miniaudio\miniaudio.h">
+      <Filter>Source Files\Lib\miniaudio</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

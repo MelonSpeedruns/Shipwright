@@ -76,7 +76,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(ProjectDir)assets;$(ProjectDir)build;$(ProjectDir)include;$(ProjectDir)src;$(ProjectDir);$(ProjectDir)..\libultraship\libultraship\Lib\libjpeg\include;$(ProjectDir)..\libultraship\libultraship;$(ProjectDir)..\libultraship\libultraship\Lib\spdlog\include;$(ProjectDir)..\ZAPDTR\ZAPDUtils;$(ProjectDir)..\libultraship\libultraship\Lib\Fast3D\U64;$(ProjectDir)..\libultraship\libultraship\Lib\Fast3D\U64\PR;$(ProjectDir)..\libultraship\libultraship\Lib\SDL;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OutDir);$(ProjectDir)..\libultraship\libultraship;$(ProjectDir)..\libultraship\libultraship\Lib\SDL\lib\x86;$(ProjectDir)..\libultraship\libultraship\Lib\GLEW\x86;$(ProjectDir)..\libultraship\libultraship\Lib\GLFW;$(ProjectDir)..\StormLib\bin\StormLib\Win32\DebugUS\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(OutDir);$(ProjectDir)..\libultraship\libultraship;$(ProjectDir)..\libultraship\libultraship\Lib\SDL\lib\x86;$(ProjectDir)..\libultraship\libultraship\Lib\GLEW\x86;$(ProjectDir)..\libultraship\libultraship\Lib\GLFW;$(ProjectDir)..\StormLib\bin\StormLib\Win32\DebugUS\;$(LibraryPath);$(ProjectDir)..\libultraship\libultraship\Lib\RaptorAudio</LibraryPath>
     <IntDir>$(Configuration)Obj\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -88,7 +88,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(ProjectDir)assets;$(ProjectDir)build;$(ProjectDir)include;$(ProjectDir)src;$(ProjectDir);$(ProjectDir)..\libultraship\libultraship\Lib\libjpeg\include;$(ProjectDir)..\libultraship\libultraship;$(ProjectDir)..\libultraship\libultraship\Lib\spdlog\include;$(ProjectDir)..\ZAPDTR\ZAPDUtils;$(ProjectDir)..\libultraship\libultraship\Lib\Fast3D\U64;$(ProjectDir)..\libultraship\libultraship\Lib\Fast3D\U64\PR;$(ProjectDir)..\libultraship\libultraship\Lib\SDL;$(IncludePath)</IncludePath>
-    <LibraryPath>$(OutDir);$(ProjectDir)..\libultraship\libultraship;$(ProjectDir)..\libultraship\libultraship\Lib\SDL\lib\x64;$(ProjectDir)..\libultraship\libultraship\Lib\GLEW\x64;$(ProjectDir)..\libultraship\libultraship\Lib\GLFW;$(ProjectDir)..\StormLib\bin\StormLib\x64\DebugUS\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(OutDir);$(ProjectDir)..\libultraship\libultraship;$(ProjectDir)..\libultraship\libultraship\Lib\SDL\lib\x64;$(ProjectDir)..\libultraship\libultraship\Lib\GLEW\x64;$(ProjectDir)..\libultraship\libultraship\Lib\GLFW;$(ProjectDir)..\StormLib\bin\StormLib\x64\DebugUS\;$(LibraryPath);$(ProjectDir)..\libultraship\libultraship\Lib\RaptorAudio</LibraryPath>
     <IntDir>$(Platform)\$(Configuration)Obj\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -111,7 +111,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libultraship.lib;ZAPDUtils.lib;opengl32.lib;glu32.lib;SDL2.lib;SDL2main.lib;glew32s.lib;winmm.lib;imm32.lib;version.lib;setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libultraship.lib;ZAPDUtils.lib;opengl32.lib;glu32.lib;SDL2.lib;SDL2main.lib;glew32s.lib;winmm.lib;imm32.lib;version.lib;setupapi.lib;RaptorAudio100.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>8777216</StackReserveSize>
       <GenerateMapFile>true</GenerateMapFile>
       <MapExports>true</MapExports>
@@ -941,7 +941,6 @@
     <ClCompile Include="src\overlays\misc\ovl_kaleido_scope\z_lmap_mark.c" />
     <ClCompile Include="src\overlays\misc\ovl_kaleido_scope\z_lmap_mark_data.c" />
     <ClCompile Include="src\overlays\misc\ovl_map_mark_data\z_map_mark_data.c" />
-    
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="soh\Enhancements\cosmetics\CosmeticsEditor.h" />

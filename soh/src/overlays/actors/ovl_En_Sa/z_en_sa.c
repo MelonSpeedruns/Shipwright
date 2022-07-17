@@ -526,6 +526,16 @@ void EnSa_Init(Actor* thisx, GlobalContext* globalCtx) {
 
     Actor_SpawnAsChild(&globalCtx->actorCtx, &this->actor, globalCtx, ACTOR_EN_ELF, this->actor.world.pos.x,
                        this->actor.world.pos.y, this->actor.world.pos.z, 0, 0, 0, FAIRY_KOKIRI);
+
+    if (CVar_GetS32("gBlindMode", 0) == 1) {
+        Vec3f camForward;
+
+        camForward.x = gGlobalCtx->mainCamera.eye.x - gGlobalCtx->mainCamera.at.x;
+        camForward.y = gGlobalCtx->mainCamera.eye.y - gGlobalCtx->mainCamera.at.y;
+        camForward.z = gGlobalCtx->mainCamera.eye.z - gGlobalCtx->mainCamera.at.z;
+
+        PlayActorSound(this->actor.world.pos, gGlobalCtx->mainCamera.at, camForward, gGlobalCtx->mainCamera.up);
+    }
 }
 
 void EnSa_Destroy(Actor* thisx, GlobalContext* globalCtx) {
