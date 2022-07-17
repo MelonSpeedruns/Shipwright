@@ -1515,14 +1515,34 @@ extern "C" void SpeakText(const char* text, int length) {
     std::string input = text;
     input = input.substr(0, length);
 
-    for (int i = 0; i < 200; i++) {
-        if (text[i] == 1 || text[i] == 26 || text[i] == 4) {
-            text[i] = 0;
+    for (int i = 0; i < length; i++) {
+        if (input[i] == 0x15) {
+            input[i] = 0;
+            input[i + 1] = 0;
+            input[i + 2] = 0;
+            input[i + 3] = 0;
+        } else if (input[i] == 0x07 || input[i] == 0x12) {
+            input[i] = 0;
+            input[i + 1] = 0;
+            input[i + 2] = 0;
+        } else if (input[i] == 0x05 || input[i] == 0x06 || input[i] == 0x13 || input[i] == 0x0C || input[i] == 0x0E ||
+                   input[i] == 0x1E || input[i] == 0x14 || input[i] == 0x11) {
+            input[i] = 0;
+            input[i + 1] = 0;
+        } else if (input[i] == 0x01) {
+            input[i] = ' ';
+        } else if (input[i] == 0x02 || input[i] == 0x08 || input[i] == 0x09 || input[i] == 0x1A || input[i] == 0x02 ||
+                   input[i] == 0x0B || input[i] == 0x1F || input[i] == 0x0D || input[i] == 0x04 || input[i] == 0x1C ||
+                   input[i] == 0x1B || input[i] == 0x19 || input[i] == 0x1D || input[i] == 0x0A || input[i] == 0x0F ||
+                   input[i] == 0x16 || input[i] == 0x17 || input[i] == 0x18) {
+            input[i] = 0;
         }
     }
 
-    auto a = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-    if (!FAILED(a)) {
+    input.erase(std::remove(input.begin(), input.end(), '\0'), input.end());
+
+    auto voiceModule = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    if (!FAILED(voiceModule)) {
         HRESULT CoInitializeEx(LPVOID pvReserved, DWORD dwCoInit);
         hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
 
