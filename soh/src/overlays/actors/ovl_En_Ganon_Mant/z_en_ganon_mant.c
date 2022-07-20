@@ -183,9 +183,9 @@ void EnGanonMant_UpdateStrand(GlobalContext* globalCtx, EnGanonMant* this, Vec3f
             (pos + i)->z += posStep.z;
         }
         // Set length
-        jointLength = 6.5f;
+        jointLength = 3.5f;
     } else {
-        jointLength = 9.5f;
+        jointLength = 3.5f;
     }
 
     for (i = 0; i < GANON_MANT_NUM_JOINTS; i++, pos++, vel++, rot++, nextPos++) {
@@ -336,7 +336,6 @@ void EnGanonMant_UpdateVertices(EnGanonMant* this) {
 
 void EnGanonMant_Update(Actor* thisx, GlobalContext* globalCtx) {
     EnGanonMant* this = (EnGanonMant*)thisx;
-    BossGanon* ganon = (BossGanon*)this->actor.parent;
 
     this->updateHasRun = true;
     this->frameTimer++;
@@ -352,7 +351,7 @@ void EnGanonMant_Update(Actor* thisx, GlobalContext* globalCtx) {
         this->attachShouldersTimer -= 1.0f;
     }
 
-    this->actor.shape.rot.y = ganon->actor.shape.rot.y;
+    this->actor.shape.rot.y = GET_PLAYER(globalCtx)->actor.shape.rot.y;
 
     if (this->tearTimer != 0) {
         this->tearTimer--;

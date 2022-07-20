@@ -20,6 +20,7 @@
 #include "objects/gameplay_keep/gameplay_keep.h"
 #include "objects/object_link_child/object_link_child.h"
 #include "textures/icon_item_24_static/icon_item_24_static.h"
+#include <overlays/actors/ovl_En_Ganon_Mant/z_en_ganon_mant.h>
 
 typedef struct {
     /* 0x00 */ u8 itemId;
@@ -9567,6 +9568,7 @@ static void (*D_80854738[])(GlobalContext* globalCtx, Player* this) = {
 };
 
 static Vec3f D_80854778 = { 0.0f, 50.0f, 0.0f };
+EnGanonMant* sBossGanonCape;
 
 void Player_Init(Actor* thisx, GlobalContext* globalCtx2) {
     Player* this = (Player*)thisx;
@@ -9598,14 +9600,16 @@ void Player_Init(Actor* thisx, GlobalContext* globalCtx2) {
     Player_SetEquipmentData(globalCtx, this);
     this->prevBoots = this->currentBoots;
     if (CVar_GetS32("gMMBunnyHood", 0)) {
-        if (INV_CONTENT(ITEM_TRADE_CHILD) == ITEM_SOLD_OUT) { sMaskMemory = PLAYER_MASK_NONE; }
+        if (INV_CONTENT(ITEM_TRADE_CHILD) == ITEM_SOLD_OUT) {
+            sMaskMemory = PLAYER_MASK_NONE;
+        }
         this->currentMask = sMaskMemory;
         for (uint16_t cSlotIndex = 0; cSlotIndex < ARRAY_COUNT(gSaveContext.equips.cButtonSlots); cSlotIndex++) {
             if (gSaveContext.equips.cButtonSlots[cSlotIndex] == SLOT_TRADE_CHILD &&
-                (gItemAgeReqs[gSaveContext.equips.buttonItems[cSlotIndex+1]] != 9 &&
-                 LINK_IS_ADULT && !CVar_GetS32("gNoRestrictAge", 0))) {
+                (gItemAgeReqs[gSaveContext.equips.buttonItems[cSlotIndex + 1]] != 9 && LINK_IS_ADULT &&
+                 !CVar_GetS32("gNoRestrictAge", 0))) {
                 gSaveContext.equips.cButtonSlots[cSlotIndex] = SLOT_NONE;
-                gSaveContext.equips.buttonItems[cSlotIndex+1] = ITEM_NONE;
+                gSaveContext.equips.buttonItems[cSlotIndex + 1] = ITEM_NONE;
             }
         }
     }
@@ -9617,16 +9621,14 @@ void Player_Init(Actor* thisx, GlobalContext* globalCtx2) {
     if (sp50 != 0) {
         if (sp50 == -3) {
             thisx->params = gSaveContext.respawn[RESPAWN_MODE_RETURN].playerParams;
-        }
-        else {
+        } else {
             if ((sp50 == 1) || (sp50 == -1)) {
                 this->unk_A86 = -2;
             }
 
             if (sp50 < 0) {
                 sp4C = 0;
-            }
-            else {
+            } else {
                 sp4C = sp50 - 1;
                 Math_Vec3f_Copy(&thisx->world.pos, &gSaveContext.respawn[sp50 - 1].pos);
                 Math_Vec3f_Copy(&thisx->home.pos, &thisx->world.pos);
@@ -9646,11 +9648,11 @@ void Player_Init(Actor* thisx, GlobalContext* globalCtx2) {
         if (gSaveContext.showTitleCard) {
             if ((gSaveContext.sceneSetupIndex < 4) &&
                 (gEntranceTable[((void)0, gSaveContext.entranceIndex) + ((void)0, gSaveContext.sceneSetupIndex)].field &
-                    0x4000) &&
+                 0x4000) &&
                 ((globalCtx->sceneNum != SCENE_DDAN) || (gSaveContext.eventChkInf[11] & 1)) &&
                 ((globalCtx->sceneNum != SCENE_NIGHT_SHOP) || (gSaveContext.eventChkInf[2] & 0x20))) {
                 TitleCard_InitPlaceName(globalCtx, &globalCtx->actorCtx.titleCtx, this->giObjectSegment, 160, 120, 144,
-                    24, 20);
+                                        24, 20);
             }
         }
         gSaveContext.showTitleCard = true;
@@ -9697,6 +9699,15 @@ void Player_Init(Actor* thisx, GlobalContext* globalCtx2) {
 
     Map_SavePlayerInitialInfo(globalCtx);
     MREG(64) = 0;
+
+    (EnGanonMant*)sBossGanonCape =
+        Actor_SpawnAsChild(&globalCtx->actorCtx, thisx, globalCtx, ACTOR_EN_GANON_MANT, 0.0f, 0.0f, 0.0f, 0, 0, 0, 1);
+
+    sBossGanonCape->backPush = -9.0f;
+    sBossGanonCape->backSwayMagnitude = 0.0f;
+    sBossGanonCape->sideSwayMagnitude = 0.0f;
+    sBossGanonCape->minDist = 0.0f;
+    sBossGanonCape->gravity = -2.5f;
 }
 
 void func_808471F4(s16* pValue) {
@@ -11254,6 +11265,16 @@ void Player_Draw(Actor* thisx, GlobalContext* globalCtx2) {
             Player_DrawGetItem(globalCtx, this);
         }
     }
+
+    sBossGanonCape->actor.world.pos = this->actor.world.pos;
+
+    sBossGanonCape->rightForearmPos = this->bodyPartsPos[PLAYER_BODYPART_R_SHOULDER];
+    sBossGanonCape->leftForearmPos = this->bodyPartsPos[PLAYER_BODYPART_HEAD];
+
+    sBossGanonCape->rightForearmPos.y += 2;
+    sBossGanonCape->leftForearmPos.y += 2;
+
+    sBossGanonCape->minY = this->actor.world.pos.y - 0.1f;
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);
 }
