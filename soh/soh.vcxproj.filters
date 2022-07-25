@@ -82,6 +82,9 @@
     <Filter Include="Source Files\soh\Enhancements\debugger">
       <UniqueIdentifier>{04fc1c52-49ff-48e2-ae23-2c00867374f8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\soh\Models">
+      <UniqueIdentifier>{9188120f-d69e-4789-8806-208153f9ddc7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\boot\assert.c">
@@ -2373,6 +2376,9 @@
     <ClCompile Include="soh\Enhancements\randomizer\randomizer_item_tracker.cpp">
       <Filter>Source Files\src</Filter>
     </ClCompile>
+    <ClCompile Include="soh\Models\gShipIntroLogo.c">
+      <Filter>Source Files\soh\Models</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\overlays\actors\ovl_kaleido_scope\z_kaleido_scope.h">
@@ -4060,6 +4066,9 @@
     </ClInclude>
     <ClInclude Include="soh\Enhancements\randomizer\randomizer_item_tracker.h">
       <Filter>Source Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="soh\Models\gShipIntroLogo.h">
+      <Filter>Source Files\soh\Models</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

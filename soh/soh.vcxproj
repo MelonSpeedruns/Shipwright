@@ -247,6 +247,7 @@
     <ClCompile Include="soh\Enhancements\savestates.cpp" />
     <ClCompile Include="soh\GbiWrap.cpp" />
     <ClCompile Include="soh\gu_pc.c" />
+    <ClCompile Include="soh\Models\gShipIntroLogo.c" />
     <ClCompile Include="soh\OTRGlobals.cpp" />
     <ClCompile Include="soh\SaveManager.cpp" />
     <ClCompile Include="soh\stubs.c" />
@@ -941,7 +942,6 @@
     <ClCompile Include="src\overlays\misc\ovl_kaleido_scope\z_lmap_mark.c" />
     <ClCompile Include="src\overlays\misc\ovl_kaleido_scope\z_lmap_mark_data.c" />
     <ClCompile Include="src\overlays\misc\ovl_map_mark_data\z_map_mark_data.c" />
-    
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="soh\Enhancements\cosmetics\CosmeticsEditor.h" />
@@ -1039,6 +1039,7 @@
     <ClInclude Include="soh\Enhancements\debugger\debugSaveEditor.h" />
     <ClInclude Include="soh\Enhancements\debugger\ImGuiHelpers.h" />
     <ClInclude Include="soh\gameconsole.h" />
+    <ClInclude Include="soh\Models\gShipIntroLogo.h" />
     <ClInclude Include="soh\OTRAudio.h" />
     <ClInclude Include="soh\OTRGlobals.h" />
     <ClInclude Include="soh\SaveManager.h" />

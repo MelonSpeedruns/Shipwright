@@ -1,0 +1,15 @@
+extern unsigned char shipLogoTextTex[];
+extern unsigned char sohShinyTex[];
+extern Vtx gShipIntroLogo_Ship_mesh_layer_Opaque_vtx_0[334];
+extern Gfx gShipIntroLogo_Ship_mesh_layer_Opaque_tri_0[];
+extern Vtx gShipIntroLogo_Ship_mesh_layer_Opaque_vtx_1[102];
+extern Gfx gShipIntroLogo_Ship_mesh_layer_Opaque_tri_1[];
+extern Vtx gShipIntroLogo_Ship_mesh_layer_Opaque_vtx_2[319];
+extern Gfx gShipIntroLogo_Ship_mesh_layer_Opaque_tri_2[];
+extern Vtx gShipIntroLogo_Ship_mesh_layer_Opaque_vtx_3[129];
+extern Gfx gShipIntroLogo_Ship_mesh_layer_Opaque_tri_3[];
+extern Gfx mat_gShipIntroLogo_f3d_material_003_layerOpaque[];
+extern Gfx mat_gShipIntroLogo_f3d_material_002_layerOpaque[];
+extern Gfx mat_gShipIntroLogo_f3d_material_layerOpaque[];
+extern Gfx mat_gShipIntroLogo_f3d_material_001_layerOpaque[];
+extern Gfx gShipIntroLogo[];

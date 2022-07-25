@@ -12,6 +12,7 @@
 #include <soh/Enhancements/bootcommands.h>
 #include "GameVersions.h"
 #include <soh/SaveManager.h>
+#include <soh/Models/gShipIntroLogo.h>
 
 const char* GetGameVersionString();
 char* quote;
@@ -111,8 +112,12 @@ const char* GetGameVersionString() {
 void Title_Calc(TitleContext* this) {
 #ifdef NORMAL_GAMEPLAY
     if ((this->coverAlpha == 0) && (this->visibleDuration != 0)) {
-        this->visibleDuration--;
+        if (CVar_GetS32("gOtrFound", 0) != 0) {
+            this->visibleDuration--;
+        }
+
         this->unk_1D4--;
+
         if (this->unk_1D4 == 0) {
             this->unk_1D4 = 400;
         }
@@ -180,18 +185,16 @@ void Title_Draw(TitleContext* this) {
     v1.z = 0;
     v2.z = 1119.0837;
 
-    char* n64LogoTex = ResourceMgr_LoadTexByName(nintendo_rogo_static_Tex_000000);
-
     func_8002EABC(&v1, &v2, &v3, this->state.gfxCtx);
     gSPSetLights1(POLY_OPA_DISP++, sTitleLights);
     Title_SetupView(this, 0, 150.0, 300.0);
     func_80093D18(this->state.gfxCtx);
-    Matrix_Translate(-53.0, -5.0, 0, MTXMODE_NEW);
+    Matrix_Translate(-70.0, -5.0, 0, MTXMODE_NEW);
     Matrix_Scale(1.0, 1.0, 1.0, MTXMODE_APPLY);
     Matrix_RotateZYX(0, sTitleRotY, 0, MTXMODE_APPLY);
 
     gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(this->state.gfxCtx), G_MTX_LOAD);
-    gSPDisplayList(POLY_OPA_DISP++, gNintendo64LogoDL);
+    gSPDisplayList(POLY_OPA_DISP++, gShipIntroLogo);
     func_800944C4(this->state.gfxCtx);
     gDPPipeSync(POLY_OPA_DISP++);
     gDPSetCycleType(POLY_OPA_DISP++, G_CYC_2CYCLE);
@@ -201,12 +204,12 @@ void Title_Draw(TitleContext* this) {
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 170, 255, 255, 255);
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 255, 128);
 
-    gDPLoadMultiBlock(POLY_OPA_DISP++, nintendo_rogo_static_Tex_001800, 0x100, 1, G_IM_FMT_I, G_IM_SIZ_8b, 32, 32, 0,
+    gDPLoadMultiBlock(POLY_OPA_DISP++, sohShinyTex, 0x100, 1, G_IM_FMT_I, G_IM_SIZ_8b, 32, 32, 0,
         G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, 5, 5, 2, 11);
 
     for (idx = 0, y = 94; idx < 16; idx++, y += 2)
     {
-        gDPLoadTextureBlock(POLY_OPA_DISP++, &n64LogoTex[0x180 * idx], G_IM_FMT_I,
+        gDPLoadTextureBlock(POLY_OPA_DISP++, &shipLogoTextTex[0x180 * idx], G_IM_FMT_I,
             G_IM_SIZ_8b, 192, 2, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK,
             G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
