@@ -267,7 +267,7 @@ void Gameplay_Init(GameState* thisx) {
     GraphicsContext* gfxCtx = globalCtx->state.gfxCtx;
     enableBetaQuest();
     gGlobalCtx = globalCtx;
-    //globalCtx->state.gfxCtx = NULL;
+    // globalCtx->state.gfxCtx = NULL;
     uintptr_t zAlloc;
     uintptr_t zAllocAligned;
     size_t zAllocSize;
@@ -298,7 +298,9 @@ void Gameplay_Init(GameState* thisx) {
     // This is potionally unavoidable due to struct size differences, but is x2 the right amount?
     GameState_Realloc(&globalCtx->state, 0x1D4790 * 2);
     KaleidoManager_Init(globalCtx);
+
     View_Init(&globalCtx->view, gfxCtx);
+
     Audio_SetExtraFilter(0);
     Quake_Init();
 
@@ -495,13 +497,18 @@ void Gameplay_Init(GameState* thisx) {
     func_8002DF18(globalCtx, GET_PLAYER(globalCtx));
     AnimationContext_Update(globalCtx, &globalCtx->animationCtx);
     gSaveContext.respawnFlag = 0;
-    #if 0
+#if 0
     if (dREG(95) != 0) {
         D_8012D1F0 = D_801614D0;
         osSyncPrintf("\nkawauso_data=[%x]", D_8012D1F0);
         DmaMgr_DmaRomToRam(0x03FEB000, D_8012D1F0, sizeof(D_801614D0));
     }
-    #endif
+#endif
+
+    Player* secondPlayer = Actor_Spawn(&globalCtx->actorCtx, globalCtx, ACTOR_PLAYER, player->actor.world.pos.x, player->actor.world.pos.y,
+                player->actor.world.pos.z, player->actor.shape.rot.x, player->actor.shape.rot.y,
+                player->actor.shape.rot.z, 0xdff);
+    secondPlayer->secondPlayer = 1;
 }
 
 void Gameplay_Update(GlobalContext* globalCtx) {
@@ -1168,10 +1175,18 @@ void Gameplay_DrawOverlayElements(GlobalContext* globalCtx) {
     }
 }
 
-void Gameplay_Draw(GlobalContext* globalCtx) {
+void Gameplay_Draw(GlobalContext* globalCtx, int isRight) {
     GraphicsContext* gfxCtx = globalCtx->state.gfxCtx;
     Lights* sp228;
     Vec3f sp21C;
+
+    if (isRight == 1) {
+        globalCtx->view.viewport.leftX = 0;
+        globalCtx->view.viewport.rightX = SCREEN_WIDTH / 2;
+    } else {
+        globalCtx->view.viewport.leftX = SCREEN_WIDTH / 2;
+        globalCtx->view.viewport.rightX = SCREEN_WIDTH;
+    }
 
     OPEN_DISPS(gfxCtx);
 
@@ -1501,7 +1516,10 @@ void Gameplay_Main(GameState* thisx) {
     }
 
     FrameInterpolation_StartRecord();
-    Gameplay_Draw(globalCtx);
+
+    Gameplay_Draw(globalCtx, 0);
+    Gameplay_Draw(globalCtx, 1);
+
     FrameInterpolation_StopRecord();
 
     if (1 && HREG(63)) {
@@ -1518,9 +1536,7 @@ void Gameplay_Main(GameState* thisx) {
         int newIngameTime = maxInGameDayTicks * percent;
 
         gSaveContext.dayTime = newIngameTime;
-
     }
-
 }
 
 // original name: "Game_play_demo_mode_check"

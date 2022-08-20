@@ -626,6 +626,7 @@ typedef struct Player {
     /* 0x0A87 */ u8         unk_A87;
     /* 0x0A88 */ Vec3f      unk_A88; // previous body part 0 position
     /* 0x0A94 */ PendingFlag pendingFlag;
+    u8 secondPlayer;
 } Player; // size = 0xAA0
 
 #endif

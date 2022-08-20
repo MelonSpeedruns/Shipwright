@@ -360,6 +360,7 @@ void PadMgr_RequestPadData(PadMgr* padMgr, Input* inputs, s32 mode) {
 
     ogInput = &padMgr->inputs[0];
     newInput = &inputs[0];
+
     for (i = 0; i < 4; i++) {
         if (mode != 0) {
             *newInput = *ogInput;

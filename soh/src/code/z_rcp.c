@@ -1531,7 +1531,7 @@ void func_80095248(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b) {
         gDPSetCycleType(POLY_OPA_DISP++, G_CYC_FILL);
         gDPSetRenderMode(POLY_OPA_DISP++, G_RM_NOOP, G_RM_NOOP2);
         gDPSetFillColor(POLY_OPA_DISP++, (GPACK_RGBA5551(r, g, b, 1) << 16) | GPACK_RGBA5551(r, g, b, 1));
-        gDPFillRectangle(POLY_OPA_DISP++, 0, ret, gScreenWidth - 1, gScreenHeight - ret - 1);
+        gDPFillRectangle(POLY_OPA_DISP++, 0, ret, 0, 0);
         gDPPipeSync(POLY_OPA_DISP++);
 
         if (ret > 0) {

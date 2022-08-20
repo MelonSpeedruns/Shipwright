@@ -11085,7 +11085,7 @@ void Player_Update(Actor* thisx, GlobalContext* globalCtx) {
             memset(&sp44, 0, sizeof(sp44));
         }
         else {
-            sp44 = globalCtx->state.input[0];
+            sp44 = globalCtx->state.input[this->secondPlayer ? 1 : 0];
             if (this->unk_88E != 0) {
                 sp44.cur.button &= ~(BTN_A | BTN_B | BTN_CUP);
                 sp44.press.button &= ~(BTN_A | BTN_B | BTN_CUP);
@@ -13590,7 +13590,7 @@ void func_8084FBF4(Player* this, GlobalContext* globalCtx) {
 }
 
 s32 func_8084FCAC(Player* this, GlobalContext* globalCtx) {
-    sControlInput = &globalCtx->state.input[0];
+    sControlInput = &globalCtx->state.input[this->secondPlayer ? 1 : 0];
 
     if (CVar_GetS32("gDebugEnabled", 0) && ((CHECK_BTN_ALL(sControlInput->cur.button, BTN_A | BTN_L | BTN_R) &&
         CHECK_BTN_ALL(sControlInput->press.button, BTN_B)) ||

@@ -1345,6 +1345,7 @@ void func_800AA178(u32);
 View* View_New(GraphicsContext* gfxCtx);
 void View_Free(View* view);
 void View_Init(View*, GraphicsContext*);
+void View_Init2(View*, GraphicsContext*);
 void func_800AA358(View* view, Vec3f* eye, Vec3f* lookAt, Vec3f* up);
 void func_800AA3F0(View* view, Vec3f* eye, Vec3f* lookAt, Vec3f* up);
 void View_SetScale(View* view, f32 scale);
