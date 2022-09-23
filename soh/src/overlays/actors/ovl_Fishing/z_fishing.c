@@ -90,6 +90,7 @@ typedef struct {
     /* 0x32 */ s16 timer;
     /* 0x34 */ u8 shouldDraw;
     /* 0x38 */ f32 drawDistance;
+    u32 epoch;
 } FishingProp; // size = 0x3C
 
 typedef enum {
@@ -115,6 +116,7 @@ typedef struct {
     /* 0x40 */ s16 unk_40;
     /* 0x42 */ s16 unk_42;
     /* 0x44 */ u8 shouldDraw;
+    u32 epoch;
 } FishingGroupFish; // size = 0x48
 
 #define LINE_SEG_COUNT 200
@@ -764,6 +766,7 @@ void Fishing_InitPondProps(Fishing* this, GlobalContext* globalCtx) {
             break;
         }
 
+        prop->epoch++;
         prop->type = sPondPropInits[i].type;
         prop->pos.x = sPondPropInits[i].pos.x;
         prop->pos.y = sPondPropInits[i].pos.y;
@@ -928,6 +931,8 @@ void Fishing_Init(Actor* thisx, GlobalContext* globalCtx2) {
 
         for (i = 0; i < GROUP_FISH_COUNT; i++) {
             FishingGroupFish* fish = &sGroupFishes[i];
+
+            fish->epoch++;
 
             fish->type = FS_GROUP_FISH_NORMAL;
 
@@ -1773,6 +1778,7 @@ void Fishing_DrawSinkingLure(GlobalContext* globalCtx) {
 
         for (i = SINKING_LURE_SEG_COUNT - 1; i >= 0; i--) {
             if ((i + D_80B7FEA0) < SINKING_LURE_SEG_COUNT) {
+                FrameInterpolation_RecordOpenChild("Fishing Lures 1", i);
                 Matrix_Translate(sSinkingLurePos[i].x, sSinkingLurePos[i].y, sSinkingLurePos[i].z, MTXMODE_NEW);
                 scale = sSinkingLureSizes[i + D_80B7FEA0] * 0.04f;
                 Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
@@ -1781,6 +1787,7 @@ void Fishing_DrawSinkingLure(GlobalContext* globalCtx) {
                 gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(globalCtx->state.gfxCtx),
                           G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
                 gSPDisplayList(POLY_OPA_DISP++, gFishingSinkingLureSegmentModelDL);
+                FrameInterpolation_RecordCloseChild();
             }
         }
     } else {
@@ -1790,6 +1797,7 @@ void Fishing_DrawSinkingLure(GlobalContext* globalCtx) {
 
         for (i = SINKING_LURE_SEG_COUNT - 1; i >= 0; i--) {
             if ((i + D_80B7FEA0) < SINKING_LURE_SEG_COUNT) {
+                FrameInterpolation_RecordOpenChild("Fishing Lures 2", i);
                 Matrix_Translate(sSinkingLurePos[i].x, sSinkingLurePos[i].y, sSinkingLurePos[i].z, MTXMODE_NEW);
                 scale = sSinkingLureSizes[i + D_80B7FEA0] * 0.04f;
                 Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
@@ -1798,6 +1806,7 @@ void Fishing_DrawSinkingLure(GlobalContext* globalCtx) {
                 gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(globalCtx->state.gfxCtx),
                           G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
                 gSPDisplayList(POLY_XLU_DISP++, gFishingSinkingLureSegmentModelDL);
+                FrameInterpolation_RecordCloseChild();
             }
         }
     }
@@ -4451,7 +4460,7 @@ void Fishing_DrawPondProps(GlobalContext* globalCtx) {
             }
 
             if (prop->shouldDraw) {
-                FrameInterpolation_RecordOpenChild(prop, 0);
+                FrameInterpolation_RecordOpenChild(prop, prop->epoch);
                 Matrix_Translate(prop->pos.x, prop->pos.y, prop->pos.z, MTXMODE_NEW);
                 Matrix_Scale(prop->scale, prop->scale, prop->scale, MTXMODE_APPLY);
                 Matrix_RotateY(prop->rotY, MTXMODE_APPLY);
@@ -4478,7 +4487,7 @@ void Fishing_DrawPondProps(GlobalContext* globalCtx) {
             }
 
             if (prop->shouldDraw) {
-                FrameInterpolation_RecordOpenChild(prop, 0);
+                FrameInterpolation_RecordOpenChild(prop, prop->epoch);
                 Matrix_Translate(prop->pos.x, prop->pos.y, prop->pos.z, MTXMODE_NEW);
                 Matrix_Scale(prop->scale, prop->scale, prop->scale, MTXMODE_APPLY);
 
@@ -4502,7 +4511,7 @@ void Fishing_DrawPondProps(GlobalContext* globalCtx) {
             }
 
             if (prop->shouldDraw) {
-                FrameInterpolation_RecordOpenChild(prop, 0);
+                FrameInterpolation_RecordOpenChild(prop, prop->epoch);
                 Matrix_Translate(prop->pos.x, prop->pos.y, prop->pos.z, MTXMODE_NEW);
                 Matrix_Scale(prop->scale, 1.0f, prop->scale, MTXMODE_APPLY);
                 Matrix_RotateY(prop->lilyPadAngle * (M_PI / 32768), MTXMODE_APPLY);
@@ -4529,7 +4538,7 @@ void Fishing_DrawPondProps(GlobalContext* globalCtx) {
             }
 
             if (prop->shouldDraw) {
-                FrameInterpolation_RecordOpenChild(prop, 0);
+                FrameInterpolation_RecordOpenChild(prop, prop->epoch);
                 Matrix_Translate(prop->pos.x, prop->pos.y, prop->pos.z, MTXMODE_NEW);
                 Matrix_Scale(prop->scale, prop->scale, prop->scale, MTXMODE_APPLY);
                 Matrix_RotateY(prop->rotY, MTXMODE_APPLY);
@@ -4759,6 +4768,7 @@ void Fishing_DrawGroupFishes(GlobalContext* globalCtx) {
             }
 
             if (fish->shouldDraw) {
+                FrameInterpolation_RecordOpenChild(fish, fish->epoch);
                 Matrix_Translate(fish->pos.x, fish->pos.y, fish->pos.z, MTXMODE_NEW);
                 Matrix_RotateY(((f32)fish->unk_3E * M_PI) / 32768.0f, MTXMODE_APPLY);
                 Matrix_RotateX((-(f32)fish->unk_3C * M_PI) / 32768.0f, MTXMODE_APPLY);
@@ -4767,6 +4777,7 @@ void Fishing_DrawGroupFishes(GlobalContext* globalCtx) {
                 gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(globalCtx->state.gfxCtx),
                           G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
                 gSPDisplayList(POLY_OPA_DISP++, gFishingGroupFishModelDL);
+                FrameInterpolation_RecordCloseChild();
             }
         }
         fish++;

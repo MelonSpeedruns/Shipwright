@@ -256,8 +256,8 @@
   <ItemGroup>
     <ClCompile Include="Audio.cpp" />
     <ClCompile Include="Blob.cpp" />
-	<ClCompile Include="Online.cpp" />
     <ClCompile Include="ControlDeck.cpp" />
+    <ClCompile Include="CrashHandler.cpp" />
     <ClCompile Include="Cvar.cpp" />
     <ClCompile Include="Environment.cpp" />
     <ClCompile Include="Factories\AudioFactory.cpp" />
@@ -345,6 +345,7 @@
     <ClCompile Include="SDLController.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CrashHandler.h" />
     <ClInclude Include="Lib\Mercury\Mercury.h" />
     <ClInclude Include="Lib\nlohmann\json.hpp" />
     <ClInclude Include="abi.h" />
@@ -442,7 +443,6 @@
     <ClInclude Include="ResourceMgr.h" />
     <ClInclude Include="RumblePack.h" />
     <ClInclude Include="Scene.h" />
-	<ClInclude Include="Online.h" />
     <ClInclude Include="Skeleton.h" />
     <ClInclude Include="SkeletonLimb.h" />
     <ClInclude Include="Texture.h" />

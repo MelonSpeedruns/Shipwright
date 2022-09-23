@@ -20,6 +20,8 @@
 #include <string>
 #include <iostream>
 
+#include "../../Cvar.h"
+
 #include "gfx_pc.h"
 #include "gfx_cc.h"
 #include "gfx_window_manager_api.h"
@@ -2110,6 +2112,10 @@ static void gfx_run_dl(Gfx* cmd) {
 
         switch (opcode) {
             // RSP commands:
+        case G_LOAD_UCODE:
+            rsp.fog_mul = 0;
+            rsp.fog_offset = 0;
+            break;
         case G_MARKER:
         {
             cmd++;
@@ -2649,7 +2655,12 @@ void gfx_init(struct GfxWindowManagerAPI *wapi, struct GfxRenderingAPI *rapi, co
     gfx_wapi->init(game_name, start_in_fullscreen, width, height);
     gfx_rapi->init();
     gfx_rapi->update_framebuffer_parameters(0, width, height, 1, false, true, true, true);
+#ifdef __APPLE__
     gfx_current_dimensions.internal_mul = 1;
+#else
+    gfx_current_dimensions.internal_mul = CVar_GetFloat("gInternalResolution", 1);
+#endif
+    gfx_msaa_level = CVar_GetS32("gMSAAValue", 1);
     gfx_current_dimensions.width = width;
     gfx_current_dimensions.height = height;
     game_framebuffer = gfx_rapi->create_framebuffer();

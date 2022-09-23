@@ -4023,6 +4023,8 @@ void BossVa_DrawDoor(GlobalContext* globalCtx, s16 scale) {
     Matrix_Get(&doorMtx);
 
     for (i = 0; i < 8; i++, segAngle -= M_PI / 4) {
+        FrameInterpolation_RecordOpenChild("Barinade Door", i);
+
         Matrix_Put(&doorMtx);
         Matrix_RotateZ(segAngle, MTXMODE_APPLY);
         Matrix_Translate(0.0f, doorPieceLength[i] * yScale, 0.0f, MTXMODE_APPLY);
@@ -4030,6 +4032,8 @@ void BossVa_DrawDoor(GlobalContext* globalCtx, s16 scale) {
         gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(globalCtx->state.gfxCtx),
                   G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gSPDisplayList(POLY_OPA_DISP++, doorPieceDispList[i]);
+
+        FrameInterpolation_RecordCloseChild();
     }
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);

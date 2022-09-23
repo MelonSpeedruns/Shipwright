@@ -201,7 +201,8 @@ void GivePlayerRandoRewardSongOfTime(GlobalContext* globalCtx, RandomizerCheck c
         !Flags_GetTreasure(globalCtx, 0x1F) && gSaveContext.nextTransition == 0xFF) {
         GetItemID getItemId = Randomizer_GetItemIdFromKnownCheck(check, GI_SONG_OF_TIME);
         GiveItemWithoutActor(globalCtx, getItemId);
-        Flags_SetTreasure(globalCtx, 0x1F);
+        player->pendingFlag.flagID = 0x1F;
+        player->pendingFlag.flagType = FLAG_SCENE_TREASURE;
     }
 }
 
@@ -238,10 +239,11 @@ void GivePlayerRandoRewardZeldaLightArrowsGift(GlobalContext* globalCtx, Randomi
     if (CHECK_QUEST_ITEM(QUEST_MEDALLION_SPIRIT) && CHECK_QUEST_ITEM(QUEST_MEDALLION_SHADOW) && LINK_IS_ADULT &&
         (gEntranceTable[((void)0, gSaveContext.entranceIndex)].scene == SCENE_TOKINOMA) &&
         !Flags_GetTreasure(globalCtx, 0x1E) && player != NULL && !Player_InBlockingCsMode(globalCtx, player) &&
-        globalCtx->sceneLoadFlag == 0 && player->getItemId == GI_NONE) {
+        globalCtx->sceneLoadFlag == 0) {
         GetItemID getItemId = Randomizer_GetItemIdFromKnownCheck(check, GI_ARROW_LIGHT);
         GiveItemWithoutActor(globalCtx, getItemId);
-        Flags_SetTreasure(globalCtx, 0x1E);
+        player->pendingFlag.flagID = 0x1E;
+        player->pendingFlag.flagType = FLAG_SCENE_TREASURE;
     }
 }
 
@@ -288,11 +290,15 @@ void Gameplay_Init(GameState* thisx) {
     u8 tempSetupIndex;
     s32 pad[2];
 
-    if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SKIP_CHILD_STEALTH)) {
+    // Skip Child Stealth when option is enabled, Zelda's Letter isn't obtained and Impa's reward hasn't been received
+    // eventChkInf[4] & 1 = Got Zelda's Letter
+    // eventChkInf[5] & 0x200 = Got Impa's reward
+    // entranceIndex 0x7A, Castle Courtyard - Day from crawlspace
+    // entranceIndex 0x400, Zelda's Courtyard
+    if (gSaveContext.n64ddFlag && Randomizer_GetSettingValue(RSK_SKIP_CHILD_STEALTH) &&
+        !(gSaveContext.eventChkInf[4] & 1) && !(gSaveContext.eventChkInf[5] & 0x200)) {
         if (gSaveContext.entranceIndex == 0x7A) {
             gSaveContext.entranceIndex = 0x400;
-        } else if (gSaveContext.entranceIndex == 0x296) {
-            gSaveContext.entranceIndex = 0x23D;
         }
     }
 
@@ -1429,7 +1435,7 @@ void Gameplay_Draw(GlobalContext* globalCtx) {
                     OVERLAY_DISP = sp70;
                     globalCtx->unk_121C7 = 2;
                     SREG(33) |= 1;
-                } else {
+                } else if (R_PAUSE_MENU_MODE != 3) {
                 Gameplay_Draw_DrawOverlayElements:
                     if ((HREG(80) != 10) || (HREG(89) != 0)) {
                         Gameplay_DrawOverlayElements(globalCtx);

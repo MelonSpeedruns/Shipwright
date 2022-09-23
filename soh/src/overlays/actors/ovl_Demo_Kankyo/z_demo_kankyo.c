@@ -3,6 +3,7 @@
 #include "objects/gameplay_keep/gameplay_keep.h"
 #include "objects/object_efc_star_field/object_efc_star_field.h"
 #include "objects/object_toki_objects/object_toki_objects.h"
+#include "soh/frame_interpolation.h"
 
 #define FLAGS (ACTOR_FLAG_4 | ACTOR_FLAG_5)
 
@@ -594,6 +595,8 @@ void DemoKankyo_DrawRain(Actor* thisx, GlobalContext* globalCtx) {
         Matrix_Scale(sRainScale * 0.001f, sRainScale * 0.001f, sRainScale * 0.001f, MTXMODE_APPLY);
 
         for (j = 0; j < 5; j++) {
+            FrameInterpolation_RecordOpenChild("Kankyo Rain", i * j);
+
             s32 pad1;
 
             if (globalCtx->sceneNum != SCENE_TOKINOMA) {
@@ -623,6 +626,8 @@ void DemoKankyo_DrawRain(Actor* thisx, GlobalContext* globalCtx) {
                       G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             POLY_XLU_DISP = Gfx_CallSetupDL(POLY_XLU_DISP, 0x14);
             gSPDisplayList(POLY_XLU_DISP++, object_efc_star_field_DL_000080);
+
+            FrameInterpolation_RecordCloseChild();
         }
     }
     CLOSE_DISPS(globalCtx->state.gfxCtx);
@@ -660,6 +665,8 @@ void DemoKankyo_DrawClouds(Actor* thisx, GlobalContext* globalCtx) {
     OPEN_DISPS(globalCtx->state.gfxCtx);
 
     for (i = 0; i < 30; i++) {
+        FrameInterpolation_RecordOpenChild("Kankyo Clouds", i);
+
         dx = -(Math_SinS(this->unk_150[i].unk_20 - 0x8000) * 120.0f) * (30.0f + (i / 30.0f) * 10.0f);
         dy = Math_CosS(this->unk_150[i].unk_20 - 0x8000) * 5.0f + 1200.0f;
         dz = (Math_CosS(this->unk_150[i].unk_20 - 0x8000) * 120.0f) * (30.0f + (i / 30.0f) * 10.0f);
@@ -681,6 +688,8 @@ void DemoKankyo_DrawClouds(Actor* thisx, GlobalContext* globalCtx) {
 
         gSPMatrix(POLY_XLU_DISP++, SEG_ADDR(1, 0), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
         gSPDisplayList(POLY_XLU_DISP++, gEffDustDL);
+
+        FrameInterpolation_RecordCloseChild();
     }
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);
@@ -778,6 +787,8 @@ void DemoKankyo_DrawWarpSparkles(Actor* thisx, GlobalContext* globalCtx) {
         this->sparkleCounter += 2;
     }
     for (i = this->sparkleCounter - 1; i >= 0; i--) {
+        FrameInterpolation_RecordOpenChild("Kankyo Warp Sparkles", i);
+
         temp_f22 = 1.0f - (i / (f32)this->sparkleCounter);
 
         switch (this->unk_150[i].unk_22) {
@@ -891,6 +902,8 @@ void DemoKankyo_DrawWarpSparkles(Actor* thisx, GlobalContext* globalCtx) {
             gSPDisplayList(POLY_XLU_DISP++, disp);
             this->unk_150[i].unk_24 += 0x190;
         }
+
+        FrameInterpolation_RecordCloseChild();
     }
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);
@@ -922,6 +935,8 @@ void DemoKankyo_DrawSparkles(Actor* thisx, GlobalContext* globalCtx) {
     }
 
     for (i = this->sparkleCounter - 1; i >= 0; i--) {
+        FrameInterpolation_RecordOpenChild("Kankyo Sparkles", i);
+
         temp_f20 = 1.0f - (i / (f32)this->sparkleCounter);
 
         switch (this->unk_150[i].unk_22) {
@@ -993,6 +1008,8 @@ void DemoKankyo_DrawSparkles(Actor* thisx, GlobalContext* globalCtx) {
             gSPDisplayList(POLY_XLU_DISP++, gEffFlash1DL);
             this->unk_150[i].unk_24 += 0x190;
         }
+
+        FrameInterpolation_RecordCloseChild();
     }
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);

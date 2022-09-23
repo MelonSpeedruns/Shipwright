@@ -3,6 +3,7 @@
 #include "vt.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
 #include "objects/gameplay_field_keep/gameplay_field_keep.h"
+#include "soh/frame_interpolation.h"
 
 typedef enum {
     /* 0 */ LENS_FLARE_CIRCLE0,
@@ -950,7 +951,6 @@ void Environment_Update(GlobalContext* globalCtx, EnvironmentContext* envCtx, Li
             Gfx* prevDisplayList;
 
             OPEN_DISPS(globalCtx->state.gfxCtx);
-
             prevDisplayList = POLY_OPA_DISP;
             displayList = Graph_GfxPlusOne(POLY_OPA_DISP);
             gSPDisplayList(OVERLAY_DISP++, displayList);
@@ -1502,9 +1502,7 @@ void Environment_DrawLensFlare(GlobalContext* globalCtx, EnvironmentContext* env
         unk88Target = cosAngle;
     }
 
-    if (cosAngle < 0.0f) {
-
-    } else {
+    if (!(cosAngle < 0.0f)) {
         if (arg9) {
             u32 shrink = ShrinkWindow_GetCurrentVal();
             func_800C016C(globalCtx, &pos, &screenPos);
@@ -1517,6 +1515,8 @@ void Environment_DrawLensFlare(GlobalContext* globalCtx, EnvironmentContext* env
         }
 
         for (i = 0; i < ARRAY_COUNT(lensFlareTypes); i++) {
+            FrameInterpolation_RecordOpenChild("Lens Flare", i);
+
             Matrix_Translate(pos.x, pos.y, pos.z, MTXMODE_NEW);
 
             if (arg9) {
@@ -1573,6 +1573,8 @@ void Environment_DrawLensFlare(GlobalContext* globalCtx, EnvironmentContext* env
                     gSPDisplayList(POLY_XLU_DISP++, gLensFlareRingDL);
                     break;
             }
+
+            FrameInterpolation_RecordCloseChild();
         }
 
         alphaScale = cosAngle - (1.5f - cosAngle);
@@ -1667,6 +1669,8 @@ void Environment_DrawRain(GlobalContext* globalCtx, View* view, GraphicsContext*
 
         // draw rain drops
         for (i = 0; i < globalCtx->envCtx.unk_EE[1]; i++) {
+            FrameInterpolation_RecordOpenChild("Rain Drop", i);
+
             temp2 = Rand_ZeroOne();
             temp1 = Rand_ZeroOne();
             temp3 = Rand_ZeroOne();
@@ -1692,6 +1696,8 @@ void Environment_DrawRain(GlobalContext* globalCtx, View* view, GraphicsContext*
             gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx),
                       G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPDisplayList(POLY_XLU_DISP++, gRaindropDL);
+
+            FrameInterpolation_RecordCloseChild();
         }
 
         // draw droplet rings on the ground
@@ -1699,6 +1705,8 @@ void Environment_DrawRain(GlobalContext* globalCtx, View* view, GraphicsContext*
             u8 firstDone = false;
 
             for (i = 0; i < globalCtx->envCtx.unk_EE[1]; i++) {
+                FrameInterpolation_RecordOpenChild("Droplet Ring", i);
+                
                 if (!firstDone) {
                     func_80093D84(gfxCtx);
                     gDPSetEnvColor(POLY_XLU_DISP++, 155, 155, 155, 0);
@@ -1719,6 +1727,8 @@ void Environment_DrawRain(GlobalContext* globalCtx, View* view, GraphicsContext*
                 gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gfxCtx),
                           G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
                 gSPDisplayList(POLY_XLU_DISP++, gEffShockwaveDL);
+
+                FrameInterpolation_RecordCloseChild();
             }
         }
 
@@ -1915,6 +1925,8 @@ void Environment_DrawLightning(GlobalContext* globalCtx, s32 unused) {
     OPEN_DISPS(globalCtx->state.gfxCtx);
 
     for (i = 0; i < ARRAY_COUNT(sLightningBolts); i++) {
+        FrameInterpolation_RecordOpenChild("Lightning Bolt", i);
+
         switch (sLightningBolts[i].state) {
             case LIGHTNING_BOLT_START:
                 dx = globalCtx->view.lookAt.x - globalCtx->view.eye.x;
@@ -1969,6 +1981,8 @@ void Environment_DrawLightning(GlobalContext* globalCtx, s32 unused) {
             gSPMatrix(POLY_XLU_DISP++, SEG_ADDR(1, 0), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
             gSPDisplayList(POLY_XLU_DISP++, gEffLightningDL);
         }
+        
+        FrameInterpolation_RecordCloseChild();
     }
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);
