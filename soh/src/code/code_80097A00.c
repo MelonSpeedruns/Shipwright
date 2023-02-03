@@ -36,6 +36,21 @@ u16 gUpgradeCapacities[][4] = {
 u32 gGsFlagsMasks[] = { 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000 };
 u32 gGsFlagsShifts[] = { 0, 8, 16, 24 };
 
+void* gNaviItemIcons[][2] = {
+    {
+        gFairyBowIconTex,
+        gFairySlingshotIconTex,
+    },
+    {
+        gBombIconTex,
+        gBombIconTex,
+    },
+    {
+        gDekuNutIconTex,
+        gDekuNutIconTex,
+    },
+};
+
 void* gItemIcons[] = {
     gDekuStickIconTex,
     gDekuNutIconTex,
