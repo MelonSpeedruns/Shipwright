@@ -9,7 +9,7 @@
 #include <overlays/actors/ovl_En_Arrow/z_en_arrow.h>
 #include "overlays/actors/ovl_En_Si/z_en_si.h"
 
-#define FLAGS (ACTOR_FLAG_4 | ACTOR_FLAG_5 | ACTOR_FLAG_25)
+#define FLAGS (ACTOR_FLAG_4 | ACTOR_FLAG_5 | ACTOR_FLAG_10 | ACTOR_FLAG_25)
 
 void EnPartner_Init(Actor* thisx, PlayState* play);
 void EnPartner_Destroy(Actor* thisx, PlayState* play);
@@ -42,21 +42,20 @@ static Color_RGBAf sOuterColors[] = {
     { 0.0f, 255.0f, 0.0f, 255.0f },
 };
 
-static ColliderCylinderInit sCylinderInit = {
+static ColliderCylinderInitType1 sCylinderInit = {
     {
         COLTYPE_NONE,
         AT_NONE,
-        AC_NONE,
-        OC1_ON | OC1_TYPE_ALL,
-        OC2_TYPE_2,
+        AC_ON | AC_TYPE_PLAYER,
+        OC1_ON | OC1_TYPE_PLAYER,
         COLSHAPE_CYLINDER,
     },
     {
         ELEMTYPE_UNK0,
-        { 0x00000000, 0x00, 0x00 },
-        { 0x00000000, 0x00, 0x00 },
+        { 0xFFCFFFFF, 0x00, 0x00 },
+        { 0xFFCFFFFF, 0x00, 0x00 },
         TOUCH_NONE,
-        BUMP_ON,
+        BUMP_ON | BUMP_HOOKABLE | BUMP_NO_HITMARK,
         OCELEM_ON,
     },
     { 10, 10, 0, { 0, 0, 0 } },
@@ -79,8 +78,7 @@ void EnPartner_Init(Actor* thisx, PlayState* play) {
     this->outerColor.a = 255.0f;
 
     Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
-    Collider_UpdateCylinder(&this->actor, &this->collider);
+    Collider_SetCylinderType1(play, &this->collider, &this->actor, &sCylinderInit);
 
     Actor_ProcessInitChain(thisx, sInitChain);
     SkelAnime_Init(play, &this->skelAnime, &gFairySkel, &gFairyAnim, this->jointTable, this->morphTable, 15);
@@ -269,6 +267,9 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
         int16_t finalDir = Math_Atan2S(-this->actor.velocity.x, this->actor.velocity.z) - 0x4000;
         Math_SmoothStepToS(&this->actor.world.rot.y, finalDir, 2, 10000, 0);
         Math_SmoothStepToS(&this->actor.shape.rot.y, finalDir, 2, 10000, 0);
+        this->collider.dim.radius = 0;
+    } else {
+        this->collider.dim.radius = 10;
     }
 
     Math_SmoothStepToF(&this->actor.speedXZ, sqrtf(SQ(relX) + SQ(relY)), 1.0f, 1.3f, 0.0f);
@@ -381,6 +382,7 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
     } else {
         Actor_UpdateBgCheckInfo(play, &this->actor, 5.0f, 15.0f, 25.0f, 0x85);
         Collider_UpdateCylinder(&this->actor, &this->collider);
+        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
         CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
     }
 
