@@ -25,6 +25,8 @@ typedef struct EnPartner {
     u8 selectedItem;
     s8 maxItems;
     s8 nutTimer;
+    u8 canMove;
+    Actor* hookshotTarget;
 } EnPartner;
 
 #endif

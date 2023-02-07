@@ -9,7 +9,7 @@
 #include <overlays/actors/ovl_En_Arrow/z_en_arrow.h>
 #include "overlays/actors/ovl_En_Si/z_en_si.h"
 
-#define FLAGS (ACTOR_FLAG_4 | ACTOR_FLAG_5 | ACTOR_FLAG_10 | ACTOR_FLAG_25)
+#define FLAGS (ACTOR_FLAG_4 | ACTOR_FLAG_5 | ACTOR_FLAG_10)
 
 void EnPartner_Init(Actor* thisx, PlayState* play);
 void EnPartner_Destroy(Actor* thisx, PlayState* play);
@@ -52,10 +52,10 @@ static ColliderCylinderInitType1 sCylinderInit = {
     },
     {
         ELEMTYPE_UNK0,
-        { 0xFFCFFFFF, 0x00, 0x00 },
-        { 0xFFCFFFFF, 0x00, 0x00 },
+        { 0x00, 0x00, 0x00 },
+        { 0x00, 0x00, 0x00 },
         TOUCH_NONE,
-        BUMP_ON | BUMP_HOOKABLE | BUMP_NO_HITMARK,
+        BUMP_ON | BUMP_NO_HITMARK,
         OCELEM_ON,
     },
     { 10, 10, 0, { 0, 0, 0 } },
@@ -66,6 +66,8 @@ void EnPartner_Init(Actor* thisx, PlayState* play) {
     s32 pad;
     Player* player = GET_PLAYER(play);
     s32 i;
+
+    this->hookshotTarget = NULL;
 
     this->innerColor.r = 255.0f;
     this->innerColor.g = 255.0f;
@@ -166,31 +168,33 @@ void CenterIvanOnLink(Actor* thisx, PlayState* play) {
     this->actor.world.pos.y += Player_GetHeight(GET_PLAYER(play)) + 5.0f;
 }
 
-void UseSlingshotBow(Actor* thisx, PlayState* play) {
+void UseBow(Actor* thisx, PlayState* play) {
     EnPartner* this = (EnPartner*)thisx;
 
-    if (gSaveContext.linkAge != 0) {
-        if (AMMO(ITEM_SLINGSHOT) > 0) {
-            Actor* newarrow = Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_ARROW,
-                                                 this->actor.world.pos.x, this->actor.world.pos.y + 7,
-                                                 this->actor.world.pos.z, 0, this->actor.world.rot.y, 0, ARROW_SEED);
-            GET_PLAYER(play)->unk_A73 = 4;
-            newarrow->parent = NULL;
-            Inventory_ChangeAmmo(ITEM_SLINGSHOT, -1);
-        } else {
-            func_80078884(NA_SE_SY_ERROR);
-        }
+    if (AMMO(ITEM_BOW) > 0) {
+        Actor* newarrow = Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_ARROW,
+                                             this->actor.world.pos.x, this->actor.world.pos.y + 7,
+                                             this->actor.world.pos.z, 0, this->actor.world.rot.y, 0, ARROW_NORMAL);
+        GET_PLAYER(play)->unk_A73 = 4;
+        newarrow->parent = NULL;
+        Inventory_ChangeAmmo(ITEM_BOW, -1);
     } else {
-        if (AMMO(ITEM_BOW) > 0) {
-            Actor* newarrow = Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_ARROW,
-                                                 this->actor.world.pos.x, this->actor.world.pos.y + 7,
-                                                 this->actor.world.pos.z, 0, this->actor.world.rot.y, 0, ARROW_NORMAL);
-            GET_PLAYER(play)->unk_A73 = 4;
-            newarrow->parent = NULL;
-            Inventory_ChangeAmmo(ITEM_BOW, -1);
-        } else {
-            func_80078884(NA_SE_SY_ERROR);
-        }
+        func_80078884(NA_SE_SY_ERROR);
+    }
+}
+
+void UseSlingshot(Actor* thisx, PlayState* play) {
+    EnPartner* this = (EnPartner*)thisx;
+
+    if (AMMO(ITEM_SLINGSHOT) > 0) {
+        Actor* newarrow = Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_ARROW,
+                                             this->actor.world.pos.x, this->actor.world.pos.y + 7,
+                                             this->actor.world.pos.z, 0, this->actor.world.rot.y, 0, ARROW_SEED);
+        GET_PLAYER(play)->unk_A73 = 4;
+        newarrow->parent = NULL;
+        Inventory_ChangeAmmo(ITEM_SLINGSHOT, -1);
+    } else {
+        func_80078884(NA_SE_SY_ERROR);
     }
 }
 
@@ -219,22 +223,6 @@ void UseNuts(Actor* thisx, PlayState* play) {
             func_80078884(NA_SE_SY_ERROR);
         }
     }
-}
-
-u8 HasObtainedItem(Actor* thisx, PlayState* play, u8 item) {
-    EnPartner* this = (EnPartner*)thisx;
-    u8* items = gSaveContext.inventory.items;
-
-    switch (item) {
-        case 0:
-            return items[SLOT_BOW] == ITEM_BOW;
-        case 1:
-            return items[SLOT_BOMB] == ITEM_BOMB;
-        case 2:
-            return items[SLOT_NUT] == ITEM_NUT;
-    }
-
-    return 0;
 }
 
 void EnPartner_Update(Actor* thisx, PlayState* play) {
@@ -267,18 +255,20 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
         int16_t finalDir = Math_Atan2S(-this->actor.velocity.x, this->actor.velocity.z) - 0x4000;
         Math_SmoothStepToS(&this->actor.world.rot.y, finalDir, 2, 10000, 0);
         Math_SmoothStepToS(&this->actor.shape.rot.y, finalDir, 2, 10000, 0);
-        this->collider.dim.radius = 0;
-    } else {
-        this->collider.dim.radius = 10;
+    }
+
+    if (!this->canMove) {
+        relX = 0;
+        relY = 0;
     }
 
     Math_SmoothStepToF(&this->actor.speedXZ, sqrtf(SQ(relX) + SQ(relY)), 1.0f, 1.3f, 0.0f);
 
     EnPartner_SpawnSparkles(this, play, 12);
 
-    if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_A)) {
+    if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_A) && this->canMove) {
         Math_SmoothStepToF(&this->yVelocity, 6.0f, 1.0f, 1.5f, 0.0f);
-    } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_B)) {
+    } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_B) && this->canMove) {
         Math_SmoothStepToF(&this->yVelocity, -6.0f, 1.0f, 1.5f, 0.0f);
     } else {
         Math_SmoothStepToF(&this->yVelocity, 0.0f, 1.0f, 1.5f, 0.0f);
@@ -286,7 +276,9 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
 
     this->actor.gravity = this->yVelocity;
 
-    Actor_MoveForward(&this->actor);
+    if (this->canMove) {
+        Actor_MoveForward(&this->actor);
+    }
 
     if (!Player_InCsMode(play)) {
         if (this->lastWasCutscene == 1) {
@@ -304,10 +296,14 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
                     itemActor->params == ITEM00_BOMBS_A || itemActor->params == ITEM00_BOMBS_B ||
                     itemActor->params == ITEM00_ARROWS_SINGLE || itemActor->params == ITEM00_ARROWS_SMALL ||
                     itemActor->params == ITEM00_ARROWS_MEDIUM || itemActor->params == ITEM00_ARROWS_LARGE ||
-                    itemActor->params == ITEM00_BOMBCHU) {
+                    itemActor->params == ITEM00_BOMBCHU ||
+                    itemActor->params == ITEM00_MAGIC_SMALL ||
+                    itemActor->params == ITEM00_MAGIC_LARGE ||
+                    itemActor->params == ITEM00_NUTS ||
+                    itemActor->params == ITEM00_STICK) {
                     f32 distanceToObject = Actor_WorldDistXYZToActor(&this->actor, itemActor);
-                    if (distanceToObject <= 30.0f) {
-                        itemActor->parent = GET_PLAYER(play);
+                    if (distanceToObject <= 20.0f) {
+                        itemActor->world.pos = GET_PLAYER(play)->actor.world.pos;
                         break;
                     }
                 }
@@ -319,7 +315,7 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
         while (itemActor != NULL) {
             if (itemActor->id == ACTOR_EN_SI) {
                 f32 distanceToObject = Actor_WorldDistXYZToActor(&this->actor, itemActor);
-                if (distanceToObject <= 30.0f) {
+                if (distanceToObject <= 20.0f) {
                     EnSi* ensi = (EnSi*)itemActor;
                     ensi->collider.base.ocFlags2 = OC2_HIT_PLAYER;
                     break;
@@ -336,54 +332,89 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
     }
 
     if (!Player_InCsMode(play)) {
-        if (CHECK_BTN_ALL(sControlInput.press.button, BTN_DLEFT)) {
-            if (gSaveContext.equips.naviItem - 1 < 0) {
-                gSaveContext.equips.naviItem = this->maxItems - 1;
-            } else {
-                gSaveContext.equips.naviItem--;
-            }
-            Audio_PlaySoundGeneral(NA_SE_SY_CURSOR, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        uint8_t usedItem = 0xFF;
+        uint8_t pressed = 0;
+        uint8_t released = 0;
+
+        if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CLEFT)) {
+            usedItem = gSaveContext.equips.cButtonSlots[0];
+            pressed = 1;
+        } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CDOWN)) {
+            usedItem = gSaveContext.equips.cButtonSlots[1];
+            pressed = 1;
+        } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CRIGHT)) {
+            usedItem = gSaveContext.equips.cButtonSlots[2];
+            pressed = 1;
+        } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CLEFT)) {
+            usedItem = gSaveContext.equips.cButtonSlots[0];
+            released = 1;
+        } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CDOWN)) {
+            usedItem = gSaveContext.equips.cButtonSlots[1];
+            released = 1;
+        } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CRIGHT)) {
+            usedItem = gSaveContext.equips.cButtonSlots[2];
+            released = 1;
         }
 
-        if (CHECK_BTN_ALL(sControlInput.press.button, BTN_DRIGHT)) {
-            if (gSaveContext.equips.naviItem + 1 >= this->maxItems) {
-                gSaveContext.equips.naviItem = 0;
-            } else {
-                gSaveContext.equips.naviItem++;
+        if (usedItem != 0xFF && pressed == 1) {
+            switch (usedItem) {
+                case SLOT_BOW:
+                    this->canMove = 0;
+                    break;
+                case SLOT_SLINGSHOT:
+                    this->canMove = 0;
+                    break;
+                case SLOT_OCARINA:
+                    Audio_PlayActorSound2(&this->actor, NA_SE_VO_NA_HELLO_2);
+                    break;
+                case SLOT_HOOKSHOT:
+                    this->canMove = 0;
+                    this->hookshotTarget = Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_OBJ_HSBLOCK,
+                                                              this->actor.world.pos.x, this->actor.world.pos.y + 7.5f,
+                                                              this->actor.world.pos.z, this->actor.world.rot.x,
+                                                              this->actor.world.rot.y, this->actor.world.rot.z, 2);
+                    this->hookshotTarget->scale.x = 0.05f;
+                    this->hookshotTarget->scale.y = 0.05f;
+                    this->hookshotTarget->scale.z = 0.05f;
+                    break;
             }
-            Audio_PlaySoundGeneral(NA_SE_SY_CURSOR, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
-        }
-
-        if (CHECK_BTN_ALL(sControlInput.press.button, BTN_R)) {
-            switch (gSaveContext.equips.naviItem) {
-                case 0:
-                    UseSlingshotBow(this, play);
+        } else if (usedItem != 0xFF && released == 1) {
+            switch (usedItem) {
+                case SLOT_BOW:
+                    UseBow(this, play);
+                    this->canMove = 1;
                     break;
-                case 1:
-                    UseBombs(this, play);
+                case SLOT_SLINGSHOT:
+                    UseSlingshot(this, play);
+                    this->canMove = 1;
                     break;
-                case 2:
-                    UseNuts(this, play);
+                case SLOT_HOOKSHOT:
+                    this->canMove = 1;
                     break;
             }
         }
+    } else {
+        this->canMove = 1;
     }
 
-    if (CHECK_BTN_ALL(sControlInput.press.button, BTN_START)) {
-        Audio_PlayActorSound2(&this->actor, NA_SE_VO_NA_HELLO_2);
-    }
-
-    if (CHECK_BTN_ALL(sControlInput.press.button, BTN_Z)) {
+    if (CHECK_BTN_ALL(sControlInput.press.button, BTN_Z) && this->canMove) {
         Audio_PlayActorSound2(&this->actor, NA_SE_EV_FAIRY_DASH);
     }
 
-    if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_Z)) {
+    if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_Z) && this->canMove) {
         CenterIvanOnLink(this, play);
-    } else {
+    } else if (this->canMove && this->hookshotTarget == NULL) {
         Actor_UpdateBgCheckInfo(play, &this->actor, 5.0f, 15.0f, 25.0f, 0x85);
         Collider_UpdateCylinder(&this->actor, &this->collider);
         CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
         CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
+    }
+
+    if (this->canMove == 0 && this->hookshotTarget != NULL) {
+        this->hookshotTarget->shape.rot.y = this->actor.world.rot.y;
+    } else if (this->canMove == 1 && this->hookshotTarget != NULL) {
+        Actor_Kill(this->hookshotTarget);
+        this->hookshotTarget = NULL;
     }
 
     SkelAnime_Update(&this->skelAnime);

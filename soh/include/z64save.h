@@ -39,8 +39,7 @@ typedef struct {
     /* 0x00 */ u8 buttonItems[8]; // SOH [Enhancements] Changed from 4 to 8 to support Dpad equips
     /* 0x04 */ u8 cButtonSlots[7]; // SOH [Enhancements] Changed from 3 to 7 to support Dpad equips
     /* 0x08 */ u16 equipment; // a mask where each nibble corresponds to a type of equipment `EquipmentType`, and each nibble is a piece `EquipValue*`
-    /* 0x0A */ u8 naviItem; // Equipped item id for Ivan Coop Partner
-} ItemEquips; // size = 0x0B
+} ItemEquips; // size = 0x0A
 
 typedef struct {
     /* 0x00 */ u8 items[24];
