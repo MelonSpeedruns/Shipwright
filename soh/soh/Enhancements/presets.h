@@ -82,6 +82,7 @@ const std::vector<const char*> enhancementsCvars = {
     "gDamageMul",
     "gFallDamageMul",
     "gVoidDamageMul",
+    "gBonkDamageMul",
     "gNoRandomDrops",
     "gNoHeartDrops",
     "gBombchuDrops",
@@ -128,6 +129,7 @@ const std::vector<const char*> enhancementsCvars = {
     "gTimeFlowFileSelect",
     "gInjectItemCounts",
     "gDayGravePull",
+    "gDampeAllNight",
     "gSkipScarecrow",
     "gBlueFireArrows",
     "gSunlightArrows",
@@ -179,6 +181,7 @@ const std::vector<const char*> enhancementsCvars = {
     "gStaticExplosionRadius",
     "gNoInputForCredits",
     "gFastFarores",
+    "gNightGSAlwaysSpawn",
 };
 
 const std::vector<const char*> randomizerCvars = {
@@ -236,6 +239,8 @@ const std::vector<const char*> randomizerCvars = {
     "gRandomizeRewardCount",
     "gRandomizeScrubText",
     "gRandomizeShopsanity",
+    "gRandomizeShopsanityPrices",
+    "gRandomizeShopsanityPricesAffordable",
     "gRandomizeShuffleAdultTrade",
     "gRandomizeShuffleBeans",
     "gRandomizeShuffleBossEntrances",
@@ -579,6 +584,8 @@ const std::vector<PresetEntry> randomizerPresetEntries = {
     PRESET_ENTRY_S32("gDampeWin", 1),
     // Skip Magic Arrow Equip Animation
     PRESET_ENTRY_S32("gSkipArrowAnimation", 1),
+    // Exit Market at Night
+    PRESET_ENTRY_S32("gMarketSneak", 1),
 
     // Equip arrows on multiple slots
     PRESET_ENTRY_S32("gSeparateArrows", 1),
@@ -688,6 +695,7 @@ const std::vector<PresetEntry> hellModePresetEntries = {
     PRESET_ENTRY_S32("gRandomizeMqDungeons", RO_MQ_DUNGEONS_RANDOM_NUMBER),
     PRESET_ENTRY_S32("gRandomizeRainbowBridge", RO_BRIDGE_DUNGEON_REWARDS),
     PRESET_ENTRY_S32("gRandomizeShopsanity", RO_SHOPSANITY_FOUR_ITEMS),
+    PRESET_ENTRY_S32("gRandomizeShopsanityPrices", RO_SHOPSANITY_PRICE_TYCOON),
     PRESET_ENTRY_S32("gRandomizeShuffleAdultTrade", 1),
     PRESET_ENTRY_S32("gRandomizeShuffleBeans", 1),
     PRESET_ENTRY_S32("gRandomizeShuffleCows", 1),

@@ -2557,6 +2557,7 @@ void Message_DrawMain(PlayState* play, Gfx** p) {
                         osSyncPrintf(VT_RST);
                         osSyncPrintf("→  OCARINA_MODE=%d\n", play->msgCtx.ocarinaMode);
                     }
+                    GameInteractor_ExecuteOnOcarinaSongAction();
                 }
                 break;
             case MSGMODE_DISPLAY_SONG_PLAYED:
@@ -3133,6 +3134,8 @@ void Message_Update(PlayState* play) {
     if (msgCtx->msgLength == 0) {
         return;
     }
+    
+    GameInteractor_ExecuteOnDialogMessage();
 
     bool isB_Held = CVarGetInteger("gSkipText", 0) != 0 ? CHECK_BTN_ALL(input->cur.button, BTN_B) && !sTextboxSkipped
                                                      : CHECK_BTN_ALL(input->press.button, BTN_B);

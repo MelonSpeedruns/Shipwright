@@ -5,7 +5,7 @@
 #include <libultraship/libultra.h>
 #include "global.h"
 #include "soh/OTRGlobals.h"
-#include "soh/Enhancements/sfx-editor/SfxEditor.h"
+#include "soh/Enhancements/audio/AudioCollection.h"
 
 #define MK_ASYNC_MSG(retData, tableType, id, status) (((retData) << 24) | ((tableType) << 16) | ((id) << 8) | (status))
 #define ASYNC_TBLTYPE(v) ((u8)(v >> 16))
@@ -77,7 +77,8 @@ void* sUnusedHandler = NULL;
 
 s32 gAudioContextInitalized = false;
 
-char* sequenceMap[MAX_SEQUENCES];
+char** sequenceMap;
+size_t sequenceMapSize;
 // A map of authentic sequence IDs to their cache policies, for use with sequence swapping.
 u8 seqCachePolicyMap[MAX_AUTHENTIC_SEQID];
 char* fontMap[256];
@@ -487,8 +488,8 @@ u8* AudioLoad_GetFontsForSequence(s32 seqId, u32* outNumFonts) {
      if (seqId == NA_BGM_DISABLED)
          return NULL;
 
-    u16 newSeqId = SfxEditor_GetReplacementSeq(seqId);
-    if (newSeqId > MAX_SEQUENCES || !sequenceMap[newSeqId]) {
+    u16 newSeqId = AudioEditor_GetReplacementSeq(seqId);
+    if (newSeqId > sequenceMapSize || !sequenceMap[newSeqId]) {
         return NULL;
     }
     SequenceData sDat = ResourceMgr_LoadSeqByName(sequenceMap[newSeqId]);
@@ -610,10 +611,33 @@ s32 AudioLoad_SyncInitSeqPlayerInternal(s32 playerIdx, s32 seqId, s32 arg2) {
     seqPlayer->delay = 0;
     seqPlayer->finished = 0;
     seqPlayer->playerIdx = playerIdx;
+
+    // Fix for barinade boss fight starting music multiple times
+    // this is not noticeable if the sequence is authentic, since the "Boss Battle"
+    // sequence begins with some silence
+    if (gPlayState != NULL &&
+        gPlayState->sceneNum == SCENE_BDAN_BOSS &&
+        playerIdx == SEQ_PLAYER_BGM_MAIN &&
+        seqId != NA_BGM_BOSS) {
+        
+        seqPlayer->delay = 10;
+    }
+    
     AudioSeq_SkipForwardSequence(seqPlayer);
     //! @bug missing return (but the return value is not used so it's not UB)
-    if (CVarGetInteger("gSeqNameOverlay", 0) && playerIdx == SEQ_PLAYER_BGM_MAIN) {
-        const char* sequenceName = SfxEditor_GetSequenceName(seqId);
+    
+    // Keep track of the previous sequence/scene so we don't repeat notifications
+    static uint16_t previousSeqId = UINT16_MAX;
+    static int16_t previousSceneNum = INT16_MAX;
+    if (CVarGetInteger("gSeqNameOverlay", 0) &&
+        playerIdx == SEQ_PLAYER_BGM_MAIN &&
+        (seqId != previousSeqId || (gPlayState != NULL && gPlayState->sceneNum != previousSceneNum))) {
+        
+        previousSeqId = seqId;
+        if (gPlayState != NULL) {
+            previousSceneNum = gPlayState->sceneNum;
+        }
+        const char* sequenceName = AudioCollection_GetSequenceName(seqId);
         if (sequenceName != NULL) {
             Overlay_DisplayText_Seconds(CVarGetInteger("gSeqNameOverlayDuration", 5), sequenceName);
         }
@@ -1319,7 +1343,12 @@ void AudioLoad_Init(void* heap, size_t heapSize) {
     AudioHeap_ResetStep();
 
     int seqListSize = 0;
+    int customSeqListSize = 0;
     char** seqList = ResourceMgr_ListFiles("audio/sequences*", &seqListSize);
+    char** customSeqList = ResourceMgr_ListFiles("custom/music/*", &customSeqListSize);
+    sequenceMapSize = (size_t)(AudioCollection_SequenceMapSize() + customSeqListSize); 
+    sequenceMap = malloc(sequenceMapSize * sizeof(char*));
+    gAudioContext.seqLoadStatus = malloc(sequenceMapSize * sizeof(char*));
 
     for (size_t i = 0; i < seqListSize; i++)
     {
@@ -1334,21 +1363,30 @@ void AudioLoad_Init(void* heap, size_t heapSize) {
 
     free(seqList);
 
-    int customSeqListSize = 0;
     int startingSeqNum = MAX_AUTHENTIC_SEQID; // 109 is the highest vanilla sequence
-    char** customSeqList = ResourceMgr_ListFiles("custom/music/*", &customSeqListSize);
     qsort(customSeqList, customSeqListSize, sizeof(char*), strcmp_sort);
 
+    // Because AudioCollection's sequenceMap actually has more than sequences (including instruments from 130-135 and sfx in the 2000s, 6000s, 10000s, 14000s, 18000s, and 26000s),
+    // it's better here to keep track of the next empty seqNum in AudioCollection instead of just skipping past the instruments at 130 with a higher MAX_AUTHENTIC_SEQID,
+    // especially if those others could be added to in the future. However, this really needs to be streamlined with specific ranges in AudioCollection for types, or unifying
+    // AudioCollection and the various maps in here
+    int seqNum = startingSeqNum;
+
     for (size_t i = startingSeqNum; i < startingSeqNum + customSeqListSize; i++) {
+        // ensure that what would be the next sequence number is actually unassigned in AudioCollection
+        while (AudioCollection_HasSequenceNum(seqNum)) {
+            seqNum++;
+        }
         int j = i - startingSeqNum;
-        SfxEditor_AddSequence(customSeqList[j], i);
+        AudioCollection_AddToCollection(customSeqList[j], seqNum);
         SequenceData sDat = ResourceMgr_LoadSeqByName(customSeqList[j]);
-        sDat.seqNumber = i;
+        sDat.seqNumber = seqNum;
 
         char* str = malloc(strlen(customSeqList[j]) + 1);
         strcpy(str, customSeqList[j]);
 
         sequenceMap[sDat.seqNumber] = str;
+        seqNum++;
     }
 
     free(customSeqList);
@@ -1545,7 +1583,7 @@ s32 AudioLoad_SlowLoadSeq(s32 seqId, u8* ramAddr, s8* isDone) {
     size_t size;
 
     seqId = AudioLoad_GetRealTableIndex(SEQUENCE_TABLE, seqId);
-    u16 newSeqId = SfxEditor_GetReplacementSeq(seqId);
+    u16 newSeqId = AudioEditor_GetReplacementSeq(seqId);
     if (seqId != newSeqId) {
         gAudioContext.seqToPlay[SEQ_PLAYER_BGM_MAIN] = newSeqId;
         gAudioContext.seqReplaced[SEQ_PLAYER_BGM_MAIN] = 1;

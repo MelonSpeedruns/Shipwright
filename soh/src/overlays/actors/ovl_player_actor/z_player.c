@@ -2182,7 +2182,11 @@ void func_80834298(Player* this, PlayState* play) {
 
 // Determine projectile type for bow or slingshot
 s32 func_80834380(PlayState* play, Player* this, s32* itemPtr, s32* typePtr) {
-    if (LINK_IS_ADULT) {
+    bool useBow = LINK_IS_ADULT;
+    if(CVarGetInteger("gBowSlingShotAmmoFix", 0)){
+        useBow = this->heldItemAction != PLAYER_IA_SLINGSHOT;
+    }
+    if (useBow) {
         *itemPtr = ITEM_BOW;
         if (this->stateFlags1 & PLAYER_STATE1_23) {
             *typePtr = ARROW_NORMAL_HORSE;
@@ -4917,11 +4921,13 @@ s32 func_8083AD4C(PlayState* play, Player* this) {
 
     if (this->unk_6AD == 2) {
         if (func_8002DD6C(this)) {
-            if (LINK_IS_ADULT) {
-                cameraMode = CAM_MODE_BOWARROW;
-            } else {
-                cameraMode = CAM_MODE_SLINGSHOT;
+            bool shouldUseBowCamera = LINK_IS_ADULT;
+
+            if(CVarGetInteger("gBowSlingShotAmmoFix", 0)){
+                shouldUseBowCamera = this->heldItemAction != PLAYER_IA_SLINGSHOT;
             }
+            
+            cameraMode = shouldUseBowCamera ? CAM_MODE_BOWARROW : CAM_MODE_SLINGSHOT;
         } else {
             cameraMode = CAM_MODE_BOOMERANG;
         }
@@ -6315,6 +6321,7 @@ s32 func_8083E5A8(Player* this, PlayState* play) {
                     Player_SetPendingFlag(this, play);
                     Message_StartTextbox(play, 0xF8, NULL);
                     Audio_PlayFanfare(NA_BGM_SMALL_ITEM_GET);
+                    GameInteractor_ExecuteOnItemReceiveHooks(this->getItemEntry);
                     gSaveContext.pendingIceTrapCount++;
                     return 1;
                 }
@@ -8553,7 +8560,8 @@ void func_8084411C(Player* this, PlayState* play) {
                         func_80843E14(this, NA_SE_VO_LI_FALL_L);
                     }
 
-                    if ((this->actor.bgCheckFlags & 0x200) && !(this->stateFlags2 & PLAYER_STATE2_19) &&
+                    if (!GameInteractor_GetDisableLedgeGrabsActive() && (this->actor.bgCheckFlags & 0x200) &&
+                        !(this->stateFlags2 & PLAYER_STATE2_19) &&
                         !(this->stateFlags1 & (PLAYER_STATE1_11 | PLAYER_STATE1_27)) && (this->linearVelocity > 0.0f)) {
                         if ((this->wallHeight >= 150.0f) && (this->unk_84B[this->unk_846] == 0)) {
                             func_8083EC18(this, play, D_808535F0);
@@ -8649,8 +8657,10 @@ void func_80844708(Player* this, PlayState* play) {
                 func_8083A060(this, play);
             }
         } else {
+            f32 rand = Rand_ZeroOne();
+            uint8_t randomBonk = (rand <= .05) && GameInteractor_GetRandomBonksActive();
             if (this->linearVelocity >= 7.0f) {
-                if (((this->actor.bgCheckFlags & 0x200) && (D_8085360C < 0x2000)) ||
+                if (randomBonk || ((this->actor.bgCheckFlags & 0x200) && (D_8085360C < 0x2000)) ||
                     ((this->cylinder.base.ocFlags1 & OC1_HIT) &&
                      (cylinderOc = this->cylinder.base.oc,
                       ((cylinderOc->id == ACTOR_EN_WOOD02) &&
@@ -8673,6 +8683,7 @@ void func_80844708(Player* this, PlayState* play) {
                     func_80832698(this, NA_SE_VO_LI_CLIMB_END);
                     this->unk_850 = 1;
                     gSaveContext.sohStats.count[COUNT_BONKS]++;
+                    GameInteractor_ExecuteOnPlayerBonk();
                     return;
                 }
             }
@@ -9369,7 +9380,7 @@ void func_808464B0(Player* this, PlayState* play) {
             heldActor->velocity.y = 0.0f;
             heldActor->speedXZ = 0.0f;
             func_80834644(play, this);
-            if (heldActor->id == ACTOR_EN_BOM_CHU) {
+            if (heldActor->id == ACTOR_EN_BOM_CHU && !CVarGetInteger("gDisableFirstPersonChus", 0)) {
                 func_8083B8F4(this, play);
             }
         }
@@ -10658,7 +10669,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
         if (!(this->skelAnime.moveFlags & 0x80)) {
             if (((this->actor.bgCheckFlags & 1) && (D_808535E4 == 5) && (this->currentBoots != PLAYER_BOOTS_IRON)) ||
-                ((this->currentBoots == PLAYER_BOOTS_HOVER) &&
+                ((this->currentBoots == PLAYER_BOOTS_HOVER || GameInteractor_GetSlipperyFloorActive()) &&
                  !(this->stateFlags1 & (PLAYER_STATE1_27 | PLAYER_STATE1_29)))) {
                 f32 sp70 = this->linearVelocity;
                 s16 sp6E = this->currentYaw;
@@ -10996,43 +11007,70 @@ void Player_Update(Actor* thisx, PlayState* play) {
     MREG(54) = this->actor.world.pos.z;
     MREG(55) = this->actor.world.rot.y;
 
-    switch (GameInteractor_GetLinkSize()) {
-        case GI_LINK_SIZE_RESET:
-            this->actor.scale.x = 0.01f;
-            this->actor.scale.y = 0.01f;
-            this->actor.scale.z = 0.01f;
-            GameInteractor_SetLinkSize(GI_LINK_SIZE_NORMAL);
-            break;
-        case GI_LINK_SIZE_GIANT:
-            this->actor.scale.x = 0.02f;
-            this->actor.scale.y = 0.02f;
-            this->actor.scale.z = 0.02f;
-            break;
-        case GI_LINK_SIZE_MINISH:
-            this->actor.scale.x = 0.001f;
-            this->actor.scale.y = 0.001f;
-            this->actor.scale.z = 0.001f;
-            break;
-        case GI_LINK_SIZE_PAPER:
-            this->actor.scale.x = 0.001f;
-            this->actor.scale.y = 0.01f;
-            this->actor.scale.z = 0.01f;
-            break;
-        case GI_LINK_SIZE_NORMAL:
-        default:
-            break;
+    // Make Link normal size when going through doors and crawlspaces and when climbing ladders.
+    // Otherwise Link can glitch out, being in unloaded rooms or falling OoB.
+    if (this->stateFlags1 & PLAYER_STATE1_21 || this->stateFlags1 & PLAYER_STATE1_29 ||
+        this->stateFlags2 & PLAYER_STATE2_CRAWLING) {
+        this->actor.scale.x = 0.01f;
+        this->actor.scale.y = 0.01f;
+        this->actor.scale.z = 0.01f;
+    } else {
+        switch (GameInteractor_GetLinkSize()) {
+            case GI_LINK_SIZE_RESET:
+                this->actor.scale.x = 0.01f;
+                this->actor.scale.y = 0.01f;
+                this->actor.scale.z = 0.01f;
+                GameInteractor_SetLinkSize(GI_LINK_SIZE_NORMAL);
+                break;
+            case GI_LINK_SIZE_GIANT:
+                this->actor.scale.x = 0.02f;
+                this->actor.scale.y = 0.02f;
+                this->actor.scale.z = 0.02f;
+                break;
+            case GI_LINK_SIZE_MINISH:
+                this->actor.scale.x = 0.001f;
+                this->actor.scale.y = 0.001f;
+                this->actor.scale.z = 0.001f;
+                break;
+            case GI_LINK_SIZE_PAPER:
+                this->actor.scale.x = 0.001f;
+                this->actor.scale.y = 0.01f;
+                this->actor.scale.z = 0.01f;
+                break;
+            case GI_LINK_SIZE_SQUISHED:
+                this->actor.scale.x = 0.015f;
+                this->actor.scale.y = 0.001f;
+                this->actor.scale.z = 0.015f;
+                break;
+            case GI_LINK_SIZE_NORMAL:
+            default:
+                break;
+        }
     }
 
-    switch (GameInteractor_GravityLevel()) {
-        case GI_GRAVITY_LEVEL_HEAVY:
-            this->actor.gravity = -4.0f;
-            break;
-        case GI_GRAVITY_LEVEL_LIGHT:
-            this->actor.gravity = -0.3f;
-            break;
-        default:
-            break;
+    // Don't apply gravity when Link is in water, otherwise
+    // it makes him sink instead of float.
+    if (!(this->stateFlags1 & PLAYER_STATE1_27)) {
+        switch (GameInteractor_GravityLevel()) {
+            case GI_GRAVITY_LEVEL_HEAVY:
+                this->actor.gravity = -4.0f;
+                break;
+            case GI_GRAVITY_LEVEL_LIGHT:
+                this->actor.gravity = -0.3f;
+                break;
+            default:
+                break;
+        }
     }
+
+    if (GameInteractor_GetRandomWindActive()) {
+        Player* player = GET_PLAYER(play);
+        player->windSpeed = 3.0f;
+        // Play fan sound (too annoying)
+        //func_8002F974(&player->actor, NA_SE_EV_WIND_TRAP - SFX_FLAG);
+    }
+    
+    GameInteractor_ExecuteOnPlayerUpdate();
 }
 
 static struct_80858AC8 D_80858AC8;
@@ -11276,14 +11314,14 @@ s16 func_8084ABD8(PlayState* play, Player* this, s32 arg2, s16 arg3) {
         temp2 = sControlInput->rel.stick_y * 240.0f * (CVarGetInteger("gInvertAimingYAxis", 1) ? 1 : -1); // Sensitivity not applied here because higher than default sensitivies will allow the camera to escape the autocentering, and glitch out massively
         Math_SmoothStepToS(&this->actor.focus.rot.x, temp2, 14, 4000, 30);
 
-        temp2 = sControlInput->rel.stick_x * -16.0f * (CVarGetInteger("gInvertAimingXAxis", 0) ? -1 : 1) * (CVarGetFloat("gFirstPersonCameraSensitivity", 1.0f));
+        temp2 = sControlInput->rel.stick_x * -16.0f * (CVarGetInteger("gInvertAimingXAxis", 0) ? -1 : 1) * (CVarGetFloat("gFirstPersonCameraSensitivityX", 1.0f));
         temp2 = CLAMP(temp2, -3000, 3000);
         this->actor.focus.rot.y += temp2;
     } else {
         temp1 = (this->stateFlags1 & PLAYER_STATE1_23) ? 3500 : 14000;
         temp3 = ((sControlInput->rel.stick_y >= 0) ? 1 : -1) *
                 (s32)((1.0f - Math_CosS(sControlInput->rel.stick_y * 200)) * 1500.0f *
-                        (CVarGetInteger("gInvertAimingYAxis", 1) ? 1 : -1)) * (CVarGetFloat("gFirstPersonCameraSensitivity", 1.0f));
+                        (CVarGetInteger("gInvertAimingYAxis", 1) ? 1 : -1)) * (CVarGetFloat("gFirstPersonCameraSensitivityY", 1.0f));
         this->actor.focus.rot.x += temp3;
 
         if (fabsf(sControlInput->cur.gyro_x) > 0.01f) {
@@ -11292,7 +11330,7 @@ s16 func_8084ABD8(PlayState* play, Player* this, s32 arg2, s16 arg3) {
 
         if (fabsf(sControlInput->cur.right_stick_y) > 15.0f && CVarGetInteger("gRightStickAiming", 0) != 0) {
             this->actor.focus.rot.x -=
-                (sControlInput->cur.right_stick_y) * 10.0f * (CVarGetInteger("gInvertAimingYAxis", 1) ? -1 : 1) * (CVarGetFloat("gFirstPersonCameraSensitivity", 1.0f));
+                (sControlInput->cur.right_stick_y) * 10.0f * (CVarGetInteger("gInvertAimingYAxis", 1) ? -1 : 1) * (CVarGetFloat("gFirstPersonCameraSensitivityY", 1.0f));
         }
 
         this->actor.focus.rot.x = CLAMP(this->actor.focus.rot.x, -temp1, temp1);
@@ -11301,7 +11339,7 @@ s16 func_8084ABD8(PlayState* play, Player* this, s32 arg2, s16 arg3) {
         temp2 = this->actor.focus.rot.y - this->actor.shape.rot.y;
         temp3 = ((sControlInput->rel.stick_x >= 0) ? 1 : -1) *
                 (s32)((1.0f - Math_CosS(sControlInput->rel.stick_x * 200)) * -1500.0f *
-                        (CVarGetInteger("gInvertAimingXAxis", 0) ? -1 : 1)) * (CVarGetFloat("gFirstPersonCameraSensitivity", 1.0f));
+                        (CVarGetInteger("gInvertAimingXAxis", 0) ? -1 : 1)) * (CVarGetFloat("gFirstPersonCameraSensitivityX", 1.0f));
         temp2 += temp3;
 
         this->actor.focus.rot.y = CLAMP(temp2, -temp1, temp1) + this->actor.shape.rot.y;
@@ -11312,7 +11350,7 @@ s16 func_8084ABD8(PlayState* play, Player* this, s32 arg2, s16 arg3) {
 
         if (fabsf(sControlInput->cur.right_stick_x) > 15.0f && CVarGetInteger("gRightStickAiming", 0) != 0) {
             this->actor.focus.rot.y +=
-                (sControlInput->cur.right_stick_x) * 10.0f * (CVarGetInteger("gInvertAimingXAxis", 0) ? 1 : -1) * (CVarGetFloat("gFirstPersonCameraSensitivity", 1.0f));
+                (sControlInput->cur.right_stick_x) * 10.0f * (CVarGetInteger("gInvertAimingXAxis", 0) ? 1 : -1) * (CVarGetFloat("gFirstPersonCameraSensitivityX", 1.0f));
         }
     }
 
@@ -11451,7 +11489,12 @@ s32 func_8084B3CC(PlayState* play, Player* this) {
         func_80835C58(play, this, func_8084FA54, 0);
 
         if (!func_8002DD6C(this) || Player_HoldsHookshot(this)) {
-            func_80835F44(play, this, 3);
+            s32 projectileItemToUse = ITEM_BOW;
+            if(CVarGetInteger("gBowSlingShotAmmoFix", 0)){
+                projectileItemToUse = LINK_IS_ADULT ? ITEM_BOW : ITEM_SLINGSHOT;
+            }
+
+            func_80835F44(play, this, projectileItemToUse);
         }
 
         this->stateFlags1 |= PLAYER_STATE1_20;
@@ -12592,7 +12635,8 @@ s32 func_8084DFF4(PlayState* play, Player* this) {
         }
         this->unk_84F = 1;
         equipItem = giEntry.itemId;
-        equipNow = CVarGetInteger("gAskToEquip", 0) && equipItem >= ITEM_SWORD_KOKIRI && equipItem <= ITEM_TUNIC_ZORA &&
+        equipNow = CVarGetInteger("gAskToEquip", 0) && giEntry.modIndex == MOD_NONE &&
+                    equipItem >= ITEM_SWORD_KOKIRI && equipItem <= ITEM_TUNIC_ZORA &&
                    ((gItemAgeReqs[equipItem] == 9 || gItemAgeReqs[equipItem] == gSaveContext.linkAge) ||
                     CVarGetInteger("gTimelessEquipment", 0));
 
@@ -12691,6 +12735,7 @@ s32 func_8084DFF4(PlayState* play, Player* this) {
                 this->unk_862 = 0;
                 gSaveContext.pendingIceTrapCount++;
                 Player_SetPendingFlag(this, play);
+                GameInteractor_ExecuteOnItemReceiveHooks(giEntry);
             }
 
             this->getItemId = GI_NONE;
@@ -12859,9 +12904,11 @@ void func_8084E6D4(Player* this, PlayState* play) {
                     Actor_Spawn(&play->actorCtx, play, ACTOR_EN_CLEAR_TAG, this->actor.world.pos.x,
                                 this->actor.world.pos.y + 100.0f, this->actor.world.pos.z, 0, 0, 0, 0, true);
                     func_8083C0E8(this, play);
+                    GameInteractor_ExecuteOnItemReceiveHooks(this->getItemEntry);
                 } else {
                     this->actor.colChkInfo.damage = 0;
                     func_80837C0C(play, this, 3, 0.0f, 0.0f, 0, 20);
+                    GameInteractor_ExecuteOnItemReceiveHooks(this->getItemEntry);
                     this->getItemId = GI_NONE;
                     this->getItemEntry = (GetItemEntry)GET_ITEM_NONE;
                     // Gameplay stats: Increment Ice Trap count

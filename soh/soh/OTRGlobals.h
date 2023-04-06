@@ -28,6 +28,7 @@ public:
 
     bool HasMasterQuest();
     bool HasOriginal();
+    uint32_t GetInterpolationFPS();
     std::shared_ptr<std::vector<std::string>> ListFiles(std::string path);
 
 private:
@@ -57,10 +58,12 @@ uint32_t ResourceMgr_GameHasMasterQuest();
 uint32_t ResourceMgr_GameHasOriginal();
 uint32_t ResourceMgr_GetNumGameVersions();
 uint32_t ResourceMgr_GetGameVersion(int index);
-void ResourceMgr_CacheDirectory(const char* resName);
+void ResourceMgr_LoadDirectory(const char* resName);
 char** ResourceMgr_ListFiles(const char* searchMask, int* resultSize);
+char* GetResourceDataByNameHandlingMQ(const char* path);
 void ResourceMgr_LoadFile(const char* resName);
 char* ResourceMgr_LoadFileFromDisk(const char* filePath);
+uint8_t ResourceMgr_ResourceIsBackground(char* texPath);
 char* ResourceMgr_LoadJPEG(char* data, int dataSize);
 uint16_t ResourceMgr_LoadTexWidthByName(char* texPath);
 uint16_t ResourceMgr_LoadTexHeightByName(char* texPath);
@@ -96,7 +99,6 @@ float OTRGetDimensionFromLeftEdge(float v);
 float OTRGetDimensionFromRightEdge(float v);
 int16_t OTRGetRectDimensionFromLeftEdge(float v);
 int16_t OTRGetRectDimensionFromRightEdge(float v);
-char* ResourceMgr_LoadFileRaw(const char* resName);
 bool AudioPlayer_Init(void);
 int AudioPlayer_Buffered(void);
 int AudioPlayer_GetDesiredBuffered(void);
@@ -137,6 +139,8 @@ void Entrance_ClearEntranceTrackingData(void);
 void Entrance_InitEntranceTrackingData(void);
 void EntranceTracker_SetCurrentGrottoID(s16 entranceIndex);
 void EntranceTracker_SetLastEntranceOverride(s16 entranceIndex);
+
+uint32_t GetGIID(uint32_t itemID);
 #endif
 
 #endif

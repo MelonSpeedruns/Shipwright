@@ -54,16 +54,35 @@ typedef struct {
 } Inventory; // size = 0x5E
 
 typedef struct {
+    u16 scene;
+    u8 room;
+    u32 sceneTime;
+    u32 roomTime;
+    u8 isRoom;
+} SceneTimestamp;
+
+typedef struct {
+    /*      */ char buildVersion[50];
+    /*      */ s16 buildVersionMajor;
+    /*      */ s16 buildVersionMinor;
+    /*      */ s16 buildVersionPatch;
     /*      */ u8 heartPieces;
     /*      */ u8 heartContainers;
     /*      */ u8 dungeonKeys[19];
     /*      */ u32 playTimer;
     /*      */ u32 pauseTimer;
+    /*      */ u32 sceneTimer;
+    /*      */ u32 roomTimer;
+    /*      */ s16 sceneNum;
+    /*      */ s8 roomNum;
     /*      */ bool gameComplete;
-    /*      */ u32 timestamp[TIMESTAMP_MAX];
+    /*      */ u32 itemTimestamp[TIMESTAMP_MAX];
+    /*      */ SceneTimestamp sceneTimestamps[8191];
+    /*      */ u32 tsIdx;
     /*      */ u32 count[COUNT_MAX];
     /*      */ u32 entrancesDiscovered[SAVEFILE_ENTRANCES_DISCOVERED_IDX_COUNT];
     /*      */ u32 scenesDiscovered[SAVEFILE_SCENES_DISCOVERED_IDX_COUNT];
+    /*      */ u8 locationsSkipped[RC_MAX];
 } SohStats;
 
 typedef struct {
@@ -246,6 +265,7 @@ typedef struct {
     /* 0x1422 */ s16 sunsSongState; // controls the effects of suns song
     /* 0x1424 */ s16 healthAccumulator;
     /* 0x1426 */ u16 pendingSale;
+    /* 0x1428 */ u16 pendingSaleMod;
     // #region SOH [General]
     // Upstream TODO: Move these to their own struct or name to more obviously specific to SoH
     /*        */ uint32_t isMasterQuest;
@@ -264,6 +284,7 @@ typedef struct {
     /*        */ char childAltarText[250];
     /*        */ char adultAltarText[750];
     /*        */ char ganonHintText[150];
+    /*        */ char gregHintText[250];
     /*        */ char ganonText[250];
     /*        */ char dampeText[150];
     /*        */ char warpMinuetText[100];
@@ -363,7 +384,7 @@ typedef enum {
 #define EVENTCHKINF_16 0x16
 #define EVENTCHKINF_EPONA_OBTAINED 0x18
 #define EVENTCHKINF_1B 0x1B
-#define EVENTCHKINF_1C 0x1C
+#define EVENTCHKINF_SPOKE_TO_MIDO_AFTER_DEKU_TREES_DEATH 0x1C
 #define EVENTCHKINF_1D 0x1D
 #define EVENTCHKINF_1E 0x1E
 #define EVENTCHKINF_20 0x20

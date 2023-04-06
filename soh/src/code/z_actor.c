@@ -8,6 +8,7 @@
 #include "objects/object_bdoor/object_bdoor.h"
 #include "soh/frame_interpolation.h"
 #include "soh/Enhancements/enemyrandomizer.h"
+#include "soh/Enhancements/game-interactor/GameInteractor.h"
 
 #if defined(_MSC_VER) || defined(__GNUC__)
 #include <string.h>
@@ -896,7 +897,7 @@ void TitleCard_InitPlaceName(PlayState* play, TitleCardContext* titleCtx, void* 
             texture = gStableTitleCardENGTex;
             break;
         case SCENE_HYLIA_LABO:
-            texture = gLakeHyliaTitleCardENGTex;
+            texture = gLakesideLaboratoryTitleCardENGTex;
             break;
         case SCENE_HUT:
             texture = gGravekeepersHutTitleCardENGTex;
@@ -1020,8 +1021,6 @@ void TitleCard_InitPlaceName(PlayState* play, TitleCardContext* titleCtx, void* 
     }
 
     titleCtx->texture = GetResourceDataByName(texture, false);
-
-    //titleCtx->texture = texture;
     titleCtx->isBossCard = false;
     titleCtx->hasTranslation = false;
     titleCtx->x = x;
@@ -1044,6 +1043,10 @@ void TitleCard_Update(PlayState* play, TitleCardContext* titleCtx) {
     }
 
     if (DECR(titleCtx->delayTimer) == 0) {
+        if (titleCtx->durationTimer == 80) {
+            GameInteractor_ExecuteOnPresentTitleCard();
+        }
+        
         if (DECR(titleCtx->durationTimer) == 0) {
             Math_StepToS(&titleCtx->alpha, 0, 30);
             Math_StepToS(&titleCtx->intensityR, 0, 70);
@@ -2513,6 +2516,7 @@ void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
             Actor_SpawnEntry(&play->actorCtx, actorEntry++, play);
         }
         play->numSetupActors = 0;
+        GameInteractor_ExecuteOnSceneSpawnActors();
     }
 
     if (actorCtx->unk_02 != 0) {
@@ -2595,6 +2599,7 @@ void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
                         actor->colorFilterTimer--;
                     }
                     actor->update(actor, play);
+                    GameInteractor_ExecuteOnActorUpdate(actor, play);
                     func_8003F8EC(play, &play->colCtx.dyna, actor);
                 }
 

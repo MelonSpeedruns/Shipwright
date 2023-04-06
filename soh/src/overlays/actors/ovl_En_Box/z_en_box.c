@@ -624,12 +624,14 @@ void EnBox_Update(Actor* thisx, PlayState* play) {
 
 void EnBox_UpdateSizeAndTexture(EnBox* this, PlayState* play) {
     EnBox_CreateExtraChestTextures();
-    int cvar = CVarGetInteger("gChestSizeAndTextureMatchesContents", 0);
-    int agonyCVar = CVarGetInteger("gChestSizeDependsStoneOfAgony", 0);
-    int stoneCheck = CHECK_QUEST_ITEM(QUEST_STONE_OF_AGONY);
+    int cstmc = CVarGetInteger("gChestSizeAndTextureMatchesContents", 0);
+    int requiresStoneAgony = CVarGetInteger("gChestSizeDependsStoneOfAgony", 0);
     GetItemCategory getItemCategory;
 
-    if (play->sceneNum != SCENE_TAKARAYA && cvar > 0 && ((agonyCVar > 0 && stoneCheck) | agonyCVar == 0)) {
+    int isVanilla = cstmc == 0 || (requiresStoneAgony && !CHECK_QUEST_ITEM(QUEST_STONE_OF_AGONY)) ||
+        (play->sceneNum == SCENE_TAKARAYA && this->dyna.actor.room != 6); // Exclude treasure game chests except for the final room
+
+    if (!isVanilla) {
         getItemCategory = this->getItemEntry.getItemCategory;
         // If they don't have bombchu's yet consider the bombchu item major
         if (this->getItemEntry.gid == GID_BOMBCHU && INV_CONTENT(ITEM_BOMBCHU) != ITEM_BOMBCHU) {
@@ -645,7 +647,8 @@ void EnBox_UpdateSizeAndTexture(EnBox* this, PlayState* play) {
         }
     }
 
-    if (play->sceneNum != SCENE_TAKARAYA && (cvar == 1 || cvar == 3) && ((agonyCVar > 0 && stoneCheck) | agonyCVar == 0)) {
+    // Change size
+    if (!isVanilla && (cstmc == 1 || cstmc == 3)) {
         switch (getItemCategory) {
             case ITEM_CATEGORY_JUNK:
             case ITEM_CATEGORY_SMALL_KEY:
@@ -673,7 +676,8 @@ void EnBox_UpdateSizeAndTexture(EnBox* this, PlayState* play) {
         }
     }
 
-    if (play->sceneNum != SCENE_TAKARAYA && (cvar == 1 || cvar == 2) && ((agonyCVar > 0 && stoneCheck) | agonyCVar == 0)) {
+    // Change texture
+    if (!isVanilla && (cstmc == 1 || cstmc == 2)) {
         switch (getItemCategory) {
             case ITEM_CATEGORY_MAJOR:
                 this->boxBodyDL = gGoldTreasureChestChestFrontDL;
@@ -752,16 +756,16 @@ void EnBox_UpdateSizeAndTexture(EnBox* this, PlayState* play) {
 void EnBox_CreateExtraChestTextures() {
     if (hasCreatedRandoChestTextures) return;
     Gfx gTreasureChestChestTextures[] = {
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gSkullTreasureChestFrontTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gSkullTreasureChestSideAndTopTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gGoldTreasureChestFrontTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gGoldTreasureChestSideAndTopTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gKeyTreasureChestFrontTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gKeyTreasureChestSideAndTopTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gChristmasRedTreasureChestFrontTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gChristmasRedTreasureChestSideAndTopTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gChristmasGreenTreasureChestFrontTex")),
-        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, ResourceMgr_LoadFileRaw("assets/objects/object_box/gChristmasGreenTreasureChestSideAndTopTex")),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gSkullTreasureChestFrontTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gSkullTreasureChestSideAndTopTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gGoldTreasureChestFrontTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gGoldTreasureChestSideAndTopTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gKeyTreasureChestFrontTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gKeyTreasureChestSideAndTopTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gChristmasRedTreasureChestFrontTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gChristmasRedTreasureChestSideAndTopTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gChristmasGreenTreasureChestFrontTex", false)),
+        gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, GetResourceDataByName("__OTR__objects/object_box/gChristmasGreenTreasureChestSideAndTopTex", false)),
     };
 
     Gfx* frontCmd = ResourceMgr_LoadGfxByName(gTreasureChestChestFrontDL);

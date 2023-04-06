@@ -1,0 +1,12 @@
+#pragma once
+
+#include "align_asset_macro.h"
+
+#define dkenjyanoma_sceneCollisionHeader_00359C "__OTR__scenes/nonmq/kenjyanoma_scene/kenjyanoma_sceneCollisionHeader_00359C"
+static const ALIGN_ASSET(2) char kenjyanoma_sceneCollisionHeader_00359C[] = dkenjyanoma_sceneCollisionHeader_00359C;
+
+#define dkenjyanoma_sceneCollisionHeader_00359C "__OTR__scenes/nonmq/kenjyanoma_scene/kenjyanoma_sceneCollisionHeader_00359C"
+
+#define dkenjyanoma_sceneCollisionHeader_00359C "__OTR__scenes/nonmq/kenjyanoma_scene/kenjyanoma_sceneCollisionHeader_00359C"
+
+#define dkenjyanoma_sceneCollisionHeader_00359C "__OTR__scenes/nonmq/kenjyanoma_scene/kenjyanoma_sceneCollisionHeader_00359C"

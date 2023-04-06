@@ -1210,10 +1210,8 @@ void BossGanon_SetupTowerCutscene(BossGanon* this, PlayState* play) {
 
 void BossGanon_ShatterWindows(u8 windowShatterState) {
     s16 i;
-    // Temporary solution: using LoadTexOrDList to ensure we actually have the texture available
-    // based on mq/nonmq. This will be handled properly with LUS 1.0
-    u8* tex1 = ResourceMgr_LoadTexOrDListByName(SEGMENTED_TO_VIRTUAL(ganon_boss_sceneTex_006C18));
-    u8* tex2 = ResourceMgr_LoadTexOrDListByName(SEGMENTED_TO_VIRTUAL(ganon_boss_sceneTex_007418));
+    u8* tex1 = GetResourceDataByNameHandlingMQ(SEGMENTED_TO_VIRTUAL(ganon_boss_sceneTex_006C18));
+    u8* tex2 = GetResourceDataByNameHandlingMQ(SEGMENTED_TO_VIRTUAL(ganon_boss_sceneTex_007418));
     u8* templateTex = GetResourceDataByName(SEGMENTED_TO_VIRTUAL(gGanondorfWindowShatterTemplateTex), false);
 
     for (i = 0; i < 2048; i++) {
@@ -2804,7 +2802,7 @@ void BossGanon_UpdateDamage(BossGanon* this, PlayState* play) {
                     func_80078914(&sZeroVec, NA_SE_EN_LAST_DAMAGE);
                     Audio_QueueSeqCmd(0x100100FF);
                     this->screenFlashTimer = 4;
-                    gSaveContext.sohStats.timestamp[TIMESTAMP_DEFEAT_GANONDORF] = GAMEPLAYSTAT_TOTAL_TIME;
+                    gSaveContext.sohStats.itemTimestamp[TIMESTAMP_DEFEAT_GANONDORF] = GAMEPLAYSTAT_TOTAL_TIME;
                 } else {
                     Audio_PlayActorSound2(&this->actor, NA_SE_EN_GANON_DAMAGE2);
                     Audio_PlayActorSound2(&this->actor, NA_SE_EN_GANON_CUTBODY);

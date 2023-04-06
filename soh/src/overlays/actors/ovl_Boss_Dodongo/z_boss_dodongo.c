@@ -35,7 +35,7 @@ void BossDodongo_DrawEffects(PlayState* play);
 void BossDodongo_UpdateEffects(PlayState* play);
 
 const ActorInit Boss_Dodongo_InitVars = {
-    ACTOR_EN_DODONGO,
+    ACTOR_BOSS_DODONGO,
     ACTORCAT_BOSS,
     FLAGS,
     OBJECT_KINGDODONGO,
@@ -118,10 +118,7 @@ void func_808C12C4(u8* arg1, s16 arg2) {
 }
 
 void func_808C1554(void* arg0, void* floorTex, s32 arg2, f32 arg3) {
-    // Entering the King Dodongo boss battle was crashing when using only an mq otr
-    // because it was trying to load a texture from a non-mq path 
-    // HACK: GetResourceDataByName doesn't account for mq vs non-mq paths, LoadTexOrDListByName does. 
-    arg0 = ResourceMgr_LoadTexOrDListByName(arg0);
+    arg0 = GetResourceDataByNameHandlingMQ(arg0);
     floorTex = GetResourceDataByName(floorTex, false);
 
     u16* temp_s3 = SEGMENTED_TO_VIRTUAL(arg0);
@@ -1333,7 +1330,7 @@ void BossDodongo_DeathCutscene(BossDodongo* this, PlayState* play) {
             this->cameraAt.x = camera->at.x;
             this->cameraAt.y = camera->at.y;
             this->cameraAt.z = camera->at.z;
-            gSaveContext.sohStats.timestamp[TIMESTAMP_DEFEAT_KING_DODONGO] = GAMEPLAYSTAT_TOTAL_TIME;
+            gSaveContext.sohStats.itemTimestamp[TIMESTAMP_DEFEAT_KING_DODONGO] = GAMEPLAYSTAT_TOTAL_TIME;
             break;
         case 5:
             tempSin = Math_SinS(this->actor.shape.rot.y - 0x1388) * 150.0f;

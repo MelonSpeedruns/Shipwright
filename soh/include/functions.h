@@ -1120,6 +1120,8 @@ s32 Player_HasMirrorShieldEquipped(PlayState* play);
 s32 Player_HasMirrorShieldSetToDraw(PlayState* play);
 s32 Player_ActionToMagicSpell(Player* player, s32 actionParam);
 s32 Player_HoldsHookshot(Player* player);
+s32 Player_HoldsBow(Player* player);
+s32 Player_HoldsSlingshot(Player* player);
 s32 func_8008F128(Player* player);
 s32 Player_ActionToSword(s32 actionParam);
 s32 Player_GetSwordHeld(Player* player);
@@ -2090,6 +2092,7 @@ void func_800F595C(u16);
 void func_800F59E8(u16);
 s32 func_800F5A58(u8);
 void func_800F5ACC(u16 seqId);
+void PreviewSequence(u16 seqId);
 void func_800F5B58(void);
 void func_800F5BF0(u8 natureAmbienceId);
 void Audio_PlayFanfare(u16);
@@ -2132,6 +2135,7 @@ void Audio_StopSfxByPosAndBank(u8, Vec3f*);
 void Audio_StopSfxByPos(Vec3f*);
 void func_800F9280(u8 playerIdx, u8 seqId, u8 arg2, u16 fadeTimer);
 void Audio_QueueSeqCmd(u32 bgmID);
+void Audio_QueuePreviewSeqCmd(u16 seqId);
 void Audio_StopSfxByPosAndId(Vec3f* pos, u16 sfxId);
 void Audio_StopSfxByTokenAndId(u8, u16);
 void Audio_StopSfxById(u32 sfxId);
@@ -2412,7 +2416,7 @@ void GameOver_Update(PlayState* play);
 void func_80110990(PlayState* play);
 void func_801109B0(PlayState* play);
 void Message_Init(PlayState* play);
-void func_80112098(PlayState* play);
+void Regs_InitData(PlayState* play);
 
 void Title_Init(GameState* thisx);
 void Title_PrintBuildInfo(Gfx** gfxp);
@@ -2428,6 +2432,11 @@ void Heaps_Alloc(void);
 void Heaps_Free(void);
 
 CollisionHeader* BgCheck_GetCollisionHeader(CollisionContext* colCtx, s32 bgId);
+
+// Exposing these methods to leverage them from the file select screen to render messages
+void Message_OpenText(PlayState* play, u16 textId);
+void Message_Decode(PlayState* play);
+void Message_DrawText(PlayState* play, Gfx** gfxP);
 
 #ifdef __cplusplus
 #undef this
