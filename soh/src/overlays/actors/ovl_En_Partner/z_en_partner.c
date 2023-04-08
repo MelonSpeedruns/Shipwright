@@ -175,11 +175,11 @@ void CenterIvanOnLink(Actor* thisx, PlayState* play) {
 void UseBow(Actor* thisx, PlayState* play, u8 started, u8 arrowType) {
     EnPartner* this = (EnPartner*)thisx;
 
-    if (this->itemTimer <= 0) {
-        if (started == 1) {
-            func_808328EC(this, NA_SE_PL_CHANGE_ARMS);
-            this->canMove = 0;
-        } else if (started == 0) {
+    if (started == 1) {
+        func_808328EC(this, NA_SE_PL_CHANGE_ARMS);
+        this->canMove = 0;
+    } else if (started == 0) {
+        if (this->itemTimer <= 0) {
             if (AMMO(ITEM_BOW) > 0) {
                 this->itemTimer = 10;
 
@@ -205,8 +205,6 @@ void UseBow(Actor* thisx, PlayState* play, u8 started, u8 arrowType) {
             } else {
                 func_80078884(NA_SE_SY_ERROR);
             }
-
-            this->canMove = 1;
         }
     }
 }
@@ -214,11 +212,11 @@ void UseBow(Actor* thisx, PlayState* play, u8 started, u8 arrowType) {
 void UseSlingshot(Actor* thisx, PlayState* play, u8 started) {
     EnPartner* this = (EnPartner*)thisx;
 
-    if (this->itemTimer <= 0) {
-        if (started == 1) {
-            func_808328EC(this, NA_SE_PL_CHANGE_ARMS);
-            this->canMove = 0;
-        } else if (started == 0) {
+    if (started == 1) {
+        func_808328EC(this, NA_SE_PL_CHANGE_ARMS);
+        this->canMove = 0;
+    } else if (started == 0) {
+        if (this->itemTimer <= 0) {
             if (AMMO(ITEM_SLINGSHOT) > 0) {
                 this->itemTimer = 10;
                 Actor* newarrow = Actor_SpawnAsChild(
@@ -230,8 +228,6 @@ void UseSlingshot(Actor* thisx, PlayState* play, u8 started) {
             } else {
                 func_80078884(NA_SE_SY_ERROR);
             }
-
-            this->canMove = 1;
         }
     }
 }
@@ -526,6 +522,9 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
 
     if (this->itemTimer > 0) {
         this->itemTimer--;
+        if (this->itemTimer <= 0) {
+            this->canMove = 1;
+        }
     }
 
     if (!Player_InCsMode(play)) {
@@ -579,6 +578,8 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
         } else if (current == 1) {
             UseItem(this->usedItem, 2, this, play);
         }
+    } else {
+        this->itemTimer = 10;
     }
 
     if (CHECK_BTN_ALL(sControlInput.press.button, BTN_Z) && this->canMove) {
