@@ -71,6 +71,7 @@ void EnPartner_Init(Actor* thisx, PlayState* play) {
     this->usedItem = 0xFF;
     this->canMove = 1;
     this->hookshotTarget = NULL;
+    GET_PLAYER(play)->ivanFloating = 0;
 
     this->innerColor.r = 255.0f;
     this->innerColor.g = 255.0f;
@@ -330,6 +331,12 @@ void UseSpell(Actor* thisx, PlayState* play, u8 started, u8 spellType) {
             this->itemTimer = 10;
             this->usedSpell = 0;
             gSaveContext.magicState = 5;
+
+            switch (this->usedSpell) {
+                case 3:
+                    GET_PLAYER(play)->ivanFloating = 0;
+                    break;
+            }
         }
 
         if (started == 2 && this->usedSpell != 0) {
@@ -341,8 +348,8 @@ void UseSpell(Actor* thisx, PlayState* play, u8 started, u8 spellType) {
                     GET_PLAYER(play)->invincibilityTimer = -10;
                     break;
                 case 3:
-                    GET_PLAYER(play)->windSpeed = 10.0f;
-                    GET_PLAYER(play)->windDirection = this->actor.yawTowardsPlayer;
+                    GET_PLAYER(play)->hoverBootsTimer = 10;
+                    GET_PLAYER(play)->ivanFloating = 1;
                     break;
             }
 
@@ -350,7 +357,7 @@ void UseSpell(Actor* thisx, PlayState* play, u8 started, u8 spellType) {
             this->magicTimer--;
             if (this->magicTimer <= 0) {
                 gSaveContext.magic--;
-                this->magicTimer = 10;
+                this->magicTimer = 5;
                 if (gSaveContext.magic <= 0) {
                     gSaveContext.magic = 0;
 
