@@ -24,6 +24,7 @@
 #include "soh/Enhancements/item-tables/ItemTableTypes.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/Enhancements/randomizer/randomizer_entrance.h"
+#include <overlays/actors/ovl_En_Partner/z_en_partner.h>
 
 typedef enum {
     /* 0x00 */ KNOB_ANIM_ADULT_L,
@@ -136,6 +137,7 @@ s32 func_80835800(Player* this, PlayState* play);
 s32 func_80835884(Player* this, PlayState* play); // Start aiming boomerang
 s32 func_808358F0(Player* this, PlayState* play); // Aim boomerang
 s32 func_808359FC(Player* this, PlayState* play); // Throw boomerang
+s32 spawn_boomerang_ivan(EnPartner* this, PlayState* play); // Throw boomerang Ivan
 s32 func_80835B60(Player* this, PlayState* play); // Boomerang active
 s32 func_80835C08(Player* this, PlayState* play);
 void func_80835F44(PlayState* play, Player* this, s32 item);
@@ -2794,6 +2796,24 @@ s32 func_808359FC(Player* this, PlayState* play) {
             func_8002F7DC(&this->actor, NA_SE_IT_BOOMERANG_THROW);
             func_80832698(this, NA_SE_VO_LI_SWORD_N);
         }
+    }
+
+    return 1;
+}
+
+s32 spawn_boomerang_ivan(EnPartner* this, PlayState* play) {
+    f32 posX = (Math_SinS(this->actor.shape.rot.y) * 1.0f) + this->actor.world.pos.x;
+    f32 posZ = (Math_CosS(this->actor.shape.rot.y) * 1.0f) + this->actor.world.pos.z;
+    s32 yaw = this->actor.shape.rot.y;
+    EnBoom* boomerang =
+        (EnBoom*)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BOOM, posX, this->actor.world.pos.y + 7.0f, posZ,
+                             this->actor.focus.rot.x, yaw, 0, 0, true);
+
+    this->boomerangActor = &boomerang->actor;
+    if (boomerang != NULL) {
+        boomerang->returnTimer = 20;
+        Audio_PlaySoundTransposed(&this->actor.projectedPos, NA_SE_VO_NA_HELLO_2, -6);
+        Audio_PlayActorSound2(&this->actor, NA_SE_IT_BOOMERANG_THROW);
     }
 
     return 1;

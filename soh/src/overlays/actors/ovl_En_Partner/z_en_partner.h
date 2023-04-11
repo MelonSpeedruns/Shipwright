@@ -3,6 +3,7 @@
 
 #include <libultraship/libultra.h>
 #include "global.h"
+#include <overlays/actors/ovl_En_Boom/z_en_boom.h>
 
 struct EnPartner;
 
@@ -36,10 +37,13 @@ typedef struct EnPartner {
     u8 damageTimer;
     s16 magicTimer;
 
+    u8 shouldDraw;
     u32 itemTimer;
 
+    GetItemEntry entry;
     WeaponInfo stickWeaponInfo;
 
+    EnBoom* boomerangActor;
     Actor* hookshotTarget;
 } EnPartner;
 

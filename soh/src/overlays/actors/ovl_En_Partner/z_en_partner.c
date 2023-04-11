@@ -75,6 +75,7 @@ void EnPartner_Init(Actor* thisx, PlayState* play) {
 
     this->usedItem = 0xFF;
     this->canMove = 1;
+    this->shouldDraw = 1;
     this->hookshotTarget = NULL;
     GET_PLAYER(play)->ivanFloating = 0;
 
@@ -126,14 +127,19 @@ void EnPartner_Destroy(Actor* thisx, PlayState* play) {
 }
 
 void EnPartner_UpdateLights(EnPartner* this, PlayState* play) {
-    s16 glowLightRadius;
+    s16 glowLightRadius = 100;
+    s16 lightRadius = 200;
+
+    if (this->shouldDraw == 0) {
+        glowLightRadius = 0;
+        lightRadius = 0;
+    }
+
     Player* player;
 
-    glowLightRadius = 100;
-
     player = GET_PLAYER(play);
-    Lights_PointNoGlowSetInfo(&this->lightInfoNoGlow, player->actor.world.pos.x,
-                              (s16)(player->actor.world.pos.y) + 69, player->actor.world.pos.z, 200, 255, 200, 200);
+    Lights_PointNoGlowSetInfo(&this->lightInfoNoGlow, player->actor.world.pos.x, (s16)(player->actor.world.pos.y) + 69,
+                              player->actor.world.pos.z, 200, 255, 200, lightRadius);
 
     Lights_PointGlowSetInfo(&this->lightInfoGlow, this->actor.world.pos.x, this->actor.world.pos.y + 9,
                             this->actor.world.pos.z, 200, 255, 200, glowLightRadius);
@@ -196,8 +202,9 @@ void UseBow(Actor* thisx, PlayState* play, u8 started, u8 arrowType) {
     } else if (started == 0) {
         if (this->itemTimer <= 0) {
             if (AMMO(ITEM_BOW) > 0) {
-                if (arrowType >= 1 && func_80087708(play, magicArrowCosts[arrowType], 0)) {
+                if (arrowType >= 1 && !func_80087708(play, magicArrowCosts[arrowType], 0)) {
                     func_80078884(NA_SE_SY_ERROR);
+                    this->canMove = 1;
                     return;
                 }
 
@@ -276,21 +283,16 @@ void UseHammer(Actor* thisx, PlayState* play, u8 started) {
         if (started == 1) {
             this->itemTimer = 10;
             static Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
-            Vec3f shockwavePos;
-            f32 sp2C;
-
-            shockwavePos.y = func_8083973C(play, this, &D_80854A40, &shockwavePos);
-            sp2C = this->actor.world.pos.y - shockwavePos.y;
-
-            Math_ScaledStepToS(&this->actor.focus.rot.x, Math_Atan2S(45.0f, sp2C), 800);
-            func_80836AB8(this, 1);
+            Vec3f shockwavePos = this->actor.world.pos;
 
             func_808429B4(play, 27767, 7, 20);
-            play->actorCtx.unk_02 = 4;
-            func_800AA000(0, 255, 20, 150);
             func_8002F7DC(&this->actor, NA_SE_IT_HAMMER_HIT);
 
             EffectSsBlast_SpawnWhiteShockwave(play, &shockwavePos, &zeroVec, &zeroVec);
+
+            if (this->actor.xzDistToPlayer < 100.0f && this->actor.yDistToPlayer < 35.0f) {
+                func_8002F71C(play, &this->actor, 8.0f, this->actor.yawTowardsPlayer, 8.0f);
+            }
         }
     }
 }
@@ -400,7 +402,50 @@ void UseOcarina(Actor* thisx, PlayState* play, u8 started) {
     if (this->itemTimer <= 0) {
         if (started == 1) {
             Audio_PlaySoundTransposed(&this->actor.projectedPos, NA_SE_VO_NA_HELLO_2, -6);
-            //Audio_PlayActorSound2(&this->actor, NA_SE_VO_NA_HELLO_2);
+        }
+    }
+}
+
+void UseBoomerang(Actor* thisx, PlayState* play, u8 started) {
+    EnPartner* this = (EnPartner*)thisx;
+
+    if (this->itemTimer <= 0) {
+        if (started == 1) {
+            this->itemTimer = 20;
+            spawn_boomerang_ivan(&this->actor, play);
+        }
+    }
+}
+
+void UseLens(Actor* thisx, PlayState* play, u8 started) {
+    EnPartner* this = (EnPartner*)thisx;
+
+    if (this->itemTimer <= 0) {
+        if (started == 1) {
+            func_80078884(NA_SE_SY_GLASSMODE_ON);
+            this->shouldDraw = 0;
+        }
+
+        if (started == 0) {
+            func_80078884(NA_SE_SY_GLASSMODE_OFF);
+            this->shouldDraw = 1;
+        }
+    }
+}
+
+void UseBeans(Actor* thisx, PlayState* play, u8 started) {
+    EnPartner* this = (EnPartner*)thisx;
+
+    if (this->itemTimer <= 0) {
+        if (started == 1) {
+            this->entry = ItemTable_Retrieve(GI_BEAN);
+            if (play->actorCtx.titleCtx.alpha <= 0) {
+                if (gSaveContext.rupees >= 100 && GiveItemEntryWithoutActor(play, this->entry)) {
+                    Rupees_ChangeBy(-100);
+                } else {
+                    func_80078884(NA_SE_SY_ERROR);
+                }
+            }
         }
     }
 }
@@ -516,6 +561,15 @@ void UseItem(uint8_t usedItem, u8 started, Actor* thisx, PlayState* play) {
             case SLOT_HAMMER:
                 UseHammer(this, play, started);
                 break;
+            case SLOT_BOOMERANG:
+                UseBoomerang(this, play, started);
+                break;
+            case SLOT_LENS:
+                UseLens(this, play, started);
+                break;
+            case SLOT_BEAN:
+                UseBeans(this, play, started);
+                break;
         }
     }
 
@@ -561,7 +615,12 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
 
     Math_SmoothStepToF(&this->actor.speedXZ, sqrtf(SQ(relX) + SQ(relY)), 1.0f, 1.3f, 0.0f);
 
-    EnPartner_SpawnSparkles(this, play, 12);
+    if (this->shouldDraw == 1) {
+        thisx->shape.shadowAlpha = 0xFF;
+        EnPartner_SpawnSparkles(this, play, 12);
+    } else {
+        thisx->shape.shadowAlpha = 0;
+    }
 
     if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_A) && this->canMove) {
         Math_SmoothStepToF(&this->yVelocity, 6.0f, 1.0f, 1.5f, 0.0f);
@@ -632,55 +691,53 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
         uint8_t released = 0;
         uint8_t current = 0;
 
-        if (this->itemTimer <= 0) {
-            if (this->usedItem == 0xFF) {
-                if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CLEFT)) {
-                    this->usedItem = gSaveContext.equips.cButtonSlots[0];
-                    this->usedItemButton = 0;
-                    pressed = 1;
-                } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CDOWN)) {
-                    this->usedItem = gSaveContext.equips.cButtonSlots[1];
-                    this->usedItemButton = 1;
-                    pressed = 1;
-                } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CRIGHT)) {
-                    this->usedItem = gSaveContext.equips.cButtonSlots[2];
-                    this->usedItemButton = 2;
-                    pressed = 1;
-                }
-            }
-
-            if (this->usedItem != 0xFF) {
-                if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CLEFT) && this->usedItemButton == 0) {
-                    current = 1;
-                } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CDOWN) && this->usedItemButton == 1) {
-                    current = 1;
-                } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CRIGHT) && this->usedItemButton == 2) {
-                    current = 1;
-                }
-            }
-
-            if (this->usedItem != 0xFF) {
-                if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CLEFT) && this->usedItemButton == 0) {
-                    this->usedItem = gSaveContext.equips.cButtonSlots[0];
-                    released = 1;
-                } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CDOWN) && this->usedItemButton == 1) {
-                    this->usedItem = gSaveContext.equips.cButtonSlots[1];
-                    released = 1;
-                } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CRIGHT) && this->usedItemButton == 2) {
-                    this->usedItem = gSaveContext.equips.cButtonSlots[2];
-                    released = 1;
-                }
-            }
-
-            if (pressed == 1) {
-                UseItem(this->usedItem, 1, this, play);
-            } else if (released == 1) {
-                UseItem(this->usedItem, 0, this, play);
-            } else if (current == 1) {
-                UseItem(this->usedItem, 2, this, play);
+        if (this->usedItem == 0xFF && this->itemTimer <= 0) {
+            if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CLEFT)) {
+                this->usedItem = gSaveContext.equips.cButtonSlots[0];
+                this->usedItemButton = 0;
+                pressed = 1;
+            } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CDOWN)) {
+                this->usedItem = gSaveContext.equips.cButtonSlots[1];
+                this->usedItemButton = 1;
+                pressed = 1;
+            } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CRIGHT)) {
+                this->usedItem = gSaveContext.equips.cButtonSlots[2];
+                this->usedItemButton = 2;
+                pressed = 1;
             }
         }
+
+        if (this->usedItem != 0xFF) {
+            if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CLEFT) && this->usedItemButton == 0) {
+                current = 1;
+            } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CDOWN) && this->usedItemButton == 1) {
+                current = 1;
+            } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CRIGHT) && this->usedItemButton == 2) {
+                current = 1;
+            }
+        }
+
+        if (this->usedItem != 0xFF) {
+            if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CLEFT) && this->usedItemButton == 0) {
+                released = 1;
+            } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CDOWN) && this->usedItemButton == 1) {
+                released = 1;
+            } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CRIGHT) && this->usedItemButton == 2) {
+                released = 1;
+            }
+        }
+
+        if (pressed == 1) {
+            UseItem(this->usedItem, 1, this, play);
+        } else if (released == 1) {
+            UseItem(this->usedItem, 0, this, play);
+            this->usedItemButton = 0xFF;
+        } else if (current == 1) {
+            UseItem(this->usedItem, 2, this, play);
+        }
     } else {
+        UseItem(this->usedItem, 0, this, play);
+        this->usedItem = 0xFF;
         this->itemTimer = 10;
     }
 
@@ -782,6 +839,10 @@ void EnPartner_Draw(Actor* thisx, PlayState* play) {
     if (play->pauseCtx.state != 0 && this->usedItem != 0xFF) {
         UseItem(this->usedItem, 0, this, play);
         this->usedItem = 0xFF;
+    }
+
+    if (this->shouldDraw == 0) {
+        return;
     }
 
     dListHead = Graph_Alloc(play->state.gfxCtx, sizeof(Gfx) * 4);
