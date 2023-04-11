@@ -5930,7 +5930,7 @@ void func_8083D6EC(PlayState* play, Player* this) {
             } else {
                 temp2 = 1300.0f;
             }
-            if (this->currentBoots == PLAYER_BOOTS_HOVER || this->ivanFloating) {
+            if (this->currentBoots == PLAYER_BOOTS_HOVER) {
                 temp1 += temp1;
             } else if (this->currentBoots == PLAYER_BOOTS_IRON) {
                 temp1 *= 0.3f;
@@ -7000,7 +7000,7 @@ void func_8084029C(Player* this, f32 arg1) {
     }
 
     if ((this->currentBoots == PLAYER_BOOTS_HOVER || this->ivanFloating) && !(this->actor.bgCheckFlags & 1) &&
-        (this->hoverBootsTimer != 0)) {
+        (this->hoverBootsTimer != 0 || this->ivanFloating)) {
         func_8002F8F0(&this->actor, NA_SE_PL_HOBBERBOOTS_LV - SFX_FLAG);
     } else if (func_8084021C(this->unk_868, arg1, 29.0f, 10.0f) || func_8084021C(this->unk_868, arg1, 29.0f, 24.0f)) {
         func_808327F8(this, this->linearVelocity);
@@ -9593,6 +9593,8 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     Collider_SetQuad(play, &this->meleeWeaponQuads[1], &this->actor, &D_80854650);
     Collider_InitQuad(play, &this->shieldQuad);
     Collider_SetQuad(play, &this->shieldQuad, &this->actor, &D_808546A0);
+
+    this->ivanDamageMultiplier = 1;
 }
 
 static void (*D_80854738[])(PlayState* play, Player* this) = {

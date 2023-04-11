@@ -3045,6 +3045,8 @@ void CollisionCheck_ApplyDamage(PlayState* play, CollisionCheckContext* colChkCt
     if (!(collider->acFlags & AC_HARD)) {
         collider->actor->colChkInfo.damage += damage;
     }
+
+    collider->actor->colChkInfo.damage *= GET_PLAYER(play)->ivanDamageMultiplier;
 }
 
 /**

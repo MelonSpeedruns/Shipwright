@@ -11,6 +11,8 @@ typedef void (*EnPartnerActionFunc)(struct EnPartner*, PlayState*);
 typedef struct EnPartner {
     Actor actor;
 
+    DynaPolyActor dyna;
+
     SkelAnime skelAnime;
 
     Vec3s jointTable[15];
@@ -27,12 +29,11 @@ typedef struct EnPartner {
 
     f32 yVelocity;
 
-    u8 lastWasCutscene;
     u8 canMove;
-    u8 usingStick;
-    u8 stickState;
     u8 usedItem;
+    u8 usedItemButton;
     u8 usedSpell;
+    u8 damageTimer;
     s16 magicTimer;
 
     u32 itemTimer;

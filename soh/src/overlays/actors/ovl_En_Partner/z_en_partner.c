@@ -9,8 +9,10 @@
 #include <overlays/actors/ovl_En_Arrow/z_en_arrow.h>
 #include "overlays/actors/ovl_En_Si/z_en_si.h"
 #include <objects/object_link_child/object_link_child.h>
+#include <overlays/actors/ovl_En_Bom/z_en_bom.h>
+#include <overlays/actors/ovl_Obj_Switch/z_obj_switch.h>
 
-#define FLAGS (ACTOR_FLAG_4 | ACTOR_FLAG_5 | ACTOR_FLAG_10)
+#define FLAGS (ACTOR_FLAG_4 | ACTOR_FLAG_5 | ACTOR_FLAG_10 | ACTOR_FLAG_26)
 
 void EnPartner_Init(Actor* thisx, PlayState* play);
 void EnPartner_Destroy(Actor* thisx, PlayState* play);
@@ -43,24 +45,27 @@ static Color_RGBAf sOuterColors[] = {
     { 0.0f, 255.0f, 0.0f, 255.0f },
 };
 
-static ColliderCylinderInitType1 sCylinderInit = {
+static ColliderCylinderInit sCylinderInit = {
     {
-        COLTYPE_HARD,
+        COLTYPE_NONE,
         AT_ON | AT_TYPE_PLAYER,
         AC_ON | AC_TYPE_PLAYER,
         OC1_ON | OC1_TYPE_ALL,
+        OC2_TYPE_2,
         COLSHAPE_CYLINDER,
     },
     {
         ELEMTYPE_UNK0,
-        { 0x00000002, 0x00, 0x01 },
-        { 0x4FC1FFFE, 0x00, 0x00 },
+        { 0x00020002, 0x00, 0x01 },
+        { 0x4FC00748, 0x00, 0x00 },
         TOUCH_ON | TOUCH_SFX_NORMAL,
-        BUMP_ON | BUMP_NO_HITMARK,
+        BUMP_ON,
         OCELEM_ON,
     },
-    { 10, 10, 0, { 0, 0, 0 } },
+    { 12, 27, 0, { 0, 0, 0 } },
 };
+
+static CollisionCheckInfoInit sCCInfoInit = { 0, 12, 60, MASS_HEAVY };
 
 void EnPartner_Init(Actor* thisx, PlayState* play) {
     EnPartner* this = (EnPartner*)thisx;
@@ -83,8 +88,16 @@ void EnPartner_Init(Actor* thisx, PlayState* play) {
     this->outerColor.b = 0.0f;
     this->outerColor.a = 255.0f;
 
+    this->usedItemButton = 0xFF;
+
     Collider_InitCylinder(play, &this->collider);
-    Collider_SetCylinderType1(play, &this->collider, &this->actor, &sCylinderInit);
+    Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    Collider_UpdateCylinder(&this->actor, &this->collider);
+    CollisionCheck_SetInfo(&this->actor.colChkInfo, NULL, &sCCInfoInit);
+    this->actor.colChkInfo.mass = MASS_HEAVY;
+    this->collider.base.ocFlags1 |= OC1_TYPE_PLAYER;
+    this->collider.info.toucher.damage = 1;
+    GET_PLAYER(play)->ivanDamageMultiplier = 1;
 
     Actor_ProcessInitChain(thisx, sInitChain);
     SkelAnime_Init(play, &this->skelAnime, &gFairySkel, &gFairyAnim, this->jointTable, this->morphTable, 15);
@@ -172,6 +185,8 @@ void CenterIvanOnLink(Actor* thisx, PlayState* play) {
     this->actor.world.pos.y += Player_GetHeight(GET_PLAYER(play)) + 5.0f;
 }
 
+static u8 magicArrowCosts[] = { 0, 4, 4, 8 };
+
 void UseBow(Actor* thisx, PlayState* play, u8 started, u8 arrowType) {
     EnPartner* this = (EnPartner*)thisx;
 
@@ -181,6 +196,11 @@ void UseBow(Actor* thisx, PlayState* play, u8 started, u8 arrowType) {
     } else if (started == 0) {
         if (this->itemTimer <= 0) {
             if (AMMO(ITEM_BOW) > 0) {
+                if (arrowType >= 1 && func_80087708(play, magicArrowCosts[arrowType], 0)) {
+                    func_80078884(NA_SE_SY_ERROR);
+                    return;
+                }
+
                 this->itemTimer = 10;
 
                 Actor* newarrow = Actor_SpawnAsChild(
@@ -202,8 +222,6 @@ void UseBow(Actor* thisx, PlayState* play, u8 started, u8 arrowType) {
                 GET_PLAYER(play)->unk_A73 = 4;
                 newarrow->parent = NULL;
                 Inventory_ChangeAmmo(ITEM_BOW, -1);
-            } else {
-                func_80078884(NA_SE_SY_ERROR);
             }
         }
     }
@@ -249,13 +267,87 @@ void UseBombs(Actor* thisx, PlayState* play, u8 started) {
     }
 }
 
+static Vec3f D_80854A40 = { 0.0f, 40.0f, 45.0f };
+
+void UseHammer(Actor* thisx, PlayState* play, u8 started) {
+    EnPartner* this = (EnPartner*)thisx;
+
+    if (this->itemTimer <= 0) {
+        if (started == 1) {
+            this->itemTimer = 10;
+            static Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
+            Vec3f shockwavePos;
+            f32 sp2C;
+
+            shockwavePos.y = func_8083973C(play, this, &D_80854A40, &shockwavePos);
+            sp2C = this->actor.world.pos.y - shockwavePos.y;
+
+            Math_ScaledStepToS(&this->actor.focus.rot.x, Math_Atan2S(45.0f, sp2C), 800);
+            func_80836AB8(this, 1);
+
+            func_808429B4(play, 27767, 7, 20);
+            play->actorCtx.unk_02 = 4;
+            func_800AA000(0, 255, 20, 150);
+            func_8002F7DC(&this->actor, NA_SE_IT_HAMMER_HIT);
+
+            EffectSsBlast_SpawnWhiteShockwave(play, &shockwavePos, &zeroVec, &zeroVec);
+        }
+    }
+}
+
+void UseBombchus(Actor* thisx, PlayState* play, u8 started) {
+    EnPartner* this = (EnPartner*)thisx;
+
+    if (this->itemTimer <= 0) {
+        if (started == 1) {
+            if (AMMO(ITEM_BOMBCHU) > 0) {
+                this->itemTimer = 10;
+                EnBom* bomb = Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BOM, this->actor.world.pos.x, this->actor.world.pos.y + 7,
+                            this->actor.world.pos.z, 0, 0, 0, 0, false);
+                bomb->timer = 0;
+                Inventory_ChangeAmmo(ITEM_BOMBCHU, -1);
+            } else {
+                func_80078884(NA_SE_SY_ERROR);
+            }
+        }
+    }
+}
+
+static Vec3f D_808547A4 = { 0.0f, 0.5f, 0.0f };
+static Vec3f D_808547B0 = { 0.0f, 0.5f, 0.0f };
+
+static Color_RGBA8 D_808547BC = { 255, 255, 100, 255 };
+static Color_RGBA8 D_808547C0 = { 255, 50, 0, 0 };
+
 void UseDekuStick(Actor* thisx, PlayState* play, u8 started) {
     EnPartner* this = (EnPartner*)thisx;
 
     if (this->itemTimer <= 0) {
         if (started == 1) {
-            this->usingStick = started;
-            func_808328EC(this, NA_SE_PL_CHANGE_ARMS);
+            if (AMMO(ITEM_STICK) > 0) {
+                func_808328EC(this, NA_SE_EV_FLAME_IGNITION);
+            } else {
+                func_80078884(NA_SE_SY_ERROR);
+            }
+        }
+
+        if (started == 2) {
+            if (AMMO(ITEM_STICK) > 0) {
+                this->stickWeaponInfo.tip = this->actor.world.pos;
+                this->stickWeaponInfo.tip.y += 7.0f;
+
+                func_8002836C(play, &this->stickWeaponInfo.tip, &D_808547A4, &D_808547B0, &D_808547BC, &D_808547C0,
+                              200.0f, 0, 8);
+
+                CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+
+                if (this->damageTimer <= 0) {
+                    Inventory_ChangeAmmo(ITEM_STICK, -1);
+                    this->damageTimer = 20;
+                } else {
+                    this->damageTimer--;
+                }
+            }
         }
     }
 }
@@ -307,7 +399,8 @@ void UseOcarina(Actor* thisx, PlayState* play, u8 started) {
 
     if (this->itemTimer <= 0) {
         if (started == 1) {
-            Audio_PlayActorSound2(&this->actor, NA_SE_VO_NA_HELLO_2);
+            Audio_PlaySoundTransposed(&this->actor.projectedPos, NA_SE_VO_NA_HELLO_2, -6);
+            //Audio_PlayActorSound2(&this->actor, NA_SE_VO_NA_HELLO_2);
         }
     }
 }
@@ -325,20 +418,27 @@ void UseSpell(Actor* thisx, PlayState* play, u8 started, u8 spellType) {
 
         if (started == 0 && this->usedSpell != 0) {
             this->itemTimer = 10;
-            this->usedSpell = 0;
             gSaveContext.magicState = 5;
 
             switch (this->usedSpell) {
+                case 1:
+                    GET_PLAYER(play)->ivanDamageMultiplier = 0;
+                    break;
                 case 3:
                     GET_PLAYER(play)->ivanFloating = 0;
                     break;
             }
+            
+            this->usedSpell = 0;
         }
 
         if (started == 2 && this->usedSpell != 0) {
+            Vec3f spE4[3];
+            Vec3f newBasePos[3];
+
             switch (this->usedSpell) {
                 case 1:
-                    CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+                    GET_PLAYER(play)->ivanDamageMultiplier = 2;
                     break;
                 case 2:
                     GET_PLAYER(play)->invincibilityTimer = -10;
@@ -369,46 +469,54 @@ void UseSpell(Actor* thisx, PlayState* play, u8 started, u8 spellType) {
 void UseItem(uint8_t usedItem, u8 started, Actor* thisx, PlayState* play) {
     EnPartner* this = (EnPartner*)thisx;
 
-    switch (usedItem) {
-        case SLOT_STICK:
-            UseDekuStick(this, play, started);
-            break;
-        case SLOT_BOMB:
-            UseBombs(this, play, started);
-            break;
-        case SLOT_NUT:
-            UseNuts(this, play, started);
-            break;
-        case SLOT_BOW:
-            UseBow(this, play, started, 0);
-            break;
-        case SLOT_ARROW_FIRE:
-            UseBow(this, play, started, 1);
-            break;
-        case SLOT_ARROW_ICE:
-            UseBow(this, play, started, 2);
-            break;
-        case SLOT_ARROW_LIGHT:
-            UseBow(this, play, started, 3);
-            break;
-        case SLOT_SLINGSHOT:
-            UseSlingshot(this, play, started);
-            break;
-        case SLOT_OCARINA:
-            UseOcarina(this, play, started);
-            break;
-        case SLOT_HOOKSHOT:
-            UseHookshot(this, play, started);
-            break;
-        case SLOT_DINS_FIRE:
-            UseSpell(this, play, started, 1);
-            break;
-        case SLOT_NAYRUS_LOVE:
-            UseSpell(this, play, started, 2);
-            break;
-        case SLOT_FARORES_WIND:
-            UseSpell(this, play, started, 3);
-            break;
+    if (this->usedItem != 0xFF && this->itemTimer <= 0) {
+        switch (usedItem) {
+            case SLOT_STICK:
+                UseDekuStick(this, play, started);
+                break;
+            case SLOT_BOMB:
+                UseBombs(this, play, started);
+                break;
+            case SLOT_BOMBCHU:
+                UseBombchus(this, play, started);
+                break;
+            case SLOT_NUT:
+                UseNuts(this, play, started);
+                break;
+            case SLOT_BOW:
+                UseBow(this, play, started, 0);
+                break;
+            case SLOT_ARROW_FIRE:
+                UseBow(this, play, started, 1);
+                break;
+            case SLOT_ARROW_ICE:
+                UseBow(this, play, started, 2);
+                break;
+            case SLOT_ARROW_LIGHT:
+                UseBow(this, play, started, 3);
+                break;
+            case SLOT_SLINGSHOT:
+                UseSlingshot(this, play, started);
+                break;
+            case SLOT_OCARINA:
+                UseOcarina(this, play, started);
+                break;
+            case SLOT_HOOKSHOT:
+                UseHookshot(this, play, started);
+                break;
+            case SLOT_DINS_FIRE:
+                UseSpell(this, play, started, 1);
+                break;
+            case SLOT_NAYRUS_LOVE:
+                UseSpell(this, play, started, 2);
+                break;
+            case SLOT_FARORES_WIND:
+                UseSpell(this, play, started, 3);
+                break;
+            case SLOT_HAMMER:
+                UseHammer(this, play, started);
+                break;
+        }
     }
 
     if (started == 0) {
@@ -465,8 +573,9 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
 
     this->actor.gravity = this->yVelocity;
 
-    if (this->canMove) {
+    if (this->canMove == 1) {
         Actor_MoveForward(&this->actor);
+        Actor_UpdateBgCheckInfo(play, &this->actor, 19.0f, 20.0f, 0.0f, 5);
     }
 
     if (this->usedSpell != 0) {
@@ -474,12 +583,7 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
     }
 
     if (!Player_InCsMode(play)) {
-        if (this->lastWasCutscene == 1) {
-            CenterIvanOnLink(this, play);
-            Audio_PlayActorSound2(&this->actor, NA_SE_EV_FAIRY_DASH);
-            this->lastWasCutscene = 0;
-        }
-
+        // Collect drops & rupees
         Actor* itemActor = play->actorCtx.actorLists[ACTORCAT_MISC].head;
         while (itemActor != NULL) {
             if (itemActor->id == ACTOR_EN_ITEM00) {
@@ -489,10 +593,8 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
                     itemActor->params == ITEM00_BOMBS_A || itemActor->params == ITEM00_BOMBS_B ||
                     itemActor->params == ITEM00_ARROWS_SINGLE || itemActor->params == ITEM00_ARROWS_SMALL ||
                     itemActor->params == ITEM00_ARROWS_MEDIUM || itemActor->params == ITEM00_ARROWS_LARGE ||
-                    itemActor->params == ITEM00_BOMBCHU ||
-                    itemActor->params == ITEM00_MAGIC_SMALL ||
-                    itemActor->params == ITEM00_MAGIC_LARGE ||
-                    itemActor->params == ITEM00_NUTS ||
+                    itemActor->params == ITEM00_BOMBCHU || itemActor->params == ITEM00_MAGIC_SMALL ||
+                    itemActor->params == ITEM00_MAGIC_LARGE || itemActor->params == ITEM00_NUTS ||
                     itemActor->params == ITEM00_STICK) {
                     f32 distanceToObject = Actor_WorldDistXYZToActor(&this->actor, itemActor);
                     if (distanceToObject <= 20.0f) {
@@ -516,8 +618,6 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
             }
             itemActor = itemActor->next;
         }
-    } else {
-        this->lastWasCutscene = 1;
     }
 
     if (this->itemTimer > 0) {
@@ -532,51 +632,53 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
         uint8_t released = 0;
         uint8_t current = 0;
 
-        if (this->usedItem == 0xFF) {
-            if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CLEFT)) {
-                this->usedItem = gSaveContext.equips.cButtonSlots[0];
-                pressed = 1;
-            } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CDOWN)) {
-                this->usedItem = gSaveContext.equips.cButtonSlots[1];
-                pressed = 1;
-            } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CRIGHT)) {
-                this->usedItem = gSaveContext.equips.cButtonSlots[2];
-                pressed = 1;
+        if (this->itemTimer <= 0) {
+            if (this->usedItem == 0xFF) {
+                if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CLEFT)) {
+                    this->usedItem = gSaveContext.equips.cButtonSlots[0];
+                    this->usedItemButton = 0;
+                    pressed = 1;
+                } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CDOWN)) {
+                    this->usedItem = gSaveContext.equips.cButtonSlots[1];
+                    this->usedItemButton = 1;
+                    pressed = 1;
+                } else if (CHECK_BTN_ALL(sControlInput.press.button, BTN_CRIGHT)) {
+                    this->usedItem = gSaveContext.equips.cButtonSlots[2];
+                    this->usedItemButton = 2;
+                    pressed = 1;
+                }
             }
-        }
 
-        if (this->usedItem != 0xFF) {
-            if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CLEFT) &&
-                this->usedItem == gSaveContext.equips.cButtonSlots[0]) {
-                current = 1;
-            } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CDOWN) &&
-                       this->usedItem == gSaveContext.equips.cButtonSlots[1]) {
-                current = 1;
-            } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CRIGHT) &&
-                       this->usedItem == gSaveContext.equips.cButtonSlots[2]) {
-                current = 1;
+            if (this->usedItem != 0xFF) {
+                if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CLEFT) && this->usedItemButton == 0) {
+                    current = 1;
+                } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CDOWN) && this->usedItemButton == 1) {
+                    current = 1;
+                } else if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_CRIGHT) && this->usedItemButton == 2) {
+                    current = 1;
+                }
             }
-        }
 
-        if (this->usedItem != 0xFF) {
-            if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CLEFT)) {
-                this->usedItem = gSaveContext.equips.cButtonSlots[0];
-                released = 1;
-            } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CDOWN)) {
-                this->usedItem = gSaveContext.equips.cButtonSlots[1];
-                released = 1;
-            } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CRIGHT)) {
-                this->usedItem = gSaveContext.equips.cButtonSlots[2];
-                released = 1;
+            if (this->usedItem != 0xFF) {
+                if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CLEFT) && this->usedItemButton == 0) {
+                    this->usedItem = gSaveContext.equips.cButtonSlots[0];
+                    released = 1;
+                } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CDOWN) && this->usedItemButton == 1) {
+                    this->usedItem = gSaveContext.equips.cButtonSlots[1];
+                    released = 1;
+                } else if (CHECK_BTN_ALL(sControlInput.rel.button, BTN_CRIGHT) && this->usedItemButton == 2) {
+                    this->usedItem = gSaveContext.equips.cButtonSlots[2];
+                    released = 1;
+                }
             }
-        }
 
-        if (pressed == 1) {
-            UseItem(this->usedItem, 1, this, play);
-        } else if (released == 1) {
-            UseItem(this->usedItem, 0, this, play);
-        } else if (current == 1) {
-            UseItem(this->usedItem, 2, this, play);
+            if (pressed == 1) {
+                UseItem(this->usedItem, 1, this, play);
+            } else if (released == 1) {
+                UseItem(this->usedItem, 0, this, play);
+            } else if (current == 1) {
+                UseItem(this->usedItem, 2, this, play);
+            }
         }
     } else {
         this->itemTimer = 10;
@@ -589,7 +691,6 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
     if (CHECK_BTN_ALL(sControlInput.cur.button, BTN_Z) && this->canMove) {
         CenterIvanOnLink(this, play);
     } else if (this->canMove == 1 && this->hookshotTarget == NULL) {
-        Actor_UpdateBgCheckInfo(play, &this->actor, 5.0f, 15.0f, 25.0f, 0x85);
         Collider_UpdateCylinder(&this->actor, &this->collider);
         CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
         CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
@@ -618,12 +719,6 @@ s32 EnPartner_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3
 
     return false;
 }
-
-static Vec3f D_808547A4 = { 0.0f, 0.5f, 0.0f };
-static Vec3f D_808547B0 = { 0.0f, 0.5f, 0.0f };
-
-static Color_RGBA8 D_808547BC = { 255, 255, 100, 255 };
-static Color_RGBA8 D_808547C0 = { 255, 50, 0, 0 };
 
 void DrawOrb(Actor* thisx, PlayState* play, u8 color) {
     EnPartner* this = (EnPartner*)thisx;
@@ -684,6 +779,11 @@ void EnPartner_Draw(Actor* thisx, PlayState* play) {
     Gfx* dListHead;
     Player* player = GET_PLAYER(play);
 
+    if (play->pauseCtx.state != 0 && this->usedItem != 0xFF) {
+        UseItem(this->usedItem, 0, this, play);
+        this->usedItem = 0xFF;
+    }
+
     dListHead = Graph_Alloc(play->state.gfxCtx, sizeof(Gfx) * 4);
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -707,20 +807,6 @@ void EnPartner_Draw(Actor* thisx, PlayState* play) {
                    (u8)(envAlpha * alphaScale));
     POLY_XLU_DISP = SkelAnime_Draw(play, this->skelAnime.skeleton, this->skelAnime.jointTable,
                                    EnPartner_OverrideLimbDraw, NULL, this, POLY_XLU_DISP);
-
-    if (this->usingStick) {
-        this->stickWeaponInfo.tip = this->actor.world.pos;
-        this->stickWeaponInfo.tip.y += 50.0f;
-        this->stickWeaponInfo.tip.x += Math_SinS(this->actor.world.rot.y) * 20.0f;
-        this->stickWeaponInfo.tip.z += Math_CosS(this->actor.world.rot.y) * 20.0f;
-
-        func_8002836C(play, &this->stickWeaponInfo.tip, &D_808547A4, &D_808547B0, &D_808547BC, &D_808547C0, 200.0f, 0, 8);
-
-        Matrix_Translate(0.0f, 267.2f, 528.26f, MTXMODE_APPLY);
-        Matrix_RotateZYX(0x1000, 0, 0x0000, MTXMODE_APPLY);
-        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-        gSPDisplayList(POLY_OPA_DISP++, gLinkChildLinkDekuStickDL);
-    }
 
     CLOSE_DISPS(play->state.gfxCtx);
 
