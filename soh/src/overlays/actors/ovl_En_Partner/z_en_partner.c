@@ -456,7 +456,6 @@ void UseSpell(Actor* thisx, PlayState* play, u8 started, u8 spellType) {
     if (gSaveContext.magic > 0) {
         if (this->itemTimer <= 0 && this->usedSpell == 0) {
             if (started == 1) {
-                this->itemTimer = 10;
                 this->usedSpell = spellType;
             }
         }
@@ -467,7 +466,7 @@ void UseSpell(Actor* thisx, PlayState* play, u8 started, u8 spellType) {
 
             switch (this->usedSpell) {
                 case 1:
-                    GET_PLAYER(play)->ivanDamageMultiplier = 0;
+                    GET_PLAYER(play)->ivanDamageMultiplier = 1;
                     break;
                 case 3:
                     GET_PLAYER(play)->ivanFloating = 0;
@@ -477,34 +476,36 @@ void UseSpell(Actor* thisx, PlayState* play, u8 started, u8 spellType) {
             this->usedSpell = 0;
         }
 
-        if (started == 2 && this->usedSpell != 0) {
-            Vec3f spE4[3];
-            Vec3f newBasePos[3];
+        if (started == 2) {
+            if (this->usedSpell != 0) {
+                Vec3f spE4[3];
+                Vec3f newBasePos[3];
 
-            switch (this->usedSpell) {
-                case 1:
-                    GET_PLAYER(play)->ivanDamageMultiplier = 2;
-                    break;
-                case 2:
-                    GET_PLAYER(play)->invincibilityTimer = -10;
-                    break;
-                case 3:
-                    GET_PLAYER(play)->hoverBootsTimer = 10;
-                    GET_PLAYER(play)->ivanFloating = 1;
-                    break;
-            }
+                switch (this->usedSpell) {
+                    case 1:
+                        GET_PLAYER(play)->ivanDamageMultiplier = 2;
+                        break;
+                    case 2:
+                        GET_PLAYER(play)->invincibilityTimer = -10;
+                        break;
+                    case 3:
+                        GET_PLAYER(play)->hoverBootsTimer = 10;
+                        GET_PLAYER(play)->ivanFloating = 1;
+                        break;
+                }
 
-            gSaveContext.magicState = 3;
-            this->magicTimer--;
-            if (this->magicTimer <= 0) {
-                gSaveContext.magic--;
-                this->magicTimer = 5;
-                if (gSaveContext.magic <= 0) {
-                    gSaveContext.magic = 0;
+                gSaveContext.magicState = 3;
+                this->magicTimer--;
+                if (this->magicTimer <= 0) {
+                    gSaveContext.magic--;
+                    this->magicTimer = 5;
+                    if (gSaveContext.magic <= 0) {
+                        gSaveContext.magic = 0;
 
-                    this->itemTimer = 10;
-                    this->usedSpell = 0;
-                    gSaveContext.magicState = 5;
+                        this->itemTimer = 10;
+                        this->usedSpell = 0;
+                        gSaveContext.magicState = 5;
+                    }
                 }
             }
         }
@@ -582,7 +583,7 @@ void EnPartner_Update(Actor* thisx, PlayState* play) {
     s32 pad;
     EnPartner* this = (EnPartner*)thisx;
 
-    Input sControlInput = play->state.input[1];
+    Input sControlInput = play->state.input[this->actor.params];
 
     f32 relX = sControlInput.cur.stick_x / 10.0f;
     f32 relY = sControlInput.cur.stick_y / 10.0f;

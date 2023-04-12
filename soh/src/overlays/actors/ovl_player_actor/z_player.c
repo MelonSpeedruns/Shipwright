@@ -2812,7 +2812,6 @@ s32 spawn_boomerang_ivan(EnPartner* this, PlayState* play) {
     this->boomerangActor = &boomerang->actor;
     if (boomerang != NULL) {
         boomerang->returnTimer = 20;
-        Audio_PlaySoundTransposed(&this->actor.projectedPos, NA_SE_VO_NA_HELLO_2, -6);
         Audio_PlayActorSound2(&this->actor, NA_SE_IT_BOOMERANG_THROW);
     }
 

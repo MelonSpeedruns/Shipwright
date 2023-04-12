@@ -685,7 +685,7 @@ void Play_Init(GameState* thisx) {
 
     Actor_Spawn(&play->actorCtx, play, ACTOR_EN_PARTNER, GET_PLAYER(play)->actor.world.pos.x,
                 GET_PLAYER(play)->actor.world.pos.y + Player_GetHeight(GET_PLAYER(play)) + 5.0f,
-                GET_PLAYER(play)->actor.world.pos.z, 0, 0, 0, 0, true);
+                GET_PLAYER(play)->actor.world.pos.z, 0, 0, 0, 1, true);
 }
 
 void Play_Update(PlayState* play) {
