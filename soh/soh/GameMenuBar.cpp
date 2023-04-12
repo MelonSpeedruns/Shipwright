@@ -1317,5 +1317,14 @@ namespace GameMenuBar {
 
             ImGui::EndMenu();
         }
+
+        ImGui::SetCursorPosY(0.0f);
+
+        if (ImGui::BeginMenu("Extra Modes")) {
+            UIWidgets::PaddedEnhancementCheckbox("Ivan the Fairy (Coop Mode)", "gIvanCoopModeEnabled", true, false);
+            UIWidgets::Tooltip("Enables Ivan the Fairy upon the next map change. Player 2 can control Ivan and press the C-Buttons to use items and mess with Player 1!");
+
+            ImGui::EndMenu();
+        }
     }
 }
