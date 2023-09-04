@@ -120,6 +120,8 @@ void LinkPuppet_Update(Actor* thisx, PlayState* play) {
         return;
     }
 
+    this->actor.shape.yOffset = playerData.yOffset;
+
     if (this->damageTimer > 0) {
         this->damageTimer--;
     }
@@ -270,7 +272,6 @@ void LinkPuppet_Draw(Actor* thisx, PlayState* play) {
 
     PlayerData playerData = Anchor_GetClientPlayerData(this->actor.params - 3);
 
-    func_8008F470(play, this->linkSkeleton.skeleton, this->linkSkeleton.jointTable, this->linkSkeleton.dListCount, 0,
-                  playerData.tunicType, playerData.bootsType, playerData.faceType, Puppet_OverrideLimbDraw,
-                  Puppet_PostLimbDraw, this);
+    DrawAnchorPuppet(play, this->linkSkeleton.skeleton, this->linkSkeleton.jointTable, this->linkSkeleton.dListCount, 0,
+        playerData.tunicType, playerData.bootsType, playerData.faceType, Puppet_OverrideLimbDraw, Puppet_PostLimbDraw, this, playerData);
 }
