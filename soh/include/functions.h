@@ -732,6 +732,7 @@ void Camera_Init(Camera* camera, View* view, CollisionContext* colCtx, PlayState
 void Camera_InitPlayerSettings(Camera* camera, Player* player);
 s16 Camera_ChangeStatus(Camera* camera, s16 status);
 Vec3s Camera_Update(Camera* camera);
+Vec3s Camera_UpdateFPS(Camera* camera);
 void Camera_Finish(Camera* camera);
 s32 Camera_ChangeMode(Camera* camera, s16 mode);
 s32 Camera_CheckValidMode(Camera* camera, s16 mode);
@@ -1104,6 +1105,7 @@ void Path_CopyLastPoint(Path* path, Vec3f* dest);
 void FrameAdvance_Init(FrameAdvanceContext* frameAdvCtx);
 s32 FrameAdvance_Update(FrameAdvanceContext* frameAdvCtx, Input* input);
 u8 PlayerGrounded(Player* player);
+void Player_DrawHookshotReticle(PlayState* play, Player* this, f32 hookshotRange);
 void Player_SetBootData(PlayState* play, Player* player);
 s32 Player_InBlockingCsMode(PlayState* play, Player* player);
 s32 Player_InCsMode(PlayState* play);

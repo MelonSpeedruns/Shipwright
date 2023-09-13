@@ -52,6 +52,7 @@ void EnPartner_Init(Actor* thisx, PlayState* play);
 void EnPartner_Destroy(Actor* thisx, PlayState* play);
 void EnPartner_Update(Actor* thisx, PlayState* play);
 void EnPartner_Draw(Actor* thisx, PlayState* play);
+Vec3f Vec3fNormalize(Vec3f vec);
 #ifdef __cplusplus
 }
 #endif
