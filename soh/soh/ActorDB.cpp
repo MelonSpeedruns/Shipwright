@@ -620,9 +620,26 @@ static ActorDBInit EnFirstPersonInit = {
 };
 extern "C" s16 gEnFirstPersonId;
 
+#include "src/overlays/actors/ovl_En_FirstPerson_Bullet/z_en_firstperson_bullet.h"
+static ActorDBInit gEnFirstPersonBulletInit = {
+    "En_FirstPerson_Bullet",
+    "FPS Bullet",
+    ACTORCAT_ITEMACTION,
+    (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED),
+    OBJECT_GAMEPLAY_KEEP,
+    sizeof(EnFirstPersonBullet),
+    (ActorFunc)EnFirstPersonBullet_Init,
+    (ActorFunc)EnFirstPersonBullet_Destroy,
+    (ActorFunc)EnFirstPersonBullet_Update,
+    (ActorFunc)EnFirstPersonBullet_Draw,
+    nullptr,
+};
+extern "C" s16 gEnFirstPersonBulletId;
+
 void ActorDB::AddBuiltInCustomActors() {
     gEnPartnerId = ActorDB::Instance->AddEntry(EnPartnerInit).entry.id;
     gEnFirstPersonId = ActorDB::Instance->AddEntry(EnFirstPersonInit).entry.id;
+    gEnFirstPersonBulletId = ActorDB::Instance->AddEntry(gEnFirstPersonBulletInit).entry.id;
 }
 
 extern "C" ActorDBEntry* ActorDB_Retrieve(const int id) {

@@ -7525,8 +7525,8 @@ Vec3s Camera_UpdateFPS(Camera* camera) {
     if (camera->play->camY > 0x32A4) {
         camera->play->camY = 0x32A4;
     }
-    if (camera->play->camY < -0x228C) {
-        camera->play->camY = -0x228C;
+    if (camera->play->camY < -0x32A4) {
+        camera->play->camY = -0x32A4;
     }
 
     camera->dist = 0.0f;

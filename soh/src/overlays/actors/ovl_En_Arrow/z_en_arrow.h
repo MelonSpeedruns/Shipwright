@@ -41,4 +41,8 @@ typedef enum {
     /*  10 */ ARROW_NUT
 } ArrowType;
 
+void func_809B45E0(EnArrow* arrow, PlayState* play);
+void func_809B4640(EnArrow* arrow, PlayState* play);
+void func_809B45E0(EnArrow* arrow, PlayState* play);
+
 #endif

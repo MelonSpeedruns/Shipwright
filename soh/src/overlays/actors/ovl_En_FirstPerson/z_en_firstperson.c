@@ -94,11 +94,10 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
     if (CHECK_BTN_ALL(sControlInput.press.button, BTN_Z)) {
         Audio_PlaySoundGeneral(NA_SE_SY_START_SHOT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
 
-        Actor* newarrow = Actor_SpawnAsChild(&play->actorCtx, thisx, play, ACTOR_EN_ARROW, thisx->world.pos.x, thisx->world.pos.y + 50,
-                        thisx->world.pos.z, this->camRightX, thisx->shape.rot.y, 0, ARROW_NORMAL);
+        Actor* newarrow = Actor_Spawn(&play->actorCtx, play, GetFPSBulletId(), thisx->world.pos.x,
+                                             thisx->world.pos.y + 50, thisx->world.pos.z, this->camRightX,
+                                             thisx->shape.rot.y, 0, 0, false);
 
-        this->player.unk_A73 = 4;
-        newarrow->parent = NULL;
         newarrow->world.pos.x += camRight.x * 9.0f;
         newarrow->world.pos.z += camRight.z * 9.0f;
     }
@@ -114,9 +113,9 @@ void EnFirstPerson_Draw(Actor* thisx, PlayState* play) {
     Matrix_Scale(2.0f, 2.0f, 2.0f, MTXMODE_APPLY);
 
     gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-    gSPDisplayList(POLY_OPA_DISP++, gShotgunDL);
+    gSPDisplayList(POLY_OPA_DISP++, gPistolDL);
 
-    Player_DrawHookshotReticle(play, this, 77600.0f);
+    Player_DrawHookshotReticle(play, this, 3.402823466e+12f);
 
     CLOSE_DISPS(play->state.gfxCtx);
 }

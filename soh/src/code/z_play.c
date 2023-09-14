@@ -36,6 +36,7 @@ PlayState* gPlayState;
 
 s16 gEnPartnerId;
 s16 gEnFirstPersonId;
+s16 gEnFirstPersonBulletId;
 
 void OTRPlay_SpawnScene(PlayState* play, s32 sceneNum, s32 spawn);
 
@@ -162,6 +163,10 @@ void func_800BC5E0(PlayState* play, s32 transitionType) {
 
 void func_800BC88C(PlayState* play) {
     play->transitionCtx.transitionType = -1;
+}
+
+s16 GetFPSBulletId() {
+    return gEnFirstPersonBulletId;
 }
 
 Gfx* Play_SetFog(PlayState* play, Gfx* gfx) {

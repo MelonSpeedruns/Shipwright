@@ -6,6 +6,9 @@
 #define dgShotgunDL "__OTR__objects/gameplay_keep/gShotgunDL"
 static const ALIGN_ASSET(2) char gShotgunDL[] = dgShotgunDL;
 
+#define dgPistolDL "__OTR__objects/gameplay_keep/gPistolDL"
+static const ALIGN_ASSET(2) char gPistolDL[] = dgPistolDL;
+
 #define dgHilite1Tex "__OTR__objects/gameplay_keep/gHilite1Tex"
 static const ALIGN_ASSET(2) char gHilite1Tex[] = dgHilite1Tex;
 
