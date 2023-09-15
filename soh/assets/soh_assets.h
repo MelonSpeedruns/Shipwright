@@ -8,6 +8,9 @@
 // On Mac, not using aligned resource names was causing crashes in release builds
 
 // objects
+#define dgPistolDL "__OTR__objects/gameplay_keep/gPistolDL"
+static const ALIGN_ASSET(2) char gPistolDL[] = dgPistolDL;
+
 #define dgChristmasGreenTreasureChestFrontTex "__OTR__objects/object_box/gChristmasGreenTreasureChestFrontTex"
 static const ALIGN_ASSET(2) char gChristmasGreenTreasureChestFrontTex[] = dgChristmasGreenTreasureChestFrontTex;
 
@@ -49,6 +52,9 @@ static const ALIGN_ASSET(2) char gTitleBossRushSubtitleTex[] = dgTitleBossRushSu
 static const ALIGN_ASSET(2) char gOptionsDividerChangeLangVtx[] = dgOptionsDividerChangeLangVtx;
 
 // textures
+#define dgFPSReticleTex "__OTR__textures/parameter_static/gFPSReticleTex"
+static const ALIGN_ASSET(2) char gFPSReticleTex[] = dgFPSReticleTex;
+
 #define dgDPad "__OTR__textures/parameter_static/gDPad"
 static const ALIGN_ASSET(2) char gDPadTex[] = dgDPad;
 

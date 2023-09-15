@@ -5,10 +5,8 @@
  */
 
 #include "z_en_firstperson.h"
-#include "objects/gameplay_keep/gameplay_keep.h"
 #include <overlays/actors/ovl_En_Partner/z_en_partner.h>
-#include "objects/gameplay_keep/gameplay_keep.h"
-#include <overlays/actors/ovl_En_Arrow/z_en_arrow.h>
+#include "soh_assets.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
 
