@@ -1373,6 +1373,47 @@ void Player_DrawHookshotReticle(PlayState* play, Player* this, f32 hookshotRange
     }
 }
 
+void Player_DrawGunReticle(PlayState* play, Player* this, f32 hookshotRange) {
+    static Vec3f D_801260C8 = { 0.0f, 0.0f, 0.0f };
+    CollisionPoly* colPoly;
+    s32 bgId;
+    Vec3f hookshotStart;
+    Vec3f hookshotEnd;
+    Vec3f firstHit;
+    Vec3f sp68;
+    f32 sp64;
+
+    D_801260C8.z = 0.0f;
+    Matrix_MultVec3f(&D_801260C8, &hookshotStart);
+    D_801260C8.z = hookshotRange;
+    Matrix_MultVec3f(&D_801260C8, &hookshotEnd);
+
+    if (BgCheck_AnyLineTest3(&play->colCtx, &hookshotStart, &hookshotEnd, &firstHit, &colPoly, 1, 1, 1, 1, &bgId)) {
+        OPEN_DISPS(play->state.gfxCtx);
+
+        WORLD_OVERLAY_DISP = Gfx_SetupDL(WORLD_OVERLAY_DISP, 0x07);
+
+        SkinMatrix_Vec3fMtxFMultXYZW(&play->viewProjectionMtxF, &firstHit, &sp68, &sp64);
+
+        const f32 sp60 = (sp64 < 200.0f) ? 0.08f : (sp64 / 200.0f) * 0.08f;
+
+        Matrix_Translate(firstHit.x, firstHit.y, firstHit.z, MTXMODE_NEW);
+        Matrix_Scale(sp60, sp60, sp60, MTXMODE_APPLY);
+
+        gSPMatrix(WORLD_OVERLAY_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPMatrix(WORLD_OVERLAY_DISP++, SEG_ADDR(1, 0), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
+        gSPTexture(WORLD_OVERLAY_DISP++, 0xFFFF, 0xFFFF, 0, G_TX_RENDERTILE, G_ON);
+        gDPLoadTextureBlock(WORLD_OVERLAY_DISP++, gLinkAdultHookshotReticleTex, G_IM_FMT_I, G_IM_SIZ_8b, 64, 64, 0,
+                            G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, 6, 6, G_TX_NOLOD, G_TX_NOLOD);
+        const Color_RGBA8 defaultColor = { .r = 255, .g = 0, .b = 0, .a = 255 };
+        gDPSetPrimColor(WORLD_OVERLAY_DISP++, 0, 0, defaultColor.r, defaultColor.g, defaultColor.b, defaultColor.a);
+        gSPVertex(WORLD_OVERLAY_DISP++, (uintptr_t)gLinkAdultHookshotRedicleVtx, 3, 0);
+        gSP1Triangle(WORLD_OVERLAY_DISP++, 0, 1, 2, 0);
+
+        CLOSE_DISPS(play->state.gfxCtx);
+    }
+}
+
 Vec3f D_801260D4 = { 1100.0f, -700.0f, 0.0f };
 
 f32 sSwordLengths[] = {

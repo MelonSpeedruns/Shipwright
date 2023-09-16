@@ -1107,6 +1107,7 @@ s32 FrameAdvance_Update(FrameAdvanceContext* frameAdvCtx, Input* input);
 u8 PlayerGrounded(Player* player);
 s16 GetFPSBulletId();
 void Player_DrawHookshotReticle(PlayState* play, Player* this, f32 hookshotRange);
+void Player_DrawGunReticle(PlayState* play, Player* this, f32 hookshotRange);
 void Player_SetBootData(PlayState* play, Player* player);
 s32 Player_InBlockingCsMode(PlayState* play, Player* player);
 s32 Player_InCsMode(PlayState* play);

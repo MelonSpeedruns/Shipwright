@@ -7,6 +7,7 @@
 #include "z_en_firstperson.h"
 #include <overlays/actors/ovl_En_Partner/z_en_partner.h>
 #include "soh_assets.h"
+#include <overlays/actors/ovl_En_Arrow/z_en_arrow.h>
 
 #define FLAGS (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED)
 
@@ -92,12 +93,8 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
     if (CHECK_BTN_ALL(sControlInput.press.button, BTN_Z)) {
         Audio_PlaySoundGeneral(NA_SE_SY_START_SHOT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
 
-        Actor* newarrow = Actor_Spawn(&play->actorCtx, play, GetFPSBulletId(), thisx->world.pos.x,
-                                             thisx->world.pos.y + 50, thisx->world.pos.z, this->camRightX,
-                                             thisx->shape.rot.y, 0, 0, false);
-
-        newarrow->world.pos.x += camRight.x * 9.0f;
-        newarrow->world.pos.z += camRight.z * 9.0f;
+        Actor* newarrow = Actor_Spawn(&play->actorCtx, play, GetFPSBulletId(), play->view.eye.x, play->view.eye.y,
+                                      play->view.eye.z, play->camY, play->camX + 0x8000, 0, ARROW_NORMAL, false);
     }
 }
 
@@ -106,14 +103,15 @@ void EnFirstPerson_Draw(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(play->state.gfxCtx);
 
-    Matrix_Translate(-850.0f, 5000.0f, -100.0f, MTXMODE_APPLY);
-    Matrix_RotateZYX(this->camRightX, 0, 0, MTXMODE_APPLY);
-    Matrix_Scale(2.0f, 2.0f, 2.0f, MTXMODE_APPLY);
+    Matrix_Translate(play->view.eye.x, play->view.eye.y, play->view.eye.z, MTXMODE_NEW);
+    Matrix_RotateZYX(play->camY, play->camX + 0x8000, 0, MTXMODE_APPLY);
+    Matrix_Translate(0, -8, 20, MTXMODE_APPLY);
+    Matrix_Scale(0.02f, 0.02f, 0.02f, MTXMODE_APPLY);
 
     gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gSPDisplayList(POLY_OPA_DISP++, gPistolDL);
 
-    Player_DrawHookshotReticle(play, this, 3.402823466e+12f);
+    Player_DrawGunReticle(play, this, 3.402823466e+12f);
 
     CLOSE_DISPS(play->state.gfxCtx);
 }

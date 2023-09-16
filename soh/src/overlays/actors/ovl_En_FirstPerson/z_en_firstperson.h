@@ -11,7 +11,7 @@ typedef void (*EnFirstPersonActionFunc)(struct EnFirstPerson*, PlayState*);
 typedef struct EnFirstPerson {
     Player player;
     ColliderCylinder collider;
-    int16_t camRightX;
+    f32 camRightX;
     int16_t camRightY;
 } EnFirstPerson;
 
