@@ -59,6 +59,15 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
 
     Input sControlInput = play->state.input[0];
 
+    if (this->reload_timer > 0) {
+        this->reload_timer--;
+
+        if (this->reload_timer == 0) {
+            Inventory_ChangeAmmo(ITEM_BOW, 60);
+            Audio_PlaySoundGeneral(NA_SE_IT_WALL_HIT_SOFT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        }
+    }
+
     f32 relX = sControlInput.cur.stick_x / 10.0f * (CVarGetInteger("gMirroredWorld", 0) ? -1 : 1);
     f32 relY = sControlInput.cur.stick_y / 10.0f;
 
@@ -69,16 +78,27 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
 
     Vec3f camRight = { -camForward.z, 0.0f, camForward.x };
 
+    // Handle Jumping & Gravity
     if (thisx->bgCheckFlags & 1) {
-        thisx->velocity.y = 0;
+        this->falling = 0;
+        thisx->velocity.y = -5.0f;
+
+        if (CHECK_BTN_ALL(sControlInput.press.button, BTN_A)) {
+            this->falling = 1;
+            thisx->velocity.y = 10.0f;
+            Audio_PlaySoundGeneral(NA_SE_PL_JUMP_DIRT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+            Audio_PlaySoundGeneral(NA_SE_PL_JUMP_GRASS, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        }
     } else {
+        if (this->falling == 0) {
+            thisx->velocity.y = 0.0f;
+            this->falling = 1;
+        }
         thisx->velocity.y += thisx->gravity;
     }
 
     thisx->velocity.x = 0;
     thisx->velocity.z = 0;
-
-    this->camRightX = -GET_ACTIVE_CAM(play)->camDir.x;
 
     thisx->velocity.x += camRight.x * relX;
     thisx->velocity.z += camRight.z * relX;
@@ -87,31 +107,53 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
 
     func_8002D7EC(thisx);
     Actor_UpdateBgCheckInfo(play, thisx, 19.0f, 10.0f, 0.0f, 5);
-
     Collider_UpdateCylinder(thisx, &this->collider);
+    CollisionCheck_SetOC(play, &play->colChkCtx, &this->collider.base);
 
+    // Shooting & Checking if ammo empty
     if (CHECK_BTN_ALL(sControlInput.press.button, BTN_Z)) {
-        Audio_PlaySoundGeneral(NA_SE_SY_START_SHOT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        if (this->reload_timer == 0) {
+            if (AMMO(ITEM_BOW) > 0) {
+                Inventory_ChangeAmmo(ITEM_BOW, -1);
 
-        Actor* newarrow = Actor_Spawn(&play->actorCtx, play, GetFPSBulletId(), play->view.eye.x, play->view.eye.y,
-                                      play->view.eye.z, play->camY, play->camX + 0x8000, 0, ARROW_NORMAL, false);
+                Audio_PlaySoundGeneral(NA_SE_SY_START_SHOT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+                Audio_PlaySoundGeneral(NA_SE_EV_METALDOOR_STOP, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+
+                Actor* newarrow =
+                    Actor_Spawn(&play->actorCtx, play, GetFPSBulletId(), play->view.eye.x, play->view.eye.y,
+                                play->view.eye.z, play->camY, play->camX + 0x8000, 0, ARROW_NORMAL, false);
+            } else {
+                Audio_PlaySoundGeneral(NA_SE_IT_WALL_HIT_SOFT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+            }
+        }
+    }
+
+    // Reloading ammo
+    if (CHECK_BTN_ALL(sControlInput.press.button, BTN_B)) {
+        if (this->reload_timer == 0 && AMMO(ITEM_BOW) < CUR_CAPACITY(UPG_QUIVER)) {
+            Audio_PlaySoundGeneral(NA_SE_EV_TBOX_UNLOCK, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+            Audio_PlaySoundGeneral(NA_SE_EV_TBOX_OPEN, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+            this->reload_timer = 60;
+        }
     }
 }
 
 void EnFirstPerson_Draw(Actor* thisx, PlayState* play) {
     EnFirstPerson* this = (EnFirstPerson*)thisx;
 
-    OPEN_DISPS(play->state.gfxCtx);
+    if (this->reload_timer == 0) {
+        OPEN_DISPS(play->state.gfxCtx);
 
-    Matrix_Translate(play->view.eye.x, play->view.eye.y, play->view.eye.z, MTXMODE_NEW);
-    Matrix_RotateZYX(play->camY, play->camX + 0x8000, 0, MTXMODE_APPLY);
-    Matrix_Translate(0, -8, 20, MTXMODE_APPLY);
-    Matrix_Scale(0.02f, 0.02f, 0.02f, MTXMODE_APPLY);
+        Matrix_Translate(play->view.eye.x, play->view.eye.y, play->view.eye.z, MTXMODE_NEW);
+        Matrix_RotateZYX(play->camY, play->camX + 0x8000, 0, MTXMODE_APPLY);
+        Matrix_Translate(-10, -5, 20, MTXMODE_APPLY);
+        Matrix_Scale(0.02f, 0.02f, 0.02f, MTXMODE_APPLY);
 
-    gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-    gSPDisplayList(POLY_OPA_DISP++, gPistolDL);
+        gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPDisplayList(POLY_OPA_DISP++, gPistolDL);
 
-    Player_DrawGunReticle(play, this, 3.402823466e+12f);
+        Player_DrawGunReticle(play, this, 3.402823466e+12f);
 
-    CLOSE_DISPS(play->state.gfxCtx);
+        CLOSE_DISPS(play->state.gfxCtx);
+    }
 }

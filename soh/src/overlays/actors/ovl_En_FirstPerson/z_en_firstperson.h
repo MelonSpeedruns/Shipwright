@@ -11,8 +11,8 @@ typedef void (*EnFirstPersonActionFunc)(struct EnFirstPerson*, PlayState*);
 typedef struct EnFirstPerson {
     Player player;
     ColliderCylinder collider;
-    f32 camRightX;
-    int16_t camRightY;
+    u8 falling;
+    u8 reload_timer;
 } EnFirstPerson;
 
 #ifdef __cplusplus
