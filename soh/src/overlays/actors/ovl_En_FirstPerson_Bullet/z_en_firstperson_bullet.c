@@ -270,7 +270,7 @@ void EnFirstPersonBullet_Fly(EnFirstPersonBullet* this, PlayState* play) {
                         this->actor.world.pos.z = this->collider.info.atHitInfo->bumper.hitPos.z;
                     }
 
-                    func_809B3CEC(play, this);
+                    func_809B3CEC_1(play, this);
                     Audio_PlayActorSound2(&this->actor, NA_SE_IT_ARROW_STICK_CRE);
                 }
             } else if (this->touchedPoly) {
