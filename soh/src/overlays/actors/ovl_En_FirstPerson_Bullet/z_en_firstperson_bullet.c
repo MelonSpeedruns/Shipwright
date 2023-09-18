@@ -41,10 +41,6 @@ static ColliderQuadInit sColliderInit = {
     { { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } } },
 };
 
-static InitChainEntry sInitChain[] = {
-    ICHAIN_F32(minVelocityY, -150, ICHAIN_STOP),
-};
-
 void EnFirstPersonBullet_SetupAction(EnFirstPersonBullet* this, EnFirstPersonBulletActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
@@ -73,8 +69,6 @@ void EnFirstPersonBullet_Init(Actor* thisx, PlayState* play) {
     };
 
     EnFirstPersonBullet* this = (EnFirstPersonBullet*)thisx;
-
-    Actor_ProcessInitChain(&this->actor, sInitChain);
 
     if (this->actor.params == ARROW_CS_NUT) {
         this->isCsNut = true;
@@ -156,7 +150,7 @@ void EnFirstPersonBullet_Shoot(EnFirstPersonBullet* this, PlayState* play) {
         EnFirstPersonBullet_SetupAction(this, EnFirstPersonBullet_Fly);
         Math_Vec3f_Copy(&this->unk_210, &this->actor.world.pos);
 
-        func_8002D9A4(&this->actor, 500.0f);
+
         this->timer = 12;
     }
 }
@@ -164,11 +158,7 @@ void EnFirstPersonBullet_Shoot(EnFirstPersonBullet* this, PlayState* play) {
 void func_809B3CEC_1(PlayState* play, EnFirstPersonBullet* this) {
     EnFirstPersonBullet_SetupAction(this, func_809B4640_1);
     Animation_PlayOnce(&this->skelAnime, &gArrow1Anim);
-    this->actor.world.rot.y += (s32)(24576.0f * (Rand_ZeroOne() - 0.5f)) + 0x8000;
-    this->actor.velocity.y += (this->actor.speedXZ * (0.4f + (0.4f * Rand_ZeroOne())));
-    this->actor.speedXZ *= (0.04f + 0.3f * Rand_ZeroOne());
     this->timer = 50;
-    this->actor.gravity = -1.5f;
 }
 
 void EnFirstPersonBullet_CarryActor(EnFirstPersonBullet* this, PlayState* play) {
@@ -289,7 +279,9 @@ void EnFirstPersonBullet_Fly(EnFirstPersonBullet* this, PlayState* play) {
         }
     } else {
         Math_Vec3f_Copy(&this->unk_210, &this->actor.world.pos);
-        Actor_MoveForward(&this->actor);
+
+        this->actor.speedXZ = 500.0f;
+        func_8002D97C(&this->actor);
 
         if ((this->touchedPoly =
                  BgCheck_ProjectileLineTest(&play->colCtx, &this->actor.prevPos, &this->actor.world.pos, &hitPoint,
@@ -297,10 +289,6 @@ void EnFirstPersonBullet_Fly(EnFirstPersonBullet* this, PlayState* play) {
             func_8002F9EC(play, &this->actor, this->actor.wallPoly, bgId, &hitPoint);
             Math_Vec3f_Copy(&posCopy, &this->actor.world.pos);
             Math_Vec3f_Copy(&this->actor.world.pos, &hitPoint);
-        }
-
-        if (this->actor.params <= ARROW_0E) {
-            this->actor.shape.rot.x = Math_Atan2S(this->actor.speedXZ, -this->actor.velocity.y);
         }
     }
 
