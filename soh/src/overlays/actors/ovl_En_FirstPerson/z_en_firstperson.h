@@ -13,6 +13,7 @@ typedef struct EnFirstPerson {
     ColliderCylinder collider;
     u8 falling;
     u8 reload_timer;
+    f32 footstep_timer;
 } EnFirstPerson;
 
 #ifdef __cplusplus

@@ -57,8 +57,6 @@ void EnFirstPerson_Destroy(Actor* thisx, PlayState* play) {
 void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
     EnFirstPerson* this = (EnFirstPerson*)thisx;
 
-    Input sControlInput = play->state.input[0];
-
     // Reloading ammo timer
     if (this->reload_timer > 0) {
         this->reload_timer--;
@@ -69,25 +67,30 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
         }
     }
 
+    // Read inputs from Controller 1
+    Input sControlInput = play->state.input[0];
+
     f32 relX = sControlInput.cur.stick_x / 10.0f * (CVarGetInteger("gMirroredWorld", 0) ? -1 : 1);
     f32 relY = sControlInput.cur.stick_y / 10.0f;
 
-    this->player.actor.shape.rot.y = play->camX;
-
-    Vec3f camForward = { Math_SinS(this->player.actor.shape.rot.y), 0.0f, Math_CosS(this->player.actor.shape.rot.y) };
+    // Init camera forward and right vectors
+    Vec3f camForward = { Math_SinS(play->camX), 0.0f, Math_CosS(play->camX) };
     camForward = Vec3fNormalize(camForward);
 
     Vec3f camRight = { -camForward.z, 0.0f, camForward.x };
 
     // Handle Jumping & Gravity
     if (thisx->bgCheckFlags & 1) {
-        this->falling = 0;
+        if (this->falling == 1) {
+            this->falling = 0;
+            Audio_PlaySoundGeneral(NA_SE_PL_LAND_GRASS, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        }
+
         thisx->velocity.y = -5.0f;
 
         if (CHECK_BTN_ALL(sControlInput.press.button, BTN_A)) {
             this->falling = 1;
             thisx->velocity.y = 10.0f;
-            Audio_PlaySoundGeneral(NA_SE_PL_JUMP_DIRT, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
             Audio_PlaySoundGeneral(NA_SE_PL_JUMP_GRASS, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
         }
     } else {
@@ -98,7 +101,9 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
         thisx->velocity.y += thisx->gravity;
     }
 
-    // Set velocity of player to move
+    // Set velocity and direction of player to move
+    this->player.actor.shape.rot.y = play->camX;
+
     thisx->velocity.x = 0;
     thisx->velocity.z = 0;
 
@@ -106,6 +111,16 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
     thisx->velocity.z += -camRight.z * relX;
     thisx->velocity.x += -camForward.x * relY;
     thisx->velocity.z += -camForward.z * relY;
+
+    // Handle footstep sounds
+    Vec3f velocityWithoutY = thisx->velocity;
+    velocityWithoutY.y = 0;
+    this->footstep_timer -= Math3D_Vec3fMagnitude(&velocityWithoutY);
+
+    if (this->footstep_timer < 0 && this->falling == 0) {
+        Audio_PlaySoundGeneral(NA_SE_PL_WALK_GRASS, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        this->footstep_timer = 40;
+    }
 
     // Move player & Collision with terrain and other actors
     func_8002D7EC(thisx);
