@@ -129,24 +129,6 @@ void EnFirstPersonBullet_Shoot(EnFirstPersonBullet* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (this->actor.parent == NULL) {
-        switch (this->actor.params) {
-            case ARROW_SEED:
-                Player_PlaySfx(&player->actor, NA_SE_IT_SLING_SHOT);
-                break;
-
-            case ARROW_NORMAL_LIT:
-            case ARROW_NORMAL_HORSE:
-            case ARROW_NORMAL:
-                Player_PlaySfx(&player->actor, NA_SE_IT_ARROW_SHOT);
-                break;
-
-            case ARROW_FIRE:
-            case ARROW_ICE:
-            case ARROW_LIGHT:
-                Player_PlaySfx(&player->actor, NA_SE_IT_MAGIC_ARROW_SHOT);
-                break;
-        }
-
         EnFirstPersonBullet_SetupAction(this, EnFirstPersonBullet_Fly);
         Math_Vec3f_Copy(&this->unk_210, &this->actor.world.pos);
 
@@ -261,7 +243,7 @@ void EnFirstPersonBullet_Fly(EnFirstPersonBullet* this, PlayState* play) {
                     }
 
                     func_809B3CEC_1(play, this);
-                    Audio_PlayActorSound2(&this->actor, NA_SE_IT_ARROW_STICK_CRE);
+                    Audio_PlayActorSound2(&this->actor, NA_SE_IT_WALL_HIT_HARD);
                 }
             } else if (this->touchedPoly) {
                 EnFirstPersonBullet_SetupAction(this, func_809B45E0_1);
@@ -273,7 +255,7 @@ void EnFirstPersonBullet_Fly(EnFirstPersonBullet* this, PlayState* play) {
                     this->timer = 20;
                 }
 
-                Audio_PlayActorSound2(&this->actor, NA_SE_IT_ARROW_STICK_OBJ);
+                Audio_PlayActorSound2(&this->actor, NA_SE_IT_WALL_HIT_HARD);
                 this->hitFlags |= 1;
             }
         }
