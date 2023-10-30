@@ -216,7 +216,7 @@ void ItemOcarina_Draw(Actor* thisx, PlayState* play) {
 
     if (IS_RANDO) {
         GetItemEntry randoGetItem = Randomizer_GetItemFromKnownCheck(RC_HF_OCARINA_OF_TIME_ITEM, GI_OCARINA_OOT);
-        EnItem00_CustomItemsParticles(&this->actor, play, randoGetItem);
+        EnItem00_CustomRandoItemParticles(&this->actor, play, randoGetItem);
         GetItemEntry_Draw(play, randoGetItem);
         return;
     }

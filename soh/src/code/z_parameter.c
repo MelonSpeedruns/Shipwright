@@ -2362,6 +2362,9 @@ u8 Item_Give(PlayState* play, u8 item) {
         }
 
         return Return_Item(item, MOD_NONE, ITEM_NONE);
+    } else if (item == ITEM_CHRISTMAS_ORNAMENT) {
+        
+        return Return_Item(item, MOD_NONE, ITEM_CHRISTMAS_ORNAMENT);
     }
     returnItem = gSaveContext.inventory.items[slot];
     osSyncPrintf("Item_Register(%d)=%d  %d\n", slot, item, returnItem);
@@ -2753,6 +2756,8 @@ u8 Item_CheckObtainability(u8 item) {
             }
         }
     } else if ((item >= ITEM_WEIRD_EGG) && (item <= ITEM_CLAIM_CHECK)) {
+        return ITEM_NONE;
+    } else if (item == ITEM_CHRISTMAS_ORNAMENT) {
         return ITEM_NONE;
     }
 

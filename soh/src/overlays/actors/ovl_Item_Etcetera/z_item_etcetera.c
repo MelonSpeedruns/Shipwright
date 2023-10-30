@@ -231,7 +231,7 @@ void ItemEtcetera_DrawThroughLens(Actor* thisx, PlayState* play) {
 
         if(IS_RANDO && play->sceneNum == 16) {
             GetItemEntry randoGetItem = GetChestGameRandoGetItem(this->actor.room, this->giDrawId, play);
-            EnItem00_CustomItemsParticles(&this->actor, play, randoGetItem);
+            EnItem00_CustomRandoItemParticles(&this->actor, play, randoGetItem);
             if (randoGetItem.itemId != ITEM_NONE) {
                 GetItemEntry_Draw(play, randoGetItem);
                 return;
@@ -254,7 +254,7 @@ void ItemEtcetera_Draw(Actor* thisx, PlayState* play) {
             randoGetItem = Randomizer_GetItemFromKnownCheck(RC_LH_UNDERWATER_ITEM, GI_LETTER_RUTO);
         }
 
-        EnItem00_CustomItemsParticles(&this->actor, play, randoGetItem);
+        EnItem00_CustomRandoItemParticles(&this->actor, play, randoGetItem);
 
         if (randoGetItem.itemId != ITEM_NONE) {
             func_8002EBCC(&this->actor, play, 0);

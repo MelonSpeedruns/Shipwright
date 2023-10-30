@@ -325,6 +325,10 @@ typedef struct {
     /*        */ u16 adultTradeItems;
     /*        */ u8 triforcePiecesCollected;
     // #endregion
+    // #region SOH [Events]
+    // Upstream TODO: Move these to their own struct or name to more obviously specific to Events
+    /*        */ u8 christmasOrnamentsCollected[128];
+    // #endregion
 } SaveContext; // size = 0x1428
 
 typedef enum {

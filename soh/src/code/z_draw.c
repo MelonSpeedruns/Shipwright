@@ -113,6 +113,7 @@ void GetItem_DrawJewelGoron(PlayState* play, s16 drawId);
 void GetItem_DrawJewelZora(PlayState* play, s16 drawId);
 void GetItem_DrawGenericMusicNote(PlayState* play, s16 drawId);
 void GetItem_DrawTriforcePiece(PlayState* play, s16 drawId);
+void GetItem_DrawChristmasOrnament(PlayState* play, s16 drawId);
 
 typedef struct {
     /* 0x00 */ void (*drawFunc)(PlayState*, s16);
@@ -388,7 +389,8 @@ DrawItemTableEntry sDrawItemTable[] = {
     { GetItem_DrawGenericMusicNote, { gGiSongNoteDL } }, //Sun's song
     { GetItem_DrawGenericMusicNote, { gGiSongNoteDL } }, //Song of time
     { GetItem_DrawGenericMusicNote, { gGiSongNoteDL } }, //Song of storms
-    { GetItem_DrawTriforcePiece, { gTriforcePiece0DL } } // Triforce Piece
+    { GetItem_DrawTriforcePiece, { gTriforcePiece0DL } }, // Triforce Piece
+    { GetItem_DrawChristmasOrnament, { gChristmasOrnamentDL } } // Christmas Ornament
 };
 
 /**
@@ -1062,6 +1064,23 @@ void GetItem_DrawTriforcePiece(PlayState* play, s16 drawId) {
               G_MTX_MODELVIEW | G_MTX_LOAD);
 
     gSPDisplayList(POLY_OPA_DISP++, triforcePieceDL);
+
+    CLOSE_DISPS(play->state.gfxCtx);
+}
+
+void GetItem_DrawChristmasOrnament(PlayState* play, s16 drawId) {
+    OPEN_DISPS(play->state.gfxCtx);
+
+    Gfx_SetupDL_25Opa(play->state.gfxCtx);
+
+    Matrix_Scale(0.025f, 0.025f, 0.025f, MTXMODE_APPLY);
+
+    Gfx* christmasOrnamentDL = (Gfx*) gChristmasOrnamentDL;
+
+    gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(play->state.gfxCtx, (char*)__FILE__, __LINE__),
+              G_MTX_MODELVIEW | G_MTX_LOAD);
+
+    gSPDisplayList(POLY_OPA_DISP++, christmasOrnamentDL);
 
     CLOSE_DISPS(play->state.gfxCtx);
 }

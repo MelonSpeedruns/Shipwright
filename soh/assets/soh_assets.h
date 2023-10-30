@@ -8,6 +8,9 @@
 // On Mac, not using aligned resource names was causing crashes in release builds
 
 // objects
+#define dgChristmasOrnamentDL "__OTR__objects/gameplay_holiday/xmas_tree_bauble_r"
+static const ALIGN_ASSET(2) char gChristmasOrnamentDL[] = dgChristmasOrnamentDL;
+
 #define dgChristmasGreenTreasureChestFrontTex "__OTR__objects/object_box/gChristmasGreenTreasureChestFrontTex"
 static const ALIGN_ASSET(2) char gChristmasGreenTreasureChestFrontTex[] = dgChristmasGreenTreasureChestFrontTex;
 

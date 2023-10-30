@@ -343,6 +343,7 @@ void EnItem00_SetObjectDependency(EnItem00* this, PlayState* play, s16 objectInd
 
 void EnItem00_Init(Actor* thisx, PlayState* play) {
     EnItem00* this = (EnItem00*)thisx;
+
     s32 pad;
     f32 yOffset = 980.0f;
     f32 shadowScale = 6.0f;
@@ -367,6 +368,8 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
     Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
 
     this->unk_158 = 1;
+
+    this->actor.params = ITEM00_CHRISTMAS_ORNAMENT;
 
     switch (this->actor.params) {
         case ITEM00_RUPEE_GREEN:
@@ -570,7 +573,6 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
         case ITEM00_TUNIC_ZORA:
         case ITEM00_TUNIC_GORON:
         case ITEM00_BOMBS_SPECIAL:
-            break;
         case ITEM00_BOMBCHU:
             Item_Give(play, ITEM_BOMBCHUS_5);
             break;
@@ -602,7 +604,8 @@ void func_8001DFC8(EnItem00* this, PlayState* play) {
         this->actor.shape.rot.y += 960;
     } else {
         if ((this->actor.params >= ITEM00_SHIELD_DEKU) && (this->actor.params != ITEM00_BOMBS_SPECIAL) &&
-            (this->actor.params != ITEM00_BOMBCHU)) {
+            (this->actor.params != ITEM00_BOMBCHU) && 
+            (this->actor.params != ITEM00_CHRISTMAS_ORNAMENT)) {
             if (this->unk_15A == -1) {
                 if (Math_SmoothStepToS(&this->actor.shape.rot.x, this->actor.world.rot.x - 0x4000, 2, 3000, 1500) ==
                     0) {
@@ -780,7 +783,8 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
     if ((this->actor.params == ITEM00_HEART && this->unk_15A >= 0) ||
         (this->actor.params >= ITEM00_ARROWS_SMALL && this->actor.params <= ITEM00_SMALL_KEY) ||
         this->actor.params == ITEM00_BOMBS_A || this->actor.params == ITEM00_ARROWS_SINGLE ||
-        this->actor.params == ITEM00_BOMBS_SPECIAL || this->actor.params == ITEM00_BOMBCHU) {
+        this->actor.params == ITEM00_BOMBS_SPECIAL || this->actor.params == ITEM00_BOMBCHU ||
+        this->actor.params == ITEM00_CHRISTMAS_ORNAMENT) {
         if (CVarGetInteger("gNewDrops", 0) ||
             // Keys in randomizer need to always rotate for their GID replacement
             (IS_RANDO && this->actor.params == ITEM00_SMALL_KEY)) {
@@ -945,6 +949,9 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
             break;
         case ITEM00_BOMBCHU:
             Item_Give(play, ITEM_BOMBCHUS_5);
+            break;
+        case ITEM00_CHRISTMAS_ORNAMENT:
+            getItemId = GI_CHRISTMAS_ORNAMENT;
             break;
     }
 
@@ -1177,13 +1184,57 @@ void EnItem00_Draw(Actor* thisx, PlayState* play) {
             case ITEM00_TUNIC_GORON:
                 GetItem_Draw(play, GID_TUNIC_GORON);
                 break;
+            case ITEM00_CHRISTMAS_ORNAMENT:
+                mtxScale = 25.0f;
+                Matrix_Scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);
+                EnItem00_CustomItemParticles(&this->actor, play, ITEM00_CHRISTMAS_ORNAMENT);
+                GetItem_Draw(play, GID_CHRISTMAS_ORNAMENT);
+                break;
             case ITEM00_FLEXIBLE:
                 break;
         }
     }
 }
 
-void EnItem00_CustomItemsParticles(Actor* Parent, PlayState* play, GetItemEntry giEntry) {
+void EnItem00_CustomItemParticles(Actor* Parent, PlayState* play, Item00Type itemType) {
+    s16 color_slot;
+    switch (itemType) {
+        case ITEM00_CHRISTMAS_ORNAMENT:
+            color_slot = 0;
+            break;
+        default:
+            return;
+    }
+
+    // Color of the circle for the particles
+    static Color_RGBA8 mainColors[1][3] = {
+        { 177, 35, 35 },   // Christmas Ornament
+    };
+
+    // Color of the faded flares stretching off the particles
+    static Color_RGBA8 flareColors[1][3] = {
+        { 90, 10, 10 },    // Christmas Ornament
+    };
+
+    static Vec3f velocity = { 0.0f, 0.0f, 0.0f };
+    static Vec3f accel = { 0.0f, 0.0f, 0.0f };
+    Color_RGBA8 primColor;
+    Color_RGBA8 envColor;
+    Color_RGBA8_Copy(&primColor, &mainColors[color_slot]);
+    Color_RGBA8_Copy(&envColor, &flareColors[color_slot]);
+    Vec3f pos;
+
+    pos.x = Rand_CenteredFloat(32.0f) + Parent->world.pos.x;
+    pos.y = (Rand_ZeroOne() * 6.0f) + Parent->world.pos.y + 25;
+    pos.z = Rand_CenteredFloat(32.0f) + Parent->world.pos.z;
+
+    velocity.y = -0.05f;
+    accel.y = -0.025f;
+
+    EffectSsKiraKira_SpawnDispersed(play, &pos, &velocity, &accel, &primColor, &envColor, 1000, 30);
+}
+
+void EnItem00_CustomRandoItemParticles(Actor* Parent, PlayState* play, GetItemEntry giEntry) {
     s16 color_slot;
     switch (giEntry.drawModIndex) {
         case MOD_NONE:
@@ -1213,6 +1264,9 @@ void EnItem00_CustomItemsParticles(Actor* Parent, PlayState* play, GetItemEntry 
                 case ITEM_NUT_UPGRADE_30:
                 case ITEM_NUT_UPGRADE_40:
                     color_slot = 7;
+                    break;
+                case ITEM_CHRISTMAS_ORNAMENT:
+                    color_slot = 1;
                     break;
                 default:
                     return;
@@ -1250,7 +1304,7 @@ void EnItem00_CustomItemsParticles(Actor* Parent, PlayState* play, GetItemEntry 
         { 31, 152, 49 },   // Stick Upgrade
         { 222, 182, 20 },  // Nut Upgrade
         { 255, 255, 255 }, // Double Defense
-        { 19, 120, 182 }   // Progressive Bombchu
+        { 19, 120, 182 },  // Progressive Bombchu
     };
 
     // Color of the faded flares stretching off the particles
@@ -1264,7 +1318,7 @@ void EnItem00_CustomItemsParticles(Actor* Parent, PlayState* play, GetItemEntry 
         { 5, 50, 10 },     // Stick Upgrade
         { 150, 100, 5 },   // Nut Upgrade
         { 154, 154, 154 }, // Double Defense
-        { 204, 102, 0 }    // Progressive Bombchu
+        { 204, 102, 0 },    // Progressive Bombchu
     };
 
     static Vec3f velocity = { 0.0f, 0.0f, 0.0f };
@@ -1374,7 +1428,7 @@ void EnItem00_DrawCollectible(EnItem00* this, PlayState* play) {
         
         f32 mtxScale = 10.67f;
         Matrix_Scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);
-        EnItem00_CustomItemsParticles(&this->actor, play, this->randoGiEntry);
+        EnItem00_CustomRandoItemParticles(&this->actor, play, this->randoGiEntry);
         GetItemEntry_Draw(play, this->randoGiEntry);
     } else if (this->actor.params == ITEM00_BOMBCHU) {
         OPEN_DISPS(play->state.gfxCtx);
@@ -1468,7 +1522,7 @@ void EnItem00_DrawHeartPiece(EnItem00* this, PlayState* play) {
 
         f32 mtxScale = 16.0f;
         Matrix_Scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);
-        EnItem00_CustomItemsParticles(&this->actor, play, this->randoGiEntry);
+        EnItem00_CustomRandoItemParticles(&this->actor, play, this->randoGiEntry);
         GetItemEntry_Draw(play, this->randoGiEntry);
     } else {
         s32 pad;

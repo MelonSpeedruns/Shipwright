@@ -556,6 +556,9 @@ extern "C" void VanillaItemTable_Init() {
         GET_ITEM(ITEM_BULLET_BAG_50,    OBJECT_GI_DEKUPOUCH,     GID_BULLET_BAG_50,    0x6C, 0x80, CHEST_ANIM_LONG,  ITEM_CATEGORY_LESSER,          MOD_NONE, GI_BULLET_BAG_50),
         GET_ITEM_NONE,
         GET_ITEM_NONE,
+        GET_ITEM(ITEM_CHRISTMAS_ORNAMENT, OBJECT_GI_RUPY, GID_CHRISTMAS_ORNAMENT, 0x6C, 0x80, CHEST_ANIM_LONG, ITEM_CATEGORY_MAJOR, MOD_NONE, GI_CHRISTMAS_ORNAMENT),
+        GET_ITEM_NONE,
+        GET_ITEM_NONE,
         GET_ITEM_NONE // GI_MAX - if you need to add to this table insert it before this entry.
     };
     ItemTableManager::Instance->AddItemTable(MOD_NONE);

@@ -214,7 +214,7 @@ void EnSi_Draw(Actor* thisx, PlayState* play) {
             GetItem_Draw(play, GID_SKULL_TOKEN_2);
         } else {
             getItem = Randomizer_GetItemFromActor(this->actor.id, play->sceneNum, this->actor.params, GI_SKULL_TOKEN);
-            EnItem00_CustomItemsParticles(&this->actor, play, getItem);
+            EnItem00_CustomRandoItemParticles(&this->actor, play, getItem);
             if (getItem.itemId != ITEM_SKULL_TOKEN) {
                 f32 mtxScale = 1.5f;
                 Matrix_Scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);

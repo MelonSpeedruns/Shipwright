@@ -1334,7 +1334,7 @@ void EnGirlA_Draw(Actor* thisx, PlayState* play) {
         ShopItemIdentity shopItemIdentity = Randomizer_IdentifyShopItem(play->sceneNum, this->randoSlotIndex);
         GetItemEntry getItemEntry = Randomizer_GetItemFromKnownCheckWithoutObtainabilityCheck(shopItemIdentity.randomizerCheck, shopItemIdentity.ogItemId);
 
-        EnItem00_CustomItemsParticles(&this->actor, play, getItemEntry);
+        EnItem00_CustomRandoItemParticles(&this->actor, play, getItemEntry);
         GetItemEntry_Draw(play, getItemEntry);
         return;
     }
