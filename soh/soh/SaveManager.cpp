@@ -1857,7 +1857,12 @@ void SaveManager::LoadBaseVersion4() {
         SaveManager::Instance->LoadData("tempSwchFlags", gSaveContext.backupFW.tempSwchFlags);
         SaveManager::Instance->LoadData("tempCollectFlags", gSaveContext.backupFW.tempCollectFlags);
     });
+
     SaveManager::Instance->LoadData("dogParams", gSaveContext.dogParams);
+
+    SaveManager::Instance->LoadArray("christmasOrnaments", ARRAY_COUNT(gSaveContext.christmasOrnaments), [](size_t i) {
+        SaveManager::Instance->LoadData("", gSaveContext.christmasOrnaments[i]);
+    });
 }
 
 void SaveManager::SaveBase(SaveContext* saveContext, int sectionID, bool fullSave) {
@@ -2026,7 +2031,12 @@ void SaveManager::SaveBase(SaveContext* saveContext, int sectionID, bool fullSav
         SaveManager::Instance->SaveData("tempSwchFlags", saveContext->backupFW.tempSwchFlags);
         SaveManager::Instance->SaveData("tempCollectFlags", saveContext->backupFW.tempCollectFlags);
     });
+
     SaveManager::Instance->SaveData("dogParams", saveContext->dogParams);
+
+    SaveManager::Instance->SaveArray("christmasOrnaments", ARRAY_COUNT(saveContext->christmasOrnaments), [&](size_t i) {
+        SaveManager::Instance->SaveData("", saveContext->christmasOrnaments[i]);
+    });
 }
 
 // Load a string into a char array based on size and ensuring it is null terminated when overflowed

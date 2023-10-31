@@ -137,6 +137,12 @@ typedef struct {
 } RespawnData; // size = 0x1C
 
 typedef struct {
+    int16_t sceneId;
+    Vec3f spawnPos;
+    u8 ornamentId;
+} ChristmasOrnamentEntry;
+
+typedef struct {
     /* 0x00 */ Vec3i pos;
     /* 0x0C */ s32 yaw;
     /* 0x10 */ s32 playerParams;
@@ -327,7 +333,7 @@ typedef struct {
     // #endregion
     // #region SOH [Events]
     // Upstream TODO: Move these to their own struct or name to more obviously specific to Events
-    /*        */ u8 christmasOrnamentsCollected[128];
+    /*        */ u8 christmasOrnaments[25];
     // #endregion
 } SaveContext; // size = 0x1428
 

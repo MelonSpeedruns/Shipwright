@@ -369,8 +369,6 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
 
     this->unk_158 = 1;
 
-    this->actor.params = ITEM00_CHRISTMAS_ORNAMENT;
-
     switch (this->actor.params) {
         case ITEM00_RUPEE_GREEN:
         case ITEM00_RUPEE_BLUE:
@@ -985,7 +983,11 @@ void EnItem00_Update(Actor* thisx, PlayState* play) {
         Audio_PlaySoundGeneral(NA_SE_SY_GET_RUPY, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
     } else if (getItemId != GI_NONE) {
         if (Actor_HasParent(&this->actor, play)) {
-            Flags_SetCollectible(play, this->collectibleFlag);
+            if (*params != ITEM00_CHRISTMAS_ORNAMENT) {
+                Flags_SetCollectible(play, this->collectibleFlag);
+            } else {
+                gSaveContext.christmasOrnaments[this->collectibleFlag] = 1;
+            }
             Actor_Kill(&this->actor);
         }
         return;
