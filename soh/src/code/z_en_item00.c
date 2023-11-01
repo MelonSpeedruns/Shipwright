@@ -358,6 +358,10 @@ void EnItem00_Init(Actor* thisx, PlayState* play) {
 
     this->actor.params &= 0xFF;
 
+    if (this->actor.params == ITEM00_CHRISTMAS_ORNAMENT) {
+        this->actor.room = 0xFF;
+    }
+
     if (Flags_GetCollectible(play, this->collectibleFlag)) {
         Actor_Kill(&this->actor);
         return;
