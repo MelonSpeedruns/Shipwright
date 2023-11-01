@@ -764,7 +764,7 @@ void Play_Init(GameState* thisx) {
                     GET_PLAYER(play)->actor.world.pos.z, 0, 0, 0, 1, false);
     }
 
-    //if (CVarGetInteger("gLetItSnow", 0)) {
+    if (CVarGetInteger("gLetItSnow", 0)) {
         for (i = 0; i < ARRAY_COUNT(christmasOrnamentsTable); i++) {
             if (christmasOrnamentsTable[i].sceneId == play->sceneNum && gSaveContext.christmasOrnaments[i] == 0) {
                 Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ITEM00, christmasOrnamentsTable[i].spawnPos.x,
@@ -772,7 +772,7 @@ void Play_Init(GameState* thisx) {
                         0x001B + (i * 0x0100), false);
             }
         }
-    //}
+    }
 }
 
 void Play_Update(PlayState* play) {

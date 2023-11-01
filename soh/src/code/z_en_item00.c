@@ -1187,7 +1187,7 @@ void EnItem00_Draw(Actor* thisx, PlayState* play) {
                 GetItem_Draw(play, GID_TUNIC_GORON);
                 break;
             case ITEM00_CHRISTMAS_ORNAMENT:
-                mtxScale = 25.0f;
+                mtxScale = 30.0f;
                 Matrix_Scale(mtxScale, mtxScale, mtxScale, MTXMODE_APPLY);
                 EnItem00_CustomItemParticles(&this->actor, play, ITEM00_CHRISTMAS_ORNAMENT);
                 GetItem_Draw(play, GID_CHRISTMAS_ORNAMENT);

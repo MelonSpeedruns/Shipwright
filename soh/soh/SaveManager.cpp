@@ -611,6 +611,10 @@ void SaveManager::InitFileNormal() {
         gSaveContext.questId = QUEST_NORMAL;
     }
 
+    for (int i = 0; i < ARRAY_COUNT(gSaveContext.christmasOrnaments); i++) {
+        gSaveContext.christmasOrnaments[i] = 0;
+    }
+
     //RANDOTODO (ADD ITEMLOCATIONS TO GSAVECONTEXT)
 }
 
@@ -869,6 +873,10 @@ void SaveManager::InitFileMaxed() {
 
     gSaveContext.entranceIndex = 0xCD;
     gSaveContext.sceneFlags[5].swch = 0x40000000;
+
+    for (int i = 0; i < ARRAY_COUNT(gSaveContext.christmasOrnaments); i++) {
+        gSaveContext.christmasOrnaments[i] = 0;
+    }
 }
 
 // Threaded SaveFile takes copy of gSaveContext for local unmodified storage
