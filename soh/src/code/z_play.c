@@ -37,7 +37,7 @@ PlayState* gPlayState;
 s16 gEnPartnerId;
 
 ChristmasOrnamentEntry christmasOrnamentsTable[1] = {
-    { SCENE_HYRULE_FIELD, { 5321.349, 0.018, 4670.330 }, 0x0000 },
+    { SCENE_HYRULE_FIELD, { 5321.349, 0.018, 4670.330 } },
 };
 
 void OTRPlay_SpawnScene(PlayState* play, s32 sceneNum, s32 spawn);
@@ -769,7 +769,7 @@ void Play_Init(GameState* thisx) {
             if (christmasOrnamentsTable[i].sceneId == play->sceneNum && gSaveContext.christmasOrnaments[i] == 0) {
                 Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ITEM00, christmasOrnamentsTable[i].spawnPos.x,
                             christmasOrnamentsTable[i].spawnPos.y, christmasOrnamentsTable[i].spawnPos.z, 0, 0, 0,
-                        0x001B + christmasOrnamentsTable[i].ornamentId, false);
+                        0x001B + (i * 0x0100), false);
             }
         }
     //}

@@ -139,7 +139,6 @@ typedef struct {
 typedef struct {
     int16_t sceneId;
     Vec3f spawnPos;
-    u8 ornamentId;
 } ChristmasOrnamentEntry;
 
 typedef struct {
