@@ -36,6 +36,7 @@ PlayState* gPlayState;
 s16 firstInit = 0;
 
 s16 gEnPartnerId;
+s16 gEnGleeokId;
 
 void OTRPlay_SpawnScene(PlayState* play, s32 sceneNum, s32 spawn);
 
@@ -767,6 +768,10 @@ void Play_Init(GameState* thisx) {
                     GET_PLAYER(play)->actor.world.pos.y + Player_GetHeight(GET_PLAYER(play)) + 5.0f,
                     GET_PLAYER(play)->actor.world.pos.z, 0, 0, 0, 1, true);
     }
+
+    Actor_Spawn(&play->actorCtx, play, gEnGleeokId, GET_PLAYER(play)->actor.world.pos.x,
+        GET_PLAYER(play)->actor.world.pos.y + Player_GetHeight(GET_PLAYER(play)) + 5.0f,
+        GET_PLAYER(play)->actor.world.pos.z, 0, 0, 0, 1, true);
 }
 
 void Play_Update(PlayState* play) {

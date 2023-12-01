@@ -604,8 +604,26 @@ static ActorDBInit EnPartnerInit = {
 };
 extern "C" s16 gEnPartnerId;
 
+#include "src/overlays/actors/ovl_En_Gleeok/z_en_gleeok.h"
+static ActorDBInit EnGleeokInit = {
+    "En_Gleeok",
+    "Gleeok",
+    ACTORCAT_BOSS,
+    (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED | ACTOR_FLAG_DRAGGED_BY_HOOKSHOT |
+     ACTOR_FLAG_CAN_PRESS_SWITCH),
+    OBJECT_GAMEPLAY_KEEP,
+    sizeof(EnPartner),
+    (ActorFunc)EnGleeok_Init,
+    (ActorFunc)EnGleeok_Destroy,
+    (ActorFunc)EnGleeok_Update,
+    (ActorFunc)EnGleeok_Draw,
+    nullptr,
+};
+extern "C" s16 gEnGleeokId;
+
 void ActorDB::AddBuiltInCustomActors() {
     gEnPartnerId = ActorDB::Instance->AddEntry(EnPartnerInit).entry.id;
+    gEnGleeokId = ActorDB::Instance->AddEntry(EnGleeokInit).entry.id;
 }
 
 extern "C" ActorDBEntry* ActorDB_Retrieve(const int id) {
