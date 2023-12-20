@@ -31,14 +31,15 @@
 #include "soh/resource/type/Skeleton.h"
 #include "libultraship/libultraship.h"
 
-#ifdef ENABLE_CROWD_CONTROL
+#ifdef ENABLE_REMOTE_CONTROL
 #include "Enhancements/crowd-control/CrowdControl.h"
+#include "Enhancements/game-interactor/GameInteractor_Sail.h"
 #endif
 
 #include "Enhancements/game-interactor/GameInteractor.h"
 #include "Enhancements/cosmetics/authenticGfxPatches.h"
 
-bool ShouldClearTextureCacheAtEndOfFrame = false;
+bool ToggleAltAssetsAtEndOfFrame = false;
 bool isBetaQuestEnabled = false;
 
 extern "C" {
