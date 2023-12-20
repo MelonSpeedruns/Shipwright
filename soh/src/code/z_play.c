@@ -17,6 +17,7 @@
 
 #include <time.h>
 #include <assert.h>
+#include <objects/gameplay_keep/gameplay_keep.h>
 
 void* D_8012D1F0 = NULL;
 //UNK_TYPE D_8012D1F4 = 0; // unused
@@ -36,6 +37,7 @@ PlayState* gPlayState;
 s16 firstInit = 0;
 
 s16 gEnPartnerId;
+s16 gEnFirstPersonId;
 
 void OTRPlay_SpawnScene(PlayState* play, s32 sceneNum, s32 spawn);
 
@@ -1435,7 +1437,11 @@ skip:
             }
         }
 
-        Camera_Update(play->cameraPtrs[play->nextCamera]);
+        if (play->cameraPtrs[0]->player != NULL && play->cameraPtrs[0]->player->actor.id == gEnFirstPersonId) {
+            Camera_UpdateFPS(play->cameraPtrs[0]);
+        } else {
+            Camera_Update(play->cameraPtrs[play->nextCamera]);
+        }
 
         if (1 && HREG(63)) {
             LOG_NUM("1", 1);
@@ -1989,6 +1995,8 @@ void Play_SpawnScene(PlayState* play, s32 sceneNum, s32 spawn) {
     if (IS_RANDO && Randomizer_GetSettingValue(RSK_SHUFFLE_ENTRANCES)) {
         Entrance_OverrideSpawnScene(sceneNum, spawn);
     }
+
+    Entrance_OverrideSpawnSceneCustomPlayer(gEnFirstPersonId);
 }
 
 void func_800C016C(PlayState* play, Vec3f* src, Vec3f* dest) {

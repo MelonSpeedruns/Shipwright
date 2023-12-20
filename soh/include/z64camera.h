@@ -113,6 +113,7 @@ typedef enum {
     /* 0x12 */ CAM_MODE_STILL,
     /* 0x13 */ CAM_MODE_PUSHPULL,
     /* 0x14 */ CAM_MODE_FOLLOWBOOMERANG, // "BOOKEEPON"
+    /* 0x14 */ CAM_MODE_FPS,
     /* 0x15 */ CAM_MODE_MAX
 } CameraModeType;
 

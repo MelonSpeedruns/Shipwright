@@ -7468,6 +7468,85 @@ void Camera_UpdateDistortion(Camera* camera) {
     }
 }
 
+Vec3s Camera_UpdateFPS(Camera* camera) {
+    Camera_Update(camera);
+
+    Vec3f* eye = &camera->eye;
+    Vec3f* at = &camera->at;
+    Vec3f* eyeNext = &camera->eyeNext;
+    VecSph spA8;
+    CamColChk sp6C;
+    Parallel1* para1 = (Parallel1*)camera->paramData;
+    f32 playerHeight = 74.0f;
+
+    at->x = camera->player->actor.world.pos.x;
+    at->y = camera->player->actor.world.pos.y + playerHeight;
+    at->z = camera->player->actor.world.pos.z;
+
+    if (RELOAD_PARAMS) {
+        OLib_Vec3fDiffToVecSphGeo(&spA8, &camera->at, &camera->eye);
+
+        CameraModeValue* values = sCameraSettings[camera->setting].cameraModes[camera->mode].values;
+        f32 yNormal = (1.0f + PCT(OREG(46))) - (PCT(OREG(46)) * (68.0f / playerHeight));
+
+        para1->yOffset = NEXTPCT * playerHeight * yNormal;
+        para1->distTarget = NEXTPCT * playerHeight * yNormal;
+        para1->pitchTarget = DEGF_TO_BINANG(NEXTSETTING);
+        para1->yawTarget = DEGF_TO_BINANG(NEXTSETTING);
+        para1->unk_08 = NEXTSETTING;
+        para1->unk_0C = NEXTSETTING;
+        para1->fovTarget = NEXTSETTING;
+        para1->unk_14 = NEXTPCT;
+        para1->interfaceFlags = NEXTSETTING;
+        para1->unk_18 = NEXTPCT * playerHeight * yNormal;
+        para1->unk_1C = NEXTPCT;
+    }
+
+    if (R_RELOAD_CAM_PARAMS) {
+        Camera_CopyPREGToModeValues(camera);
+    }
+
+    sCameraInterfaceFlags = 1;
+
+    camera->animState = 0;
+
+    f32 newCamX =
+        -D_8015BD7C->state.input[0].cur.right_stick_x * 10.0f * (CVarGetFloat("gThirdPersonCameraSensitivityX", 1.0f));
+    f32 newCamY =
+        D_8015BD7C->state.input[0].cur.right_stick_y * 10.0f * (CVarGetFloat("gThirdPersonCameraSensitivityY", 1.0f));
+    bool invertXAxis = (CVarGetInteger("gInvertXAxis", 0) && !CVarGetInteger("gMirroredWorld", 0)) ||
+                       (!CVarGetInteger("gInvertXAxis", 0) && CVarGetInteger("gMirroredWorld", 0));
+
+    camera->play->camX += newCamX * (invertXAxis ? -1 : 1);
+    camera->play->camY += newCamY * (CVarGetInteger("gInvertYAxis", 1) ? 1 : -1);
+
+    if (camera->play->camY > 0x32A4) {
+        camera->play->camY = 0x32A4;
+    }
+    if (camera->play->camY < -0x32A4) {
+        camera->play->camY = -0x32A4;
+    }
+
+    camera->dist = 0.0f;
+
+    OLib_Vec3fDiffToVecSphGeo(&spA8, at, eyeNext);
+
+    spA8.r = camera->dist;
+    spA8.yaw = camera->play->camX;
+    spA8.pitch = camera->play->camY;
+
+    Camera_Vec3fVecSphGeoAdd(eyeNext, at, &spA8);
+
+    camera->eye.x = eyeNext->x;
+    camera->eye.y = eyeNext->y;
+    camera->eye.z = eyeNext->z;
+
+    camera->playerPosRot.pos.y = camera->player->actor.world.pos.y;
+
+    camera->fov = 65.0f;
+    camera->roll = 0.0f;
+}
+
 s32 sOOBTimer = 0;
 Vec3s Camera_Update(Camera* camera) {
     Vec3f viewAt;

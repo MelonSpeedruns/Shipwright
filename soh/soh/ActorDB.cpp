@@ -604,8 +604,25 @@ static ActorDBInit EnPartnerInit = {
 };
 extern "C" s16 gEnPartnerId;
 
+#include "src/overlays/actors/ovl_En_FirstPerson/z_en_firstperson.h"
+static ActorDBInit EnFirstPersonInit = {
+    "En_FirstPerson",
+    "First Person Player",
+    ACTORCAT_PLAYER,
+    (ACTOR_FLAG_UPDATE_WHILE_CULLED | ACTOR_FLAG_DRAW_WHILE_CULLED),
+    OBJECT_GAMEPLAY_KEEP,
+    sizeof(EnFirstPerson),
+    (ActorFunc)EnFirstPerson_Init,
+    (ActorFunc)EnFirstPerson_Destroy,
+    (ActorFunc)EnFirstPerson_Update,
+    (ActorFunc)EnFirstPerson_Draw,
+    nullptr,
+};
+extern "C" s16 gEnFirstPersonId;
+
 void ActorDB::AddBuiltInCustomActors() {
     gEnPartnerId = ActorDB::Instance->AddEntry(EnPartnerInit).entry.id;
+    gEnFirstPersonId = ActorDB::Instance->AddEntry(EnFirstPersonInit).entry.id;
 }
 
 extern "C" ActorDBEntry* ActorDB_Retrieve(const int id) {
