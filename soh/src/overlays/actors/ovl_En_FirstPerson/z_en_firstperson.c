@@ -122,7 +122,9 @@ void EnFirstPerson_Update(Actor* thisx, PlayState* play) {
     this->footstep_timer -= Math3D_Vec3fMagnitude(&velocityWithoutY);
 
     if (this->footstep_timer < 0 && this->falling == 0) {
-        Audio_PlaySoundGeneral(NA_SE_PL_WALK_GRASS, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
+        s32 sfxId = SurfaceType_GetSfx(&play->colCtx, this->player.actor.floorPoly, this->player.actor.floorBgId);
+        sfxId = func_8083275C(this->player, sfxId);
+        Audio_PlaySoundGeneral(sfxId, &D_801333D4, 4, &D_801333E0, &D_801333E0, &D_801333E8);
         this->footstep_timer = 40;
     }
 
