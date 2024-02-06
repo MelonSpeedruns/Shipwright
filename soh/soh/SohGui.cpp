@@ -8,8 +8,10 @@
 #include "SohGui.hpp"
 
 #include <spdlog/spdlog.h>
-#include <ImGui/imgui.h>
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
+#endif
+#include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
 #include <libultraship/libultraship.h>
 #include <Fast3D/gfx_pc.h>
@@ -38,6 +40,7 @@
 
 #include "Enhancements/game-interactor/GameInteractor.h"
 #include "Enhancements/cosmetics/authenticGfxPatches.h"
+#include "Enhancements/resolution-editor/ResolutionEditor.h"
 
 bool ToggleAltAssetsAtEndOfFrame = false;
 bool isBetaQuestEnabled = false;
@@ -113,7 +116,6 @@ namespace SohGui {
     std::shared_ptr<LUS::GuiWindow> mInputEditorWindow;
 
     std::shared_ptr<AudioEditor> mAudioEditorWindow;
-    std::shared_ptr<GameControlEditor::GameControlEditorWindow> mGameControlEditorWindow;
     std::shared_ptr<CosmeticsEditorWindow> mCosmeticsEditorWindow;
     std::shared_ptr<ActorViewerWindow> mActorViewerWindow;
     std::shared_ptr<ColViewerWindow> mColViewerWindow;
@@ -127,6 +129,8 @@ namespace SohGui {
     std::shared_ptr<ItemTrackerSettingsWindow> mItemTrackerSettingsWindow;
     std::shared_ptr<ItemTrackerWindow> mItemTrackerWindow;
     std::shared_ptr<RandomizerSettingsWindow> mRandomizerSettingsWindow;
+
+    std::shared_ptr<AdvancedResolutionSettings::AdvancedResolutionSettingsWindow> mAdvancedResolutionSettingsWindow;
 
     void SetupGuiElements() {
         auto gui = LUS::Context::GetInstance()->GetWindow()->GetGui();
@@ -159,8 +163,6 @@ namespace SohGui {
 
         mAudioEditorWindow = std::make_shared<AudioEditor>("gAudioEditor.WindowOpen", "Audio Editor");
         gui->AddGuiWindow(mAudioEditorWindow);
-        mGameControlEditorWindow = std::make_shared<GameControlEditor::GameControlEditorWindow>("gGameControlEditorEnabled", "Game Control Editor");
-        gui->AddGuiWindow(mGameControlEditorWindow);
         mCosmeticsEditorWindow = std::make_shared<CosmeticsEditorWindow>("gCosmeticsEditorEnabled", "Cosmetics Editor");
         gui->AddGuiWindow(mCosmeticsEditorWindow);
         mActorViewerWindow = std::make_shared<ActorViewerWindow>("gActorViewerEnabled", "Actor Viewer");
@@ -187,9 +189,12 @@ namespace SohGui {
         gui->AddGuiWindow(mItemTrackerSettingsWindow);
         mRandomizerSettingsWindow = std::make_shared<RandomizerSettingsWindow>("gRandomizerSettingsEnabled", "Randomizer Settings");
         gui->AddGuiWindow(mRandomizerSettingsWindow);
+        mAdvancedResolutionSettingsWindow = std::make_shared<AdvancedResolutionSettings::AdvancedResolutionSettingsWindow>("gAdvancedResolutionEditorEnabled", "Advanced Resolution Settings");
+        gui->AddGuiWindow(mAdvancedResolutionSettingsWindow);
     }
 
     void Destroy() {
+        mAdvancedResolutionSettingsWindow = nullptr;
         mRandomizerSettingsWindow = nullptr;
         mItemTrackerWindow = nullptr;
         mItemTrackerSettingsWindow = nullptr;
@@ -203,7 +208,6 @@ namespace SohGui {
         mColViewerWindow = nullptr;
         mActorViewerWindow = nullptr;
         mCosmeticsEditorWindow = nullptr;
-        mGameControlEditorWindow = nullptr;
         mAudioEditorWindow = nullptr;
         mInputEditorWindow = nullptr;
         mStatsWindow = nullptr;
