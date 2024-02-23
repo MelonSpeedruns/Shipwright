@@ -1765,6 +1765,17 @@ void CosmeticsEditorWindow::DrawElement() {
         return;
     }
 
+    ImGui::Text("Link Skin");
+    ImGui::SameLine();
+
+    std::string AnchorSkin = CVarGetString("gRemote.AnchorSkin", "");
+    if (ImGui::InputText("##gRemote.AnchorSkin", (char*)AnchorSkin.c_str(), AnchorSkin.capacity() + 1)) {
+        CVarSetString("gRemote.AnchorSkin", AnchorSkin.c_str());
+        LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
+    }
+
+    UIWidgets::PaddedSeparator();
+
     ImGui::Text("Color Scheme");
     ImGui::SameLine();
     UIWidgets::EnhancementCombobox("gCosmetics.DefaultColorScheme", colorSchemes, COLORSCHEME_N64);
@@ -1792,8 +1803,14 @@ void CosmeticsEditorWindow::DrawElement() {
             LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
         }
     }
+
+    UIWidgets::PaddedSeparator();
+
     UIWidgets::EnhancementCheckbox("Sync Rainbow colors", "gCosmetics.RainbowSync");
     UIWidgets::EnhancementSliderFloat("Rainbow Speed: %f", "##rainbowSpeed", "gCosmetics.RainbowSpeed", 0.03f, 1.0f, "", 0.6f, false);
+
+    UIWidgets::PaddedSeparator();
+
     if (ImGui::Button("Randomize All", ImVec2(ImGui::GetContentRegionAvail().x / 2, 30.0f))) {
         for (auto& [id, cosmeticOption] : cosmeticOptions) {
             if (!CVarGetInteger(cosmeticOption.lockedCvar, 0) && (!cosmeticOption.advancedOption || CVarGetInteger("gCosmetics.AdvancedMode", 0))) {
@@ -1831,6 +1848,8 @@ void CosmeticsEditorWindow::DrawElement() {
         }
         LUS::Context::GetInstance()->GetWindow()->GetGui()->SaveConsoleVariablesOnNextTick();
     }
+
+    UIWidgets::PaddedSeparator();
 
     if (ImGui::BeginTabBar("CosmeticsContextTabBar", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton)) {
         if (ImGui::BeginTabItem("Link & Items")) {
