@@ -469,9 +469,9 @@ void GameInteractorAnchor::HandleRemoteJson(nlohmann::json payload) {
                 GET_PLAYER(gPlayState)->actor.freezeTimer = 0;
             } else if (payload["damageEffect"] == PUPPET_DMGEFF_FIRE) {
                 for (int i = 0; i < 18; i++) {
-                    GET_PLAYER(gPlayState)->flameTimers[i] = Rand_S16Offset(0, 200);
+                    GET_PLAYER(gPlayState)->bodyFlameTimers[i] = Rand_S16Offset(0, 200);
                 }
-                GET_PLAYER(gPlayState)->isBurning = true;
+                GET_PLAYER(gPlayState)->bodyIsBurning = true;
                 func_80837C0C(gPlayState, GET_PLAYER(gPlayState), 0, 0, 0, 0, 0);
                 GET_PLAYER(gPlayState)->invincibilityTimer = 18;
                 GET_PLAYER(gPlayState)->actor.freezeTimer = 0;
